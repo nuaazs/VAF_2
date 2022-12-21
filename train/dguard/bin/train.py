@@ -202,6 +202,16 @@ def main():
 
 
         #####################################################################################
+        if rank == 0:
+            # log
+            epoch_logger.log_stats(
+                stats_meta={"epoch": epoch},
+                stats=train_stats,
+            )
+            # save checkpoint
+            if epoch % config.save_epoch_freq == 0:
+                checkpointer.save_checkpoint(epoch=epoch)
+                
         try:
             # test voxceleb1-O voxceleb1-H voxceleb1-E
             if epoch % config.save_epoch_freq== 0:
@@ -238,15 +248,7 @@ def main():
             print(e)
         #####################################################################################
 
-        if rank == 0:
-            # log
-            epoch_logger.log_stats(
-                stats_meta={"epoch": epoch},
-                stats=train_stats,
-            )
-            # save checkpoint
-            if epoch % config.save_epoch_freq == 0:
-                checkpointer.save_checkpoint(epoch=epoch)
+        
         
         
         dist.barrier()
@@ -354,7 +356,6 @@ def train(train_loader, model, criterion, optimizer, epoch, lr_scheduler, margin
             print("Error in train")
             # embed()
             # raise e
-            
 
     key_stats={
         'Avg_loss': train_stats.avg('Loss'),

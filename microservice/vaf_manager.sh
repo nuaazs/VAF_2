@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export MICRO_SERVICE_PATH="/home/zhaosheng/asr_damo_websocket/online/microservice"
+export MICRO_SERVICE_PATH="/home/xuekaixiang/workplace/vaf/microservice"
 export GUNICORN="/opt/anaconda/anaconda3/envs/server_dev/bin/gunicorn"
 
 gpu_available=0

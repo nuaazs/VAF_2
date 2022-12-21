@@ -5,7 +5,7 @@ augmentations:
     noise_file: <noise>
     reverb_file: <reverb>
   obj: dguard.process.processor.SpkVeriAug
-batch_size: 128
+batch_size: 64
 checkpointer:
   args:
     checkpoints_dir: <exp_dir>/models

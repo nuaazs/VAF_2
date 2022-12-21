@@ -21,7 +21,7 @@ lr: 0.0005
 min_lr: !!float 5e-5
 
 # dataloader
-batch_size: 128
+batch_size: 64
 num_workers: 32
 
 # model
