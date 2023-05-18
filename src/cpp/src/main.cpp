@@ -5,8 +5,8 @@
 
 #include <iostream>
 #include <malloc.h>
-#include "timer.h"
-#include "search_best.h"
+#include "../include/timer.h"
+#include "../include/search_best.h"
 #include <string>
 #define ALGIN (32)       // 使用SIMD需要内存对齐，128bit的指令需要16位对齐，256bit的指令需要32位对齐
 #define VOICENUM (88275) // 底库中存有88275声纹特征向量
@@ -36,10 +36,20 @@ float calcL(const DType *const pVec, const int len)
 
 // std::string test(DType vectorA[]);
 extern "C" {
-    float test(DType vectorA[],DType pDB[])
+    float test(DType vectorA[])
     {
-        // int shmid = 4;
-        // DType *pDB = (DType *)shmat(shmid, NULL, 0);
+        // 从shmid.txt中读取共享内存的id shmid
+        int shmid;
+        FILE *fp = fopen("shmid.txt", "r");
+        if (fp == NULL)
+        {
+            cout << "Error: failed to open shmid.txt!" << endl;
+            return -1;
+        }
+        fscanf(fp, "%d", &shmid);
+        fclose(fp);
+        
+        DType *pDB = (DType *)shmat(shmid, NULL, 0);
 
         Result res = SearchBest(static_cast<DType *>(vectorA), FEATSIZE, pDB, VOICENUM * FEATSIZE);
         // best_similarity equals to abs of res.similarity
@@ -57,4 +67,14 @@ extern "C" {
 }
 
 int main()
-{return 0;}
+{
+    // 生成一个随机的声纹特征向量，测试test函数
+    DType *vectorA = new DType[FEATSIZE];
+    for (int i = 0; i < FEATSIZE; i++)
+    {
+        vectorA[i] = rand() % 100;
+    }
+    // 调用test函数
+    float result = test(vectorA);
+    cout << "result: " << result << endl;
+}
