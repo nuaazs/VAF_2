@@ -58,6 +58,7 @@ def test(outinfo, pool=False):
         is_inbase, check_result = test_wav(
             embedding=outinfo.embeddings_dict[model_name],
             black_limit=cfg.BLACK_TH[model_name],
+            embedding_type=model_name,
         )
         inbase_list.append(is_inbase)
         check_result_dict[model_name]=check_result
@@ -75,12 +76,12 @@ def test(outinfo, pool=False):
     is_inbase = all(inbase_list)
     hit_scores=""
     blackbase_phone=""
-    for _model in check_result_dict.key():
+    for _model in check_result_dict.keys():
         hit_scores += f"{_model}:{check_result_dict[_model]['best_score']},"
-    for _model in check_result_dict.key():
+    for _model in check_result_dict.keys():
         blackbase_phone += f"{_model}:{check_result_dict[_model]['best_id']},"
     top_10=""
-    for _model in check_result_dict.key():
+    for _model in check_result_dict.keys():
         top_10 += f"{_model}:{check_result_dict[_model]['top_10']},"
 
     #=========================LOG TIME=========================

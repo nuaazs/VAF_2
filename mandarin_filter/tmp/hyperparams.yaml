@@ -1,0 +1,57 @@
+pretrained_path: speechbrain/lang-id-voxlingua107-ecapa
+
+
+# Feature parameters
+n_mels: 60
+left_frames: 0
+right_frames: 0
+deltas: false
+
+# Number of speakers
+out_n_neurons: 107
+
+# Functions
+compute_features: !new:speechbrain.lobes.features.Fbank
+  n_mels: 60
+  left_frames: 0
+  right_frames: 0
+  deltas: false
+
+embedding_model: !new:speechbrain.lobes.models.ECAPA_TDNN.ECAPA_TDNN
+  input_size: 60
+  channels: [1024, 1024, 1024, 1024, 3072]
+  kernel_sizes: [5, 3, 3, 3, 1]
+  dilations: [1, 2, 3, 4, 1]
+  attention_channels: 128
+  lin_neurons: 256
+
+
+classifier: !new:speechbrain.lobes.models.Xvector.Classifier
+  input_shape: [null, null, 256]
+  activation: !name:torch.nn.LeakyReLU
+  lin_blocks: 1
+  lin_neurons: 512
+  out_neurons: !ref <out_n_neurons>
+
+
+mean_var_norm: !new:speechbrain.processing.features.InputNormalization
+  norm_type: sentence
+  std_norm: false
+
+modules:
+    compute_features: !ref <compute_features>
+    mean_var_norm: !ref <mean_var_norm>
+    embedding_model: !ref <embedding_model>
+    classifier: !ref <classifier>
+
+label_encoder: !new:speechbrain.dataio.encoder.CategoricalEncoder
+
+pretrainer: !new:speechbrain.utils.parameter_transfer.Pretrainer
+    loadables:
+        embedding_model: !ref <embedding_model>
+        classifier: !ref <classifier>
+        label_encoder: !ref <label_encoder>
+    paths:
+        embedding_model: !ref <pretrained_path>/embedding_model.ckpt
+        classifier: !ref <pretrained_path>/classifier.ckpt
+        label_encoder: !ref <pretrained_path>/label_encoder.txt

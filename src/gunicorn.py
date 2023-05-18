@@ -10,7 +10,7 @@ threaded = True
 workers = cfg.WORKERS
 threads = cfg.THREADS
 bind = f"0.0.0.0:{cfg.PORT}"
-daemon = "true"
+daemon = "false"
 # worker_class in ：sync, eventlet, gevent, tornado, gthread
 worker_class = "tornado"
 worker_connections = cfg.WORKER_CONNECTIONS

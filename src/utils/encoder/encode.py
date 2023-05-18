@@ -3,6 +3,7 @@
 import cfg
 import importlib
 ENCODE_MODEL_LIST = cfg.ENCODE_MODEL_LIST
+from utils.log import logger
 emb_dict = {}
 for model in ENCODE_MODEL_LIST:
     module = importlib.import_module(f"utils.encoder.{model}")
@@ -46,7 +47,8 @@ def encode(wav_torch_raw, action_type="test"):
         for model in ENCODE_MODEL_LIST:
             emb = emb_dict[model]
             embedding = emb.encode_batch(wav_torch)
-            embeddings_dict[model] = embedding
+            logger.info(f"\t\t {model} embedding shape: {embedding.shape}")
+            embeddings_dict[model] = embedding.reshape(-1)
         result = {
             "pass": True,
             "msg": "Qualified.",

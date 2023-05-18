@@ -74,9 +74,12 @@ calculate.argtypes = [ctypes.POINTER(ctypes.c_float), ctypes.c_size_t]  #
 calculate.restype = ctypes.c_float
 
 
-def retrieve(data):
+def retrieve(data,embedding_type):
     input_data = (ctypes.c_float * len(data))(*data)
-    result = calculate(input_data, len(data))
+    if "ECAPATDNN" in embedding_type:
+        result = calculate(input_data, len(data))
+    elif "CAMPP" in embedding_type:
+        result = calculate(input_data, len(data))
     logger.info(f"Hit result:{result}")
     if int(result) == result:
         if result>0:
@@ -100,11 +103,11 @@ def retrieve(data):
     return score, spkid
 
 
-def test_wav(embedding, black_limit):
+def test_wav(embedding, black_limit,embedding_type):
     embedding = torch.tensor(embedding).to('cpu')
     input = [(base_item, embedding) for base_item in database.keys()]
     # results = pool.map(cosine_similarity, input)
-    score, index = retrieve(embedding.numpy().reshape(192, ).tolist())
+    score, index = retrieve(embedding.numpy().reshape(cfg.EMBEDDING_LEN[embedding_type], ).tolist(),embedding_type)
     top_10 = [[score, index], [score, index], [score, index], [score, index], [score, index], [score, index],
               [score, index], [score, index], [score, index], [score, index]]
     best_score = score

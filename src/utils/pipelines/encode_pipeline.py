@@ -95,27 +95,25 @@ def pipeline(request_form, file_mode="file"):
     # =========================LOG TIME=========================
     outinfo.log_time(name="vad_used_time")
     """
-
-    vad_result["wav_torch"] = resample(vad_result["wav_torch"], cfg.SR, cfg.ECAPA_SR)
+    logger.info(f"\t\t Resample to 16k ... ")
+    vad_result["wav_torch"] = resample(vad_result["wav_torch"], cfg.SR, cfg.ENCODE_SR)
     # =========================LOG TIME=========================
     outinfo.log_time(name="resample_16k")
     # STEP 3: Encoding
+    logger.info(f"\t\t Start encoding ... ")
     encode_result = encode(wav_torch_raw=vad_result["wav_torch"])
+    logger.info(f"\t\t End encoding ... ")
     # =========================LOG TIME=========================
     outinfo.log_time(name="encode_time")
     if encode_result["pass"]:
-        embedding = encode_result["tensor"]
+        embeddings_dict = encode_result["embeddings_dict"]
     else:
         remove_fold_and_file(new_spkid)
         return outinfo.response_error(spkid=new_spkid, err_type=encode_result["err_type"],
                                       message=encode_result["msg"])
-
-    outinfo.embedding = embedding
+    outinfo.embeddings_dict = embeddings_dict
     remove_fold_and_file(new_spkid)
-    response = {
-        'embeddings': outinfo.embedding.tolist(),
-        #"vad_used_time": outinfo.used_time["vad_used_time"],
-        #"vad_before_length": outinfo.before_length,
-        #"vad_after_length": outinfo.after_length,
-    }
+    response = {}
+    for _model_name in embeddings_dict.keys():
+        response[_model_name] = embeddings_dict[_model_name].tolist()
     return response

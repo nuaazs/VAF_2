@@ -3,6 +3,6 @@
 # @Author  : zhaosheng@nuaa.edu.cn
 # @Describe: models.
 
-from utils.encoder.encoder import similarity
-from utils.encoder.encoder import spkreg
+from utils.encoder.similarity import similarity
+# from utils.encoder.encoder import spkreg
 from utils.encoder.encode import encode

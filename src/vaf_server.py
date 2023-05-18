@@ -138,22 +138,22 @@ def get_embedding(file_mode):
     Returns:
         json: response
     """
-    try:
-        response = encoder_pipline(request_form=request.form, file_mode=file_mode)
-        if "cuda" in cfg.DEVICE:
-            # clear cuda cache
-            torch.cuda.empty_cache()
-        return json.dumps(response, ensure_ascii=False)
+    # try:
+    response = encoder_pipline(request_form=request.form, file_mode=file_mode)
+    if "cuda" in cfg.DEVICE:
+        # clear cuda cache
+        torch.cuda.empty_cache()
+    return json.dumps(response, ensure_ascii=False)
         
-    except Exception as e:
-        if "cuda" in cfg.DEVICE:
-            # clear cuda cache
-            torch.cuda.empty_cache()
-        return json.dumps({"code": 4000, "status": "fail", "err_type": 1, "err_msg": str(e)})
-    finally:
-        if "cuda" in cfg.DEVICE:
-            # clear cuda cache
-            torch.cuda.empty_cache()
+    # except Exception as e:
+    #     if "cuda" in cfg.DEVICE:
+    #         # clear cuda cache
+    #         torch.cuda.empty_cache()
+    #     return json.dumps({"code": 4000, "status": "fail", "err_type": 1, "err_msg": str(e)})
+    # finally:
+    #     if "cuda" in cfg.DEVICE:
+    #         # clear cuda cache
+    #         torch.cuda.empty_cache()
 
 
 # Test ALL API

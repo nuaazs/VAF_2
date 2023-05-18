@@ -22,9 +22,9 @@ from utils.test import test
 from utils.info import OutInfo
 from utils.preprocess import remove_fold_and_file
 from utils.cmd import run_cmd
-from utils.preprocess import filter_mandarin
-# cfg
 import cfg
+if cfg.FILTER_MANDARIN:
+    from utils.preprocess.mandarin_filter import filter_mandarin
 
 
 def general(request_form, file_mode="url", action_type="test"):
@@ -148,7 +148,7 @@ def general(request_form, file_mode="url", action_type="test"):
         remove_fold_and_file(new_spkid)
         return response
 
-    vad_result["wav_torch"] = resample(vad_result["wav_torch"], cfg.SR, cfg.ECAPA_SR)
+    vad_result["wav_torch"] = resample(vad_result["wav_torch"], cfg.SR, cfg.ENCODE_SR)
     # =========================LOG TIME=========================
     outinfo.log_time(name="resample_16k")
     # STEP 2.5: filter_mandarin

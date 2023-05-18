@@ -5,3 +5,15 @@ find . -name "__pycache__" | xargs rm -rf
 find . -name "*.pyc" | xargs rm -rf
 find . -name "pretrained_models" | xargs rm -rf
 find . -name "*.log" | xargs rm
+rm -rf ./src/pretrained_models*
+rm -rf ./src/log_*
+rm -rf ./src/cfg_*
+rm -rf ./src/log/*
+rm -rf docker/vaf/src.tar.gz
+tar -cvf docker/vaf/src.tar.gz ./src
+pwd=$PWD
+cd docker/vaf
+docker build -t zhaosheng/vaf:v0.6.0 .
+cd $pwd
+cd src/
+./start_multi.sh

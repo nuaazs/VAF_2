@@ -11,6 +11,6 @@ random_seed = torch.randint(1000, 9999, (1,)).item()
 
 emb = SpeakerRecognition.from_hparams(
     source="./nn/ECAPATDNN",
-    savedir=f"./pretrained_models/ECAPATDNN-16k-phone_1_{random_seed}",
+    savedir=f"./pretrained_models/ECAPATDNN_{random_seed}",
     run_opts={"device": cfg.DEVICE},
 )

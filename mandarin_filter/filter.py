@@ -2,7 +2,7 @@ import torchaudio
 from speechbrain.pretrained import EncoderClassifier
 import glob
 
-language_id = EncoderClassifier.from_hparams(source="speechbrain/lang-id-voxlingua107-ecapa", savedir="tmp", run_opts={"device":"cuda:0"})
+language_id = EncoderClassifier.from_hparams(source="speechbrain/lang-id-voxlingua107-ecapa", savedir="nn", run_opts={"device":cfg.DEVICE})
 language_id.eval()
 
 def filter_mandarin(wavdata,score_threshold=0.9):

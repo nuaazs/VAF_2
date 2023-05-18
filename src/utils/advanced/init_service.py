@@ -15,7 +15,8 @@ def init_service():
     Returns:
         Dict : Speakers, speakers Number, Server Name
     """
-    black_database = get_embeddings(class_index=-1)
+    # black_database = get_embeddings(class_index=-1)
+    black_database = {}
     spks = list(black_database.keys())
     spks_num = len(spks)
     name = cfg.SERVER_INFO["name"]
