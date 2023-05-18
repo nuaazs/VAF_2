@@ -7,11 +7,10 @@ from speechbrain.pretrained import SpeakerRecognition
 import torch
 import cfg
 
-similarity = torch.nn.CosineSimilarity(dim=-1, eps=1e-6)
-# get current random seed from 1000~9999
 random_seed = torch.randint(1000, 9999, (1,)).item()
-spkreg = SpeakerRecognition.from_hparams(
-    source="./nn/ECAPATDNN-16k-phone_1",
+
+emb = SpeakerRecognition.from_hparams(
+    source="./nn/ECAPATDNN",
     savedir=f"./pretrained_models/ECAPATDNN-16k-phone_1_{random_seed}",
     run_opts={"device": cfg.DEVICE},
 )

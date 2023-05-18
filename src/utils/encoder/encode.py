@@ -1,19 +1,15 @@
 # utils
 
 import cfg
-if cfg.USE_CAMPP:
-    from utils.encoder.cam_val import emb
-else:
-    from utils.encoder import spkreg
-
-# cfg
-
-
+import importlib
+ENCODE_MODEL_LIST = cfg.ENCODE_MODEL_LIST
+emb_dict = {}
+for model in ENCODE_MODEL_LIST:
+    module = importlib.import_module(f"utils.encoder.{model}")
+    emb_dict[model] = module.emb
 
 def encode(wav_torch_raw, action_type="test"):
-    # TODO:降噪模块更新
     """Audio quality detection and encoding.
-
     Args:
         wav_torch_raw (torch 1D): wav data
         action_type (sting): Action type (register or test)
@@ -27,8 +23,7 @@ def encode(wav_torch_raw, action_type="test"):
         min_length = cfg.MIN_LENGTH_TEST
     else:
         min_length = cfg.MIN_LENGTH_TEST  # sys.maxsize
-    # sr = cfg.SR
-    sr = 16000
+    sr = cfg.ENCODE_SR
     max_score = 0
     mean_score = 0
     min_score = 1
@@ -46,13 +41,12 @@ def encode(wav_torch_raw, action_type="test"):
         }
         return result
     try:
-        wav_torch = wav_torch_raw.unsqueeze(0)
-
-        if cfg.USE_CAMPP:
-            embedding = emb.forward(wav_torch).unsqueeze(0) #spkreg.encode_batch(wav_torch)
-        else:
-            embedding = spkreg.encode_batch(wav_torch)
-
+        embeddings = []
+        wav_torch = wav_torch_raw.unsqueeze(0) # shape: [1, wav_length]
+        for model in ENCODE_MODEL_LIST:
+            emb = emb_dict[model]
+            embedding = emb.encode_batch(wav_torch)
+            embeddings.append(embedding)
         result = {
             "pass": True,
             "msg": "Qualified.",
@@ -60,7 +54,7 @@ def encode(wav_torch_raw, action_type="test"):
             "before_score": None,
             "mean_score": mean_score,
             "min_score": min_score,
-            "tensor": embedding[0],  # encode_result[x_index][0],
+            "tensor": embeddings,
             "err_type": 0,
         }
         return result

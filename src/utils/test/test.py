@@ -76,49 +76,6 @@ def test(outinfo, pool=False):
     )
     
     if is_inbase:
-        # save to minio
-        # if cfg.DOUBLE_MODEL_CHECK:
-        #     input_data = outinfo.wav_vad
-        #     input_data = input_data.reshape(1, -1)
-        #     # Use Double Model to Check
-        #     emb2 = double_model.forward(input_data)
-        #     emb2 = emb2.detach().cpu().numpy().reshape(-1) #(512,)
-        #     # 
-        #     is_inbase_2, check_result_2 = test_wav(
-        #         database=black_database,
-        #         embedding=outinfo.embedding,
-        #         black_limit=cfg.BLACK_TH,
-        #     )
-        #     hit_scores_2 = check_result_2["best_score"]
-        #     blackbase_phone_2 = check_result_2["spk"]
-        #     top_10_2 = check_result_2["top_10"]
-        #     if not is_inbase_2:
-        #         response = {
-        #             "code": 2000,
-        #             "status": "success",
-        #             "inbase": is_inbase and is_inbase_2,
-        #             "err_msg": "null",
-        #             "before_vad_length": outinfo.before_length,
-        #             "after_vad_length": outinfo.after_length,
-        #             "hit_scores": hit_scores,
-        #             "blackbase_phone": blackbase_phone,
-        #             "top_10": top_10,
-        #             "used_time": outinfo.used_time,
-        #         }
-        #         to_log(
-        #             phone=outinfo.spkid,
-        #             action_type=1,
-        #             err_type=99,
-        #             message=f"False, Not in base, {blackbase_phone},{hit_scores}",
-        #             file_url=outinfo.oss_path,
-        #             preprocessed_file_path=outinfo.preprocessed_file_path,
-        #             valid_length=outinfo.after_length,
-        #             show_phone=outinfo.show_phone,
-        #             before_length=outinfo.before_length,
-        #             after_length=outinfo.after_length
-        #         )
-        #         remove_fold_and_file(outinfo.spkid)
-        #         return response
         now_time_str = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         timestr = now_time_str.replace(" ", "_").replace(":", "_")
         filename = outinfo.spkid + "_" + timestr + "_vad.wav"

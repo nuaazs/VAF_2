@@ -152,9 +152,9 @@ def general(request_form, file_mode="url", action_type="test"):
     # =========================LOG TIME=========================
     outinfo.log_time(name="resample_16k")
     # STEP 2.5: filter_mandarin
-    if cfg.filter_mandarin:
+    if cfg.FILTER_MANDARIN:
         logger.info(f"\t\t Doing filter_mandarin ... ")
-        is_mandarin, lang, score = filter_mandarin(wavdata=vad_result["wav_torch"],score_threshold=cfg.filter_mandarin_threshold) # True,result[3][0],score
+        is_mandarin, lang, score = filter_mandarin(wavdata=vad_result["wav_torch"],score_threshold=cfg.FILTER_MANDARIN_TH) # True,result[3][0],score
         if not is_mandarin:
             remove_fold_and_file(new_spkid)
             return outinfo.response_error(spkid=new_spkid, err_type=7, message=f"Language is {lang}, score is {score}")

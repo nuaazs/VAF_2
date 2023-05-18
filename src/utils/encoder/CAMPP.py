@@ -363,12 +363,6 @@ class CAMPPlus(nn.Module):
         x = self.head(x)
         x = self.xvector(x)
         return x
-    
-
-
-
-
-
 
 class FBank(object):
     def __init__(self,
@@ -411,7 +405,7 @@ class get_embedding:
         self.embedding_model.load_state_dict(torch.load(os.path.join(checkpoints_dir,'embedding_model.ckpt')))
         self.model = self.embedding_model.to(self.device).eval()
         
-    def forward(self, x):
+    def encode_batch(self, x):
         # wav, fs = self.load_s(x)
         # assert fs == 16000, f"The sample rate of wav is {fs} and inconsistent with that of the pretrained model."
         feat = self.FBank(x)
@@ -423,14 +417,9 @@ class get_embedding:
         return emb
 
 emb = get_embedding(n_mels = 80,embedding_size = 512,sample_rate = 16000,epoch = 80,
-        checkpoints_dir = f"/VAF/src/nn/{cfg.DOUBLE_MODEL_CHECK_MODEL}")
-def encode(wavdata):
-    return emb.forward(wavdata)
+        checkpoints_dir = f"nn/CAMPP")
 
 if __name__ == "__main__":
     wav_data,sr = torchaudio.load("/ssd2/voiceprint-recognition-system/src/api_test/1p1c8k.wav")
     wav_data = wav_data.reshape(-1)
-    # emb
-    
-    a = emb.forward(wav_data)
-    print(a.shape)
+    a = emb.encode_batch(wav_data)
