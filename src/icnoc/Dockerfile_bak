@@ -1,0 +1,18 @@
+FROM python:3.8
+
+ENV TIME_ZONE Asia/Shanghai
+RUN  sed -i 's/ports.ubuntu.com/mirror.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list
+RUN  sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
+RUN  sed -i s@/deb.debian.org/@/mirrors.aliyun.com/@g /etc/apt/sources.list
+
+ADD auto_test /auto_test
+WORKDIR /auto_test
+
+RUN apt-get update -y
+RUN apt-get install -y --no-install-recommends ffmpeg vim tzdata  \
+    && ln -snf /usr/share/zoneinfo/$TIME_ZONE /etc/localtime && echo $TIME_ZONE > /etc/timezone \
+    && dpkg-reconfigure -f noninteractive tzdata \
+    && apt-get clean \
+    && rm -rf /tmp/* /var/ca
+RUN pip install -r /auto_test/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+ENTRYPOINT ["/bin/bash", "/auto_test/start.sh"]

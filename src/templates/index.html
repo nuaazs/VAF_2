@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>龙垣科技-部署测试页面</title>
+
+</head>
+<body>
+    <h1>Email: zhaosheng@nuaa.edu.cn</h1>
+    <h1>服务器: {{name}}</h1>
+    <h1>已注册: {{ spks_num }} 人。</h1>
+    <h2>配置文件</h2>
+    <p>{{ config }}</p>
+
+    <h3>MYSQL TEST: {{mysql_check_result}}</h3>
+    <h3>MYSQL MESSAGE: {{mysql_check_message}}</h3>
+    <h3>REDIS TEST: {{redis_check_result}}</h3>
+    <h3>REDIS MESSAGE: {{redis_check_message}}</h3>
+    <h3>CUDA TEST: {{cuda_check_result}}</h3>
+    <h3>CUDA MESSAGE: {{cuda_check_message}}</h3>
+    <h3>MINIO TEST: {{minio_check_result}}</h3>
+    <h3>MINIO MESSAGE: {{minio_check_message}}</h3>
+    <h3>ASR TEST: {{asr_check_result}}</h3>
+    <h3>ASR MESSAGE: {{asr_check_message}}</h3>
+    <a href="http://{{ip}}:{{port}}/pretest/register">注册测试</a>
+    <a href="http://{{ip}}:{{port}}/pretest/test">推理测试</a>
+    <a href="http://{{ip}}:{{port}}/pretest/pool">声纹池测试</a>
+    
+</body>
+
+</html>
+
