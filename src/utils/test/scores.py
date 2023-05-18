@@ -100,7 +100,7 @@ def retrieve(data):
     return score, spkid
 
 
-def test_wav(database, embedding, black_limit):
+def test_wav(embedding, black_limit):
     embedding = torch.tensor(embedding).to('cpu')
     input = [(base_item, embedding) for base_item in database.keys()]
     # results = pool.map(cosine_similarity, input)

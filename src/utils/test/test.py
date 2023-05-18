@@ -13,7 +13,6 @@ from utils.oss.upload import upload_file
 from utils.orm import to_database
 from utils.orm import to_log
 from utils.orm import add_hit
-from utils.orm import get_embeddings
 from utils.test import test_wav
 from utils.encoder import similarity
 from utils.orm import to_database
@@ -21,16 +20,15 @@ from utils.preprocess import check_clip
 from utils.orm import get_blackid
 from utils.asr import get_asr_content
 from utils.preprocess import remove_fold_and_file
-from utils.encoder.cam_val import emb as double_model
 import cfg
+
 # log
 from utils.log import logger
-
-black_database = get_embeddings()
 
 def save_audio(path: str,
                tensor: torch.Tensor,
                sampling_rate: int = 16000):
+    tensor = tensor.reshape(-1)
     torchaudio.save(path, tensor.unsqueeze(0), sampling_rate, bits_per_sample=16)
 
 def test(outinfo, pool=False):
@@ -54,26 +52,41 @@ def test(outinfo, pool=False):
     Returns:
         dict: inference result.
     """
-    is_inbase, check_result = test_wav(
-        database=black_database,
-        embedding=outinfo.embedding,
-        black_limit=cfg.BLACK_TH,
-    )
+    inbase_list = []
+    check_result_dict = {}
+    for model_name in outinfo.embeddings_dict.keys():
+        is_inbase, check_result = test_wav(
+            embedding=outinfo.embeddings_dict[model_name],
+            black_limit=cfg.BLACK_TH[model_name],
+        )
+        inbase_list.append(is_inbase)
+        check_result_dict[model_name]=check_result
 
-    hit_scores = check_result["best_score"]
-    blackbase_phone = check_result["spk"]
-    top_10 = check_result["top_10"]
+        # save to redis test db
+        add_success, phone_info = to_database(
+            embedding=outinfo.embeddings_dict[model_name],
+            spkid=outinfo.spkid,
+            max_class_index=model_name,
+            log_phone_info=cfg.LOG_PHONE_INFO,
+            mode="test",
+        )
+        
+    # if all inbase_list is True, then inbase
+    is_inbase = all(inbase_list)
+    hit_scores=""
+    blackbase_phone=""
+    for _model in check_result_dict.key():
+        hit_scores += f"{_model}:{check_result_dict[_model]['best_score']},"
+    for _model in check_result_dict.key():
+        blackbase_phone += f"{_model}:{check_result_dict[_model]['best_id']},"
+    top_10=""
+    for _model in check_result_dict.key():
+        top_10 += f"{_model}:{check_result_dict[_model]['top_10']},"
+
     #=========================LOG TIME=========================
     outinfo.log_time("test_used_time")
 
-    # save to redis test db
-    add_success, phone_info = to_database(
-        embedding=outinfo.embedding,
-        spkid=outinfo.spkid,
-        max_class_index=999,
-        log_phone_info=cfg.LOG_PHONE_INFO,
-        mode="test",
-    )
+    
     
     if is_inbase:
         now_time_str = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
@@ -99,11 +112,6 @@ def test(outinfo, pool=False):
             save_days=cfg.MINIO["test_save_days"],
         )
 
-        try:
-            blackbase_id = get_blackid(blackbase_phone.split(",")[0])
-        except Exception as e:
-            logger.error(f"get blackbase_id error: {e}")
-            blackbase_id = 0
         # get asr content
         asr_content, hit_keyword, keyword = get_asr_content(outinfo.raw_minio_file_url, outinfo.spkid)
         hit_info = {
@@ -122,7 +130,7 @@ def test(outinfo, pool=False):
             "class_number": 999,
             "preprocessed_file_path": outinfo.preprocessed_file_path,
             "blackbase_phone": blackbase_phone,
-            "blackbase_id": blackbase_id,
+            "blackbase_id": 0,
             "hit_status": 1,
             "hit_scores": hit_scores,
             "top_10": top_10,

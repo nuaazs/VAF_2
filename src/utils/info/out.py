@@ -55,6 +55,9 @@ class OutInfo:
         self.wav = ""
         self.wav_vad = ""
         self.embedding = ""
+        self.embeddings_name_list=[]
+        self.embeddings_list=[]
+        self.embeddings_dict={}
         self.class_num = ""
         self.call_begintime = ""
         self.call_endtime = ""

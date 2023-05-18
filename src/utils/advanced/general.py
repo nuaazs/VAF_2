@@ -166,14 +166,12 @@ def general(request_form, file_mode="url", action_type="test"):
     # =========================LOG TIME=========================
     outinfo.log_time(name="encode_time")
     if encode_result["pass"]:
-        embedding = encode_result["tensor"]
+        embeddings_dict = encode_result["embeddings_dict"]
     else:
         remove_fold_and_file(new_spkid)
         return outinfo.response_error(spkid=new_spkid, err_type=encode_result["err_type"],
                                       message=encode_result["msg"])
-
-    outinfo.embedding = embedding
-
+    outinfo.embeddings_dict = embeddings_dict
     # STEP 4: Test or Register
 
     if action_num == 1:

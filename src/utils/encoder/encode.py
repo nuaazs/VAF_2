@@ -41,12 +41,12 @@ def encode(wav_torch_raw, action_type="test"):
         }
         return result
     try:
-        embeddings = []
+        embeddings_dict = {}
         wav_torch = wav_torch_raw.unsqueeze(0) # shape: [1, wav_length]
         for model in ENCODE_MODEL_LIST:
             emb = emb_dict[model]
             embedding = emb.encode_batch(wav_torch)
-            embeddings.append(embedding)
+            embeddings_dict[model] = embedding
         result = {
             "pass": True,
             "msg": "Qualified.",
@@ -54,7 +54,7 @@ def encode(wav_torch_raw, action_type="test"):
             "before_score": None,
             "mean_score": mean_score,
             "min_score": min_score,
-            "tensor": embeddings,
+            "embeddings_dict": embeddings_dict,
             "err_type": 0,
         }
         return result

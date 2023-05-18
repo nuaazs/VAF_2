@@ -77,9 +77,10 @@ FILTER_MANDARIN_TH = 0.9
 ################### 4. Thresholds #####################
 #######################################################
 # 0.78 for ECAPA_TDNN, 0.5 for CAMPP
-ENCODE_MODEL_LIST = ["ECAPATDNN","CAMPP"]
 
-BLACK_TH = [0.78, 0.5]
+ENCODE_MODEL_LIST = ["ECAPATDNN","CAMPP"]
+BLACK_TH = {"ECAPATDNN": 0.78, "CAMPP": 0.5}
+EMBEDDING_LENGTH = {"ECAPATDNN": 192, "CAMPP": 512}
 
 MIN_LENGTH_REGISTER = 10
 
