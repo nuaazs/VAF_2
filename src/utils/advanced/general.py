@@ -149,6 +149,9 @@ def general(request_form, file_mode="url", action_type="test"):
         return response
 
     vad_result["wav_torch"] = resample(vad_result["wav_torch"], cfg.SR, cfg.ENCODE_SR)
+    if vad_result["wav_torch"].shape > 1:
+        vad_result["wav_torch"] = vad_result["wav_torch"][0]
+    logger.info(f"\t\t vad_result wav_torch shape {vad_result['wav_torch'].shape} ")
     # =========================LOG TIME=========================
     outinfo.log_time(name="resample_16k")
     # STEP 2.5: filter_mandarin

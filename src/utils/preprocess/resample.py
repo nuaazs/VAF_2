@@ -35,11 +35,11 @@ def resample(
     
     if sr == target_sr:
         return wav
-    wav = wav.unsqueeze(0)
-
-    assert wav.shape[0] == 1
+    if len(wav.shape) == 1:
+        wav = wav.unsqueeze(0)
+    # assert wav.shape[0] == 1
     assert len(wav.shape) == 2
     resample = T.Resample(sr, target_sr)
     wav = resample(wav)
-    wav = wav.reshape(-1)
+    # wav = wav.reshape(-1)
     return wav

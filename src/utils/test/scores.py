@@ -67,22 +67,19 @@ def cosine_similarity(input_data):
 
 import ctypes
 
-lib = ctypes.cdll.LoadLibrary('./cpp/libexample.so')
+#lib = ctypes.cdll.LoadLibrary('./cpp/lib/get_top.so')
 
-calculate = lib.test
-calculate.argtypes = [ctypes.POINTER(ctypes.c_float), ctypes.c_size_t]  #
-calculate.restype = ctypes.c_float
+# 修改函数参数类型
+#calculate = lib.test
+#calculate.argtypes = [ctypes.POINTER(ctypes.c_float), ctypes.c_int, ctypes.c_int, ctypes.c_char_p]  
+#calculate.restype = ctypes.c_float
 
-
-def retrieve(data,embedding_type):
+def retrieve(data, embedding_type, shmid_file=b'shmid.txt',voicenum=88275,featsize=192):
     input_data = (ctypes.c_float * len(data))(*data)
-    if "ECAPATDNN" in embedding_type:
-        result = calculate(input_data, len(data))
-    elif "CAMPP" in embedding_type:
-        result = calculate(input_data, len(data))
+    result = calculate(input_data, voicenum, featsize, shmid_file)
     logger.info(f"Hit result:{result}")
     if int(result) == result:
-        if result>0:
+        if result > 0:
             score = 1.0
             index = str(int(result) - 1)
             spkid = black_id[int(index)]
@@ -112,10 +109,6 @@ def test_wav(embedding, black_limit,embedding_type):
               [score, index], [score, index], [score, index], [score, index]]
     best_score = score
     best_id = index
-    # results = sorted(results, key=lambda x: float(x[0]) * (-1))
-    # top_10 = [f"{_score},{_spk_id}" for _score, _spk_id in results[:10]]
-    # best_score = float(np.array(results[0][0]))
-    # best_id = str(",".join(map(str, np.array(results)[:10, 1])))
     top_10 = str("|".join(map(str, np.array(top_10))))
     inbase = best_score >= black_limit
     return inbase, {"best_score": best_score, "spk": best_id, "top_10": top_10}
