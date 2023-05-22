@@ -18,6 +18,7 @@ def encode(wav_torch_raw, action_type="test"):
     Returns:
         Dict: Quality inspection results and audio characteristics
     """
+    wav_torch_raw = wav_torch_raw.reshape(-1)
     if action_type == "register":
         min_length = cfg.MIN_LENGTH_REGISTER
     elif action_type == "test":
@@ -28,6 +29,7 @@ def encode(wav_torch_raw, action_type="test"):
     max_score = 0
     mean_score = 0
     min_score = 1
+    logger.info(f"\t\t wav_torch_raw shape: {wav_torch_raw.shape}")
     raw_wav_length = len(wav_torch_raw) / sr
     if raw_wav_length <= min_length:
         result = {
