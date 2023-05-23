@@ -49,9 +49,9 @@ extern "C" {
 
 int main()
 {
-    const int VOICENUM = 88275;
+    const int VOICENUM = 112963;
     const int FEATSIZE = 192;
-    const char* SHMID_FILE = "shmid.txt";
+    const char* SHMID_FILE = "/home/zhaosheng/VAF/src/cpp/shmid/campp.txt";
 
     DType *vectorA = new DType[FEATSIZE];
     for (int i = 0; i < FEATSIZE; i++)

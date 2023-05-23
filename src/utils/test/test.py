@@ -71,6 +71,7 @@ def test(outinfo, pool=False):
             log_phone_info=cfg.LOG_PHONE_INFO,
             mode="test",
         )
+    print(check_result_dict)
         
     # if all inbase_list is True, then inbase
     is_inbase = all(inbase_list)
@@ -79,7 +80,8 @@ def test(outinfo, pool=False):
     for _model in check_result_dict.keys():
         hit_scores += f"{_model}:{check_result_dict[_model]['best_score']},"
     for _model in check_result_dict.keys():
-        blackbase_phone += f"{_model}:{check_result_dict[_model]['best_id']},"
+        print(check_result_dict[_model]['top_10'])
+        blackbase_phone += f"{_model}:{check_result_dict[_model]['top_10'].split('|')[0].split(',')[1]},"
     top_10=""
     for _model in check_result_dict.keys():
         top_10 += f"{_model}:{check_result_dict[_model]['top_10']},"

@@ -4,9 +4,7 @@ from speechbrain.pretrained import EncoderClassifier
 import torch
 import cfg
 random_seed = torch.randint(1000, 9999, (1,)).item()
-
-
-language_id = EncoderClassifier.from_hparams(source="nn/lang-id-ecapa", savedir=f"./pretrained_models/lang-id-ecapa_{random_seed}", run_opts={"device":cfg.DEVICE})
+language_id = EncoderClassifier.from_hparams(source="./nn/LANG", savedir=f"./pretrained_models/lang-id-ecapa_{random_seed}", run_opts={"device":cfg.DEVICE})
 language_id.eval()
 
 def filter_mandarin(wavdata,score_threshold=0.9):
@@ -14,8 +12,8 @@ def filter_mandarin(wavdata,score_threshold=0.9):
     Filter the mandarin audio
     """
     # read the wav file
-    wavdata = wavdata.reshape(-1)
     waveform = wavdata.to(cfg.DEVICE)
+    print(wavdata.shape)
     result = language_id.classify_batch(waveform)
     score = result[1].exp()
     if score > score_threshold and result[3][0].startswith("zh"):

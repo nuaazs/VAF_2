@@ -5,6 +5,10 @@
 //main.cpp
 #include <iostream>
 #include <malloc.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
 #include "../include/timer.h"
 #include "../include/search_best.h"
 
@@ -16,15 +20,40 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-    if(argc < 5) {
-        std::cout << "Usage: " << argv[0] << " VOICENUM FEATSIZE VECTOR_BIN_PATH SHMID_SAVE_PATH\n";
+    if(argc < 3) {
+        std::cout << "Usage: " << argv[0] << " FEATSIZE VECTOR_TXT_PATH SHMID_SAVE_PATH\n";
         return -1;
     }
+    
+    
+    int FEATSIZE = atoi(argv[1]);
+    char* vecFilename_txt = argv[2];
+    // vecFilename = vecFilename_txt.replace(".txt", ".bin")
+    char vecFilename[1024];
+    strcpy(vecFilename, vecFilename_txt);
+    vecFilename[strlen(vecFilename)-3] = 'b';
+    vecFilename[strlen(vecFilename)-2] = 'i';
+    vecFilename[strlen(vecFilename)-1] = 'n';
+    cout << "vecFilename: " << vecFilename << endl;
+    char* shmidFilename = argv[3];
 
-    int VOICENUM = atoi(argv[1]);
-    int FEATSIZE = atoi(argv[2]);
-    char* vecFilename = argv[3];
-    char* shmidFilename = argv[4];
+    // VECTOR_TXT_PATH 行数为 VOICENUM
+    // 读取VECTOR_TXT_PATH 行数
+
+    std::ifstream infile(vecFilename_txt);
+    if (!infile.is_open()) {
+        std::cerr << "Failed to open file: " << vecFilename_txt << std::endl;
+        return 1;
+    }
+    // 统计行数
+    std::string line;
+    std::vector<std::string> lines;
+    while (std::getline(infile, line)) {
+        lines.push_back(line);
+    }
+    infile.close();
+    int VOICENUM = lines.size(); // 文件行数即为 VOICENUM
+    std::cout << "Number of lines in " << vecFilename_txt << ": " << VOICENUM << std::endl;
 
     DType* pDB = reinterpret_cast<DType*>(memalign(ALGIN, sizeof(DType)*VOICENUM*FEATSIZE));
     if(!pDB) {
