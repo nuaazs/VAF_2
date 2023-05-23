@@ -95,7 +95,7 @@ def pipeline(request_form,request_files,file_mode="file"):
     # STEP 3: Get 80 fbank by speechbrain.lobes.features.Fbank
     logger.info(f"\t\t Doing fbank ... ")
     fbank= speechbrain.lobes.features.Fbank(sample_rate=8000,n_mels=80)
-    print(vad_result["wav_torch"].shape)
+    # print(vad_result["wav_torch"].shape)
     vad_result["wav_torch"] = vad_result["wav_torch"].unsqueeze(0)
     fbank_data = fbank(vad_result["wav_torch"])
 

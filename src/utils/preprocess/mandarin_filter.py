@@ -13,7 +13,6 @@ def filter_mandarin(wavdata,score_threshold=0.9):
     """
     # read the wav file
     waveform = wavdata.to(cfg.DEVICE)
-    print(wavdata.shape)
     result = language_id.classify_batch(waveform)
     score = result[1].exp()
     if score > score_threshold and result[3][0].startswith("zh"):

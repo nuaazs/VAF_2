@@ -71,7 +71,7 @@ def test(outinfo, pool=False):
             log_phone_info=cfg.LOG_PHONE_INFO,
             mode="test",
         )
-    print(check_result_dict)
+    # print(check_result_dict)
         
     # if all inbase_list is True, then inbase
     is_inbase = all(inbase_list)
@@ -80,7 +80,7 @@ def test(outinfo, pool=False):
     for _model in check_result_dict.keys():
         hit_scores += f"{_model}:{check_result_dict[_model]['best_score']},"
     for _model in check_result_dict.keys():
-        print(check_result_dict[_model]['top_10'])
+        # print(check_result_dict[_model]['top_10'])
         blackbase_phone += f"{_model}:{check_result_dict[_model]['top_10'].split('|')[0].split('_')[1]},"
     top_10=""
     for _model in check_result_dict.keys():
@@ -123,6 +123,7 @@ def test(outinfo, pool=False):
 
         # get asr content
         asr_content, hit_keyword, keyword = get_asr_content(outinfo.raw_minio_file_url, outinfo.spkid)
+        # print(f"Keyword: {keyword}")
         hit_info = {
             "name": "none",
             "show_phone": outinfo.show_phone,

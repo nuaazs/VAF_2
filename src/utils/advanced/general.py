@@ -135,7 +135,6 @@ def general(request_form, file_mode="url", action_type="test"):
     if use_fbank:
         logger.info(f"\t\t Doing fbank ... ")
         fbank = speechbrain.lobes.features.Fbank(sample_rate=8000, n_mels=80)
-        print(vad_result["wav_torch"].shape)
         vad_result["wav_torch"] = vad_result["wav_torch"].unsqueeze(0)
         fbank_data = fbank(vad_result["wav_torch"])
 
@@ -149,7 +148,6 @@ def general(request_form, file_mode="url", action_type="test"):
         return response
 
     vad_result["wav_torch"] = resample(vad_result["wav_torch"], cfg.SR, cfg.ENCODE_SR)
-    print(vad_result["wav_torch"].shape)
     if len(vad_result["wav_torch"].shape) > 1:
         vad_result["wav_torch"] = vad_result["wav_torch"][0]
     logger.info(f"\t\t vad_result wav_torch shape {vad_result['wav_torch'].shape} ")

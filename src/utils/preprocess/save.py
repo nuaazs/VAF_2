@@ -86,7 +86,7 @@ def save_url(url, spk, channel, upload=False):
         t1 = time.time()
         wget.download(url, save_path)
         t2 = time.time()
-        print(f"wget time: {t2 - t1}")
+        # print(f"wget time: {t2 - t1}")
     save_path_wav = os.path.join(spk_dir, f"raw_{speech_number}_{pid}_preprocessed.wav")
     # conver to wav
     end = cfg.WAV_START + cfg.WAV_LENGTH

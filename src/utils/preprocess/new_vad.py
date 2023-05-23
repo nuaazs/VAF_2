@@ -819,7 +819,7 @@ class lyxx_VAD(Pretrained):
 
         # Fetch audio file from web if not local
         if apply_energy_VAD_before:
-            print("wav_data.shape", wav_data.shape)
+
             boundaries = self.energy_VAD_before_nn(
                 wav_data,
                 activation_th=en_activation_th,
@@ -827,8 +827,6 @@ class lyxx_VAD(Pretrained):
             )
             upsampled_boundaries = self.upsample_boundaries(boundaries, wav_data)
             wav_data = wav_data[upsampled_boundaries > 0.5].unsqueeze(0)
-            print("Energy VAD applied before NN VAD")
-            print("wav_data.shape", wav_data.shape)
             if outinfo:
                 # =========================LOG TIME=========================
                 outinfo.log_time(name="vad:apply_energy_VAD_before_used_time")

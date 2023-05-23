@@ -107,7 +107,7 @@ def delete_spk(spk_id):
     )
     cur = conn.cursor()
     query_sql = f"delete from speaker where phone='{spk_id}';"
-    print(f"delete from speaker where phone='{spk_id}';")
+    # print(f"delete from speaker where phone='{spk_id}';")
     cur.execute(query_sql)
     result = cur.fetchall()
     if len(result) > 0:

@@ -21,8 +21,6 @@ def read_wav_data(
     wav_filepath,
 ):
     wav, sr = torchaudio.load(wav_filepath)
-    print(wav.shape)
-    print(wav_filepath)
     assert wav.shape[0] == 1, f"wav channel != 1"
     wav = wav.reshape(-1)
     return wav.unsqueeze(0)

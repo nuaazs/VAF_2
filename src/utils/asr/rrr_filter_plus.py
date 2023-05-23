@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 import re
-from black_3 import BLACK_3,BLACK_2,BLACK_1,LOOKAHEAD,LOOKAHEAD_WHITE,TOTAL_WHITE,STOP_WORDS
+from utils.asr.black_3 import BLACK_3,BLACK_2,BLACK_1,LOOKAHEAD,LOOKAHEAD_WHITE,TOTAL_WHITE,STOP_WORDS
 
 level = {
     0: "正常",
