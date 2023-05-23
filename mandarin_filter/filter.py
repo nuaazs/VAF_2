@@ -1,8 +1,12 @@
 import torchaudio
 from speechbrain.pretrained import EncoderClassifier
 import glob
+import torch
+import cfg
+from utils.log import logger
+random_seed = torch.randint(1000, 9999, (1,)).item()
 
-language_id = EncoderClassifier.from_hparams(source="speechbrain/lang-id-voxlingua107-ecapa", savedir="nn", run_opts={"device":cfg.DEVICE})
+language_id = EncoderClassifier.from_hparams(source="nn/lang-id-ecapa", savedir=f"./pretrained_models/lang-id-ecapa_{random_seed}", run_opts={"device":cfg.DEVICE})
 language_id.eval()
 
 def filter_mandarin(wavdata,score_threshold=0.9):
@@ -13,6 +17,7 @@ def filter_mandarin(wavdata,score_threshold=0.9):
     waveform = wavdata.to("cuda:0")
     result = language_id.classify_batch(waveform)
     score = result[1].exp()
+    logger.info(f"Mandarin score: {score}")
     if score > score_threshold and result[3][0].startswith("zh"):
         return True,result[3][0],score
     else:
