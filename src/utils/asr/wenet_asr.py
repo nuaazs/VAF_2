@@ -14,6 +14,7 @@ def get_asr_content(wav_url="http://106.14.148.126:9000/testing/2p1c8k.wav", spk
     keyword = []
     url = cfg.ASR_SERVER
     params = {"file_url": wav_url, "spkid": spkid}
+    print(params)
     r = requests.request("POST", url, data=params)
     if r.status_code == 200:
         text = r.json()["corrected_result"]

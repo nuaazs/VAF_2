@@ -167,7 +167,7 @@ def test(outinfo, pool=False):
             after_length=outinfo.after_length
         )
         add_hit(hit_info, is_grey=False, after_vad_length=outinfo.after_length)
-        add_hit_count(blackbase_phone)
+        # add_hit_count(blackbase_phone)
         remove_fold_and_file(outinfo.spkid)
         #=========================LOG TIME=========================
         outinfo.log_time("to_database_used_time")
