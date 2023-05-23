@@ -1,7 +1,7 @@
 # import cfg
 import requests
 import cfg
-
+from utils.utils.asr.rrr_filter_plus import check_text
 # read black words
 # with open(cfg.BLACK_WORDS_PATH, "r") as f:
 #     black_words = f.read().splitlines()
@@ -24,10 +24,11 @@ def get_asr_content(wav_url="http://106.14.148.126:9000/testing/2p1c8k.wav", spk
     #     if word in text:
     #         keyword.append(word)
     #         hit_keyword = True
-    if hit_keyword:
-        return text, "true", ",".join(keyword)
+    key_word_text, key_word_count, message = check_text(text)
+    if key_word_text:
+        return text, "true", message
     else:
-        return text, "false", ""
+        return text, "false",message
 
 # if __name__ == '__main__':
 #     result = get_asr_content()
