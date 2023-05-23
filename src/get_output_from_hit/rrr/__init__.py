@@ -1,1 +1,0 @@
-from rrr.wenet_asr import get_rrr_content
