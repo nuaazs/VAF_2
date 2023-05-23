@@ -81,11 +81,17 @@ def test(outinfo, pool=False):
         hit_scores += f"{_model}:{check_result_dict[_model]['best_score']},"
     for _model in check_result_dict.keys():
         print(check_result_dict[_model]['top_10'])
-        blackbase_phone += f"{_model}:{check_result_dict[_model]['top_10'].split('|')[0].split(',')[1]},"
+        blackbase_phone += f"{_model}:{check_result_dict[_model]['top_10'].split('|')[0].split('_')[1]},"
     top_10=""
     for _model in check_result_dict.keys():
         top_10 += f"{_model}:{check_result_dict[_model]['top_10']},"
-
+    if blackbase_phone.endswith(","):
+        blackbase_phone = blackbase_phone[:-1]
+    if top_10.endswith(","):
+        top_10 = top_10[:-1]
+    if hit_scores.endswith(","):
+        hit_scores = hit_scores[:-1]
+    blackbase_id = blackbase_phone
     #=========================LOG TIME=========================
     outinfo.log_time("test_used_time")
 
@@ -133,7 +139,7 @@ def test(outinfo, pool=False):
             "class_number": 999,
             "preprocessed_file_path": outinfo.preprocessed_file_path,
             "blackbase_phone": blackbase_phone,
-            "blackbase_id": 0,
+            "blackbase_id": blackbase_id,
             "hit_status": 1,
             "hit_scores": hit_scores,
             "top_10": top_10,

@@ -127,8 +127,8 @@ def test_wav(embedding, black_limit,embedding_type):
     for i,_data in enumerate(top_10,1):
         # str("|".join(map(str, np.array(top_10))))
         if i<10:
-            top_10_str+=f"{_data[0],_data[1]}|"
+            top_10_str+=f"{_data[0]}_{_data[1]}|"
         else:
-            top_10_str+=f"{_data[0],_data[1]}"
+            top_10_str+=f"{_data[0]}_{_data[1]}"
     inbase = best_score >= black_limit
     return inbase, {"best_score": best_score, "spk": best_id, "top_10": top_10_str}

@@ -371,16 +371,16 @@ def add_hit(hit_info, is_grey, after_vad_length):
     valid_length = after_vad_length
     class_number = hit_info["class_number"]
     hit_time = hit_info["hit_time"]
-    blackbase_phone = hit_info["blackbase_phone"]
-    blackbase_id = hit_info["blackbase_id"]
-    top_10 = hit_info["top_10"]
+    blackbase_phone = hit_info["blackbase_phone"].replace("'", "").replace(")(","|").replace("(","").replace(")","")
+    blackbase_id = hit_info["blackbase_id"].replace("'", "").replace(")(","|").replace("(","").replace(")","")
+    top_10 = hit_info["top_10"].replace("'", "").replace(")(","|").replace("(","").replace(")","")
     # 1~10
     hit_status = hit_info["hit_status"]
-    hit_score = hit_info["hit_scores"]
+    hit_score = hit_info["hit_scores"].replace("'", "").replace(")(","|").replace("(","").replace(")","")
     preprocessed_file_path = hit_info["preprocessed_file_path"]
     content_text = hit_info["content_text"]
-    hit_keyword = hit_info["hit_keyword"]
-    keyword = hit_info["keyword"]
+    hit_keyword = hit_info["hit_keyword"].replace("'", "").replace(")(","|").replace("(","").replace(")","")
+    keyword = hit_info["keyword"].replace("'", "").replace(")(","|").replace("(","").replace(")","")
 
     if is_grey:
         is_grey = 1
