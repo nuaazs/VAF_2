@@ -33,6 +33,7 @@ def pipeline(request_form, file_mode="file"):
     call_endtime = request_form.get("call_endtime", "1999-02-18 10:10:10")
     show_phone = request_form.get("show_phone", new_spkid)
     channel = int(request_form.get("wav_channel", cfg.WAV_CHANNEL))
+    do_vad = int(request_form.get("vad", 0))
     action_num = 3
 
     logger.info(f"# Donging VAD ... ")
@@ -79,22 +80,22 @@ def pipeline(request_form, file_mode="file"):
     if len(outinfo.wav.shape) > 1:
         outinfo.wav = outinfo.wav[0]
     outinfo.wav_vad = outinfo.wav
-    vad_result = {"wav_torch":outinfo.wav_vad}
-    """
-    # STEP 2: VAD
-    logger.info(f"\t\t Doing VAD ... ")
-    if len(outinfo.wav.shape) == 1:
-        outinfo.wav = outinfo.wav.unsqueeze(0)
-    vad_result = vad(wav=outinfo.wav, spkid=new_spkid, save=True)
-    outinfo.after_length = vad_result["after_length"]
-    outinfo.before_length = vad_result["before_length"]
-    outinfo.wav_vad = vad_result["wav_torch"]
-    outinfo.preprocessed_file_path = vad_result["preprocessed_file_path"]
-    logger.info(f"{vad_result['wav_torch'].shape}")
-    logger.info(f"\t\t VAD Success! Before: {vad_result['before_length']}, After: {vad_result['after_length']}")
-    # =========================LOG TIME=========================
-    outinfo.log_time(name="vad_used_time")
-    """
+    if not do_vad:
+        vad_result = {"wav_torch":outinfo.wav_vad}
+    else:
+        # STEP 2: VAD
+        logger.info(f"\t\t Doing VAD ... ")
+        if len(outinfo.wav.shape) == 1:
+            outinfo.wav = outinfo.wav.unsqueeze(0)
+        vad_result = vad(wav=outinfo.wav, spkid=new_spkid, action_type="test", save=False,outinfo=outinfo)
+        outinfo.after_length = vad_result["after_length"]
+        outinfo.before_length = vad_result["before_length"]
+        outinfo.wav_vad = vad_result["wav_torch"]
+        outinfo.preprocessed_file_path = vad_result["preprocessed_file_path"]
+        logger.info(f"\t\t VAD Success! Before: {vad_result['before_length']}, After: {vad_result['after_length']}")
+        # =========================LOG TIME=========================
+        outinfo.log_time(name="vad_used_time")
+
     logger.info(f"\t\t Resample to 16k ... ")
     vad_result["wav_torch"] = resample(vad_result["wav_torch"], cfg.SR, cfg.ENCODE_SR)
     # =========================LOG TIME=========================

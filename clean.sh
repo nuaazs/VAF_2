@@ -14,7 +14,7 @@ rm -rf docker/vaf/src.tar.gz
 tar -cvf docker/vaf/src.tar.gz ./src
 pwd=$PWD
 cd docker/vaf
-docker build -t zhaosheng/vaf:v0.6.0 .
+docker build -t zhaosheng/vaf:v1.0 .
 cd $pwd
 cd src/
 ./start_multi.sh
