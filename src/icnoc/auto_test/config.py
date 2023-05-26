@@ -25,15 +25,15 @@ import os
 
 MINIO_HOST = 'http://192.168.3.202:9000'
 # 服务地址
-TEST_URL = 'http://192.168.3.202:8190/test/url'
-TEST_FILE_URL = 'http://192.168.3.202:8191/test/file'
+TEST_URL = 'http://192.168.3.169:8191/test/url'
+TEST_FILE_URL = 'http://192.168.3.169:8191/test/file'
 # 黑库桶名
 BUCKETS_NAME_BLACK = "black-raw"
 # 灰库桶名
 BUCKETS_NAME_GRAY = "gray-raw"
 
 # 文件存放地址
-WAV_PATH_GRAY = '/mnt/xuekx/test_data/13003661007'
+WAV_PATH_GRAY = '/mnt/13003661007'
 
 WORKERS = 4
 TEST_COUNT = 100
