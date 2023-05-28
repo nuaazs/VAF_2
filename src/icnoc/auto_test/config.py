@@ -26,7 +26,7 @@ import os
 MINIO_HOST = 'http://192.168.3.202:9000'
 # 服务地址
 TEST_URL = 'http://192.168.3.169:8191/test/url'
-TEST_FILE_URL = 'http://192.168.3.169:8191/test/file'
+TEST_FILE_URL = 'http://192.168.3.169:8192/test/file'
 # 黑库桶名
 BUCKETS_NAME_BLACK = "black-raw"
 # 灰库桶名

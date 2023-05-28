@@ -1,6 +1,9 @@
 #!/usr/bin/bash
 
 image_name="auto_test:v1.1"
+sudo docker rm -f auto_test
+
+echo sudo docker rm -f auto_test
 
 #无启动脚本
 #sudo docker run --restart=always --network="host" -d -it \
