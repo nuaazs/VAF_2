@@ -22,8 +22,12 @@ from utils.test import test
 from utils.info import OutInfo
 from utils.preprocess import remove_fold_and_file
 from utils.cmd import run_cmd
-from utils.gender import gender_classify
 import cfg
+
+if cfg.LOAD_GENDER_MODEL:
+    from utils.gender import gender_classify
+
+
 if cfg.FILTER_MANDARIN:
     from utils.preprocess.mandarin_filter import filter_mandarin
 
@@ -158,7 +162,7 @@ def general(request_form, file_mode="url", action_type="test"):
     # =========================LOG TIME=========================
     outinfo.log_time(name="resample_16k")
 
-    if gender:
+    if gender and cfg.LOAD_GENDER_MODEL:
         try:
             print("Gender")
             result=gender_classify(vad_result["wav_torch"])
