@@ -16,6 +16,7 @@ ERR_TYPE = {
     8: "ID重复且时间达到阈值，但是质量没有之前的好。",
     9: "embedding error.",
     10: "Request error.",
+    12: "性别识别失败",
 }
 
 
