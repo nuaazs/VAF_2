@@ -381,7 +381,8 @@ def add_hit(hit_info, is_grey, after_vad_length):
     content_text = hit_info["content_text"]
     hit_keyword = hit_info["hit_keyword"].replace("'", "").replace(")(","|").replace("(","").replace(")","")
     keyword = hit_info["keyword"].replace("'", "").replace(")(","|").replace("(","").replace(")","")
-
+    gender = hit_info["gender"]
+    gender_score= hit_info["gender_score"]
     if is_grey:
         is_grey = 1
     else:
@@ -389,11 +390,11 @@ def add_hit(hit_info, is_grey, after_vad_length):
 
     query_sql = f"INSERT INTO hit (phone, file_url, phone_type,area_code,call_begintime,call_endtime,valid_length,class_number,\
                                    blackbase_phone,blackbase_id,top_10,hit_status,hit_score,preprocessed_file_url,\
-                                   is_grey,show_phone,hit_time,hit_keyword,keyword,content_text) \
+                                   is_grey,show_phone,hit_time,hit_keyword,keyword,content_text,gender,gender_score) \
                  VALUES ('{phone}', '{file_url}','{phone_type}','{area_code}',\
                  '{call_begintime}',\
                  '{call_endtime}','{valid_length}','{class_number}','{blackbase_phone}','{blackbase_id}','{top_10}',\
-                 '{hit_status}','{hit_score}','{preprocessed_file_path}','{is_grey}','{show_phone}',NOW(),'{hit_keyword}','{keyword[:1000]}','{content_text}');"
+                 '{hit_status}','{hit_score}','{preprocessed_file_path}','{is_grey}','{show_phone}',NOW(),'{hit_keyword}','{keyword[:1000]}','{content_text}','{gender}','{gender_score}');"
     try:
         mysql_handler.insert_one(query_sql)
     except Exception as e:

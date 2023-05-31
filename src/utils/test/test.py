@@ -147,6 +147,8 @@ def test(outinfo, pool=False):
             "content_text": asr_content,
             "hit_keyword": hit_keyword,
             "keyword": keyword,
+            "gender": outinfo.gender_result.get("text_lab", ""),
+            "gender_score": outinfo.gender_result.get("score", 0),
         }
         response = {
             "code": 2000,
@@ -160,6 +162,7 @@ def test(outinfo, pool=False):
             "after_vad_length": outinfo.after_length,
             "self_test_before_score": 1,
             "used_time": outinfo.used_time,
+            "gender": outinfo.gender_result,
         }
         to_log(
             phone=outinfo.spkid,
@@ -171,7 +174,7 @@ def test(outinfo, pool=False):
             valid_length=outinfo.after_length,
             show_phone=outinfo.show_phone,
             before_length=outinfo.before_length,
-            after_length=outinfo.after_length
+            after_length=outinfo.after_length,
         )
         add_hit(hit_info, is_grey=False, after_vad_length=outinfo.after_length)
         # add_hit_count(blackbase_phone)
@@ -191,6 +194,7 @@ def test(outinfo, pool=False):
             "blackbase_phone": blackbase_phone,
             "top_10": top_10,
             "used_time": outinfo.used_time,
+            "gender": outinfo.gender_result,
         }
         to_log(
             phone=outinfo.spkid,

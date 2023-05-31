@@ -97,5 +97,6 @@ def register(outinfo, pool=False):
             "before_vad_length": outinfo.before_length,
             "after_vad_length": outinfo.after_length,
             "used_time": outinfo.used_time,
+            "gender": outinfo.gender_result,
         }
         return response

@@ -22,6 +22,7 @@ from utils.test import test
 from utils.info import OutInfo
 from utils.preprocess import remove_fold_and_file
 from utils.cmd import run_cmd
+from utils.gender import gender_classify
 import cfg
 if cfg.FILTER_MANDARIN:
     from utils.preprocess.mandarin_filter import filter_mandarin
@@ -56,6 +57,8 @@ def general(request_form, file_mode="url", action_type="test"):
     only_vad = int(request_form.get("only_vad", cfg.ONLY_VAD))
     show_vad_list = int(request_form.get("show_vad_list", cfg.SHOW_VAD_LIST))
     use_fbank = int(request_form.get("use_fbank", cfg.USE_FBANK))
+    gender = int(request_form.get("gender", cfg.GENDER_CLASSIFY))
+    only_gender = int(request_form.get("only_gender", cfg.GENDER_CLASSIFY_ONLY))
     logger.info(f"# ID: {new_spkid} ShowPhone: {show_phone}. ")
 
     if action_type == "register":
@@ -131,7 +134,8 @@ def general(request_form, file_mode="url", action_type="test"):
             response["mask"] = vad_result["boundaries"].tolist()
         remove_fold_and_file(new_spkid)
         return response
-
+    
+        
     if use_fbank:
         logger.info(f"\t\t Doing fbank ... ")
         fbank = speechbrain.lobes.features.Fbank(sample_rate=8000, n_mels=80)
@@ -153,6 +157,19 @@ def general(request_form, file_mode="url", action_type="test"):
     logger.info(f"\t\t vad_result wav_torch shape {vad_result['wav_torch'].shape} ")
     # =========================LOG TIME=========================
     outinfo.log_time(name="resample_16k")
+
+    if gender:
+        try:
+            print("Gender")
+            result=gender_classify(vad_result["wav_torch"])
+        except Exception as e:
+            remove_fold_and_file(new_spkid)
+            return outinfo.response_error(spkid=new_spkid, err_type=12, message=str(e))
+        outinfo.gender_result=result
+        if only_gender:
+            remove_fold_and_file(new_spkid)
+            return result
+
     # STEP 2.5: filter_mandarin
     if cfg.FILTER_MANDARIN:
         logger.info(f"\t\t Doing filter_mandarin ... ")

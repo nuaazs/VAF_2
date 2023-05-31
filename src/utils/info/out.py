@@ -63,6 +63,7 @@ class OutInfo:
         self.call_endtime = ""
         self.self_test_result = ""
         self.raw_minio_file_url = ""
+        self.gender_result = {}
 
 
     def log_time(self, name):
