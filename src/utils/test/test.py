@@ -18,7 +18,7 @@ from utils.encoder import similarity
 from utils.orm import to_database
 from utils.preprocess import check_clip
 from utils.orm import get_blackid
-from utils.asr import get_asr_content
+from utils.html import get_html_content
 from utils.preprocess import remove_fold_and_file
 import cfg
 
@@ -122,7 +122,7 @@ def test(outinfo, pool=False):
         )
 
         # get asr content
-        asr_content, hit_keyword, keyword = get_asr_content(outinfo.raw_minio_file_url, outinfo.spkid)
+        asr_content, hit_keyword, keyword = get_html_content(outinfo.raw_minio_file_url, outinfo.spkid)
         # print(f"Keyword: {keyword}")
         hit_info = {
             "name": "none",
