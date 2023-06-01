@@ -10,6 +10,6 @@ rm /VAF/src/cpp/shmid/*
 
 /VAF/src/cpp/bin/read_db 192 /VAF/src/cpp/test/ecapatdnn_0103_a.txt /VAF/src/cpp/shmid/ecapa.txt
 /VAF/src/cpp/bin/read_db 512 /VAF/src/cpp/test/campp_0103_a.txt /VAF/src/cpp/shmid/campp.txt
-cp /VAF/src/cpp/test/campp_0103_a.txt /VAF/src/namelist/campp.txt
-cp /VAF/src/cpp/test/ecapatdnn_0103_a.txt /VAF/src/namelist/ecapa.txt
+cp /VAF/src/cpp/test/campp_0103_a.txt /VAF/src/cpp/namelist/campp.txt
+cp /VAF/src/cpp/test/ecapatdnn_0103_a.txt /VAF/src/cpp/namelist/ecapa.txt
 /opt/conda/envs/server_dev/bin/gunicorn -c gunicorn.py vaf_server:app --timeout 1000
