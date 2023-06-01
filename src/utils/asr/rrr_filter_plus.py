@@ -76,7 +76,7 @@ def check_text(text):
         c_list, c_count, c_text = check_filter(C_list, text)
         if a_count > 0 and b_count > 0 and c_count > 0:
             key_text = "black3_"+key+"|A:"+",".join(a_list)+"|B:"+",".join(b_list)+"|C:"+",".join(c_list)
-            return key_text,a_count,f"BLACK_3:{a_text},{b_text},{c_text}"
+            return key_text,a_count,key+f"_BLACK_3:{a_text},{b_text},{c_text}"
     
     # BLACK_2
     for key in BLACK_2.keys():
@@ -94,7 +94,7 @@ def check_text(text):
         if (a_count > 0 and b_count > 0) and (a_count + b_count >= num_th):
             # print(a_list, b_list)
             key_text = "black2_"+key+"|A:"+",".join(a_list)+"|B:"+",".join(b_list)
-            return key_text,a_count + b_count,f"BLACK_2:{all_keys_text}"
+            return key_text,a_count + b_count,key+f"_BLACK_2:{all_keys_text}"
         
     # LOOKAHEAD
     return None,0,"未命中"

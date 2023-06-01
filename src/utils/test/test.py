@@ -111,9 +111,9 @@ def test(outinfo, pool=False):
         )
 
         # save to minio
-        filename_raw = outinfo.spkid + "_" + timestr + ".wav"
+        filename_raw = outinfo.spkid + "_" + timestr + "_raw.wav"
         temp_save_path_raw = f"{cfg.TEMP_PATH}/{outinfo.spkid}/{filename_raw}"
-        save_audio(temp_save_path_raw, outinfo.wav_vad, sampling_rate=cfg.SR)
+        save_audio(temp_save_path_raw, outinfo.wav, sampling_rate=cfg.SR)
         outinfo.raw_minio_file_url = upload_file(
             bucket_name="preprocessed",
             filepath=temp_save_path_raw,
