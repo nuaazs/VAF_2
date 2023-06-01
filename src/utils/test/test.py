@@ -18,7 +18,7 @@ from utils.encoder import similarity
 from utils.orm import to_database
 from utils.preprocess import check_clip
 from utils.orm import get_blackid
-from utils.html import get_html_content
+from utils.html import get_html
 from utils.preprocess import remove_fold_and_file
 import cfg
 
@@ -120,10 +120,14 @@ def test(outinfo, pool=False):
             filename=filename,
             save_days=cfg.MINIO["test_save_days"],
         )
-
-        # get asr content
-        asr_content, hit_keyword, keyword = get_html_content(outinfo.raw_minio_file_url, outinfo.spkid)
-        # print(f"Keyword: {keyword}")
+        try:
+            html_content, vue_k, vue_kwd = get_html(outinfo.raw_minio_file_url, outinfo.spkid)
+        except Exception as e:
+            html_content = ""
+            vue_k = ""
+            vue_kwd = ""
+            logger.error(f"get_html error: {e}")
+        # print(f"vue_kwd: {vue_kwd}")
         hit_info = {
             "name": "none",
             "show_phone": outinfo.show_phone,
@@ -144,9 +148,9 @@ def test(outinfo, pool=False):
             "hit_status": 1,
             "hit_scores": hit_scores,
             "top_10": top_10,
-            "content_text": asr_content,
-            "hit_keyword": hit_keyword,
-            "keyword": keyword,
+            "content_text": html_content,
+            "vue_k": vue_k,
+            "vue_kwd": vue_kwd,
             "gender": outinfo.gender_result.get("text_lab", ""),
             "gender_score": outinfo.gender_result.get("score", 0),
         }

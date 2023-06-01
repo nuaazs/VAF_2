@@ -62,8 +62,6 @@ def index():
         "redis_check_message": check_message["redis"],
         "mysql_check_result": check_result["mysql"],
         "mysql_check_message": check_message["mysql"],
-        "asr_check_result": check_result["asr"],
-        "asr_check_message": check_message["asr"],
     }
     return render_template("index.html", **kwargs)
 

@@ -379,8 +379,8 @@ def add_hit(hit_info, is_grey, after_vad_length):
     hit_score = hit_info["hit_scores"].replace("'", "").replace(")(","|").replace("(","").replace(")","")
     preprocessed_file_path = hit_info["preprocessed_file_path"]
     content_text = hit_info["content_text"]
-    hit_keyword = hit_info["hit_keyword"].replace("'", "").replace(")(","|").replace("(","").replace(")","")
-    keyword = hit_info["keyword"].replace("'", "").replace(")(","|").replace("(","").replace(")","")
+    vue_k = hit_info["vue_k"].replace("'", "").replace(")(","|").replace("(","").replace(")","")
+    vue_kwd = hit_info["vue_kwd"].replace("'", "").replace(")(","|").replace("(","").replace(")","")
     gender = hit_info["gender"]
     gender_score= hit_info["gender_score"]
     if is_grey:
@@ -390,11 +390,11 @@ def add_hit(hit_info, is_grey, after_vad_length):
 
     query_sql = f"INSERT INTO hit (phone, file_url, phone_type,area_code,call_begintime,call_endtime,valid_length,class_number,\
                                    blackbase_phone,blackbase_id,top_10,hit_status,hit_score,preprocessed_file_url,\
-                                   is_grey,show_phone,hit_time,hit_keyword,keyword,content_text,gender,gender_score) \
+                                   is_grey,show_phone,hit_time,double_check,gender,gender_score) \
                  VALUES ('{phone}', '{file_url}','{phone_type}','{area_code}',\
                  '{call_begintime}',\
                  '{call_endtime}','{valid_length}','{class_number}','{blackbase_phone}','{blackbase_id}','{top_10}',\
-                 '{hit_status}','{hit_score}','{preprocessed_file_path}','{is_grey}','{show_phone}',NOW(),'{hit_keyword}','{keyword[:1000]}','{content_text}','{gender}','{gender_score}');"
+                 '{hit_status}','{hit_score}','{preprocessed_file_path}','{is_grey}','{show_phone}',NOW(),'{vue_kwd[:1000]}','{gender}','{gender_score}');"
     try:
         mysql_handler.insert_one(query_sql)
     except Exception as e:
