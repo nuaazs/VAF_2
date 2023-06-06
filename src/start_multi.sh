@@ -24,5 +24,5 @@ do
     # cuda_num = i - 1, calculate the cuda_nun
     cuda_num=`expr ${i} - 1`
     echo "docker run -d --name vaf_${i} --gpus="device=${cuda_num}" -v ${PWD}/cpp_${i}:/VAF/src/cpp -v ${PWD}/cfg_${i}.py:/VAF/src/cfg.py -v ${PWD}/log_${i}:/VAF/src/log -v ${PWD}/pretrained_models_${i}:/VAF/src/pretrained_models --net host zhaosheng/vaf:v1.0 bash > /dev/null 2>&1 &"
-    docker run --name vaf_${i} --gpus "device=${cuda_num}" -v ${PWD}/start.sh:/VAF/src/start.sh -v ${PWD}/cpp_${i}:/VAF/src/cpp -v ${PWD}/cfg_${i}.py:/VAF/src/cfg.py -v ${PWD}/log_${i}:/VAF/src/log -v ${PWD}/pretrained_models_${i}:/VAF/src/pretrained_models --net host zhaosheng/vaf:v1.0 > ${i}_docker.log 2>&1 &
+    docker run --name vaf_${i} --gpus "device=${cuda_num}" -v ${PWD}/start.sh:/VAF/src/start.sh -v ${PWD}/cpp_${i}:/VAF/src/cpp -v ${PWD}/cfg_${i}.py:/VAF/src/cfg.py -v ${PWD}/log_${i}:/VAF/src/log -v ${PWD}/pretrained_models_${i}:/VAF/src/pretrained_models --net host zhaosheng/vaf:v2.0 > ${i}_docker.log 2>&1 &
 done

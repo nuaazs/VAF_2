@@ -110,8 +110,8 @@ def delete_spk(spk_id):
     # print(f"delete from speaker where phone='{spk_id}';")
     cur.execute(query_sql)
     result = cur.fetchall()
-    if len(result) > 0:
-        print(result)
+    # if len(result) > 0:
+    #     print(result)
     conn.commit()
     conn.close()
 
@@ -378,7 +378,7 @@ def add_hit(hit_info, is_grey, after_vad_length):
     hit_status = hit_info["hit_status"]
     hit_score = hit_info["hit_scores"].replace("'", "").replace(")(","|").replace("(","").replace(")","")
     preprocessed_file_path = hit_info["preprocessed_file_path"]
-    content_text = hit_info["content_text"]
+
     vue_k = hit_info["vue_k"].replace("'", "").replace(")(","|").replace("(","").replace(")","")
     vue_kwd = hit_info["vue_kwd"].replace("'", "").replace(")(","|").replace("(","").replace(")","")
     gender = hit_info["gender"]

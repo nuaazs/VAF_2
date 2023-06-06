@@ -44,6 +44,8 @@ def save_file(file, spk, channel, upload=False):
     logger.info("\t\tConver to wav.")
     end = cfg.WAV_START + cfg.WAV_LENGTH
     run_cmd(f"ffmpeg -i {save_path} -y -ss {cfg.WAV_START} -to {end} -ar {cfg.SR} -ac 1 -vn -map_channel 0.0.{channel} {save_path_wav}")
+    # run_cmd(f"cp {save_path} {save_path_wav}")
+
     if upload:
         url = upload_file(
             bucket_name="raw",

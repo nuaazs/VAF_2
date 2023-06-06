@@ -79,10 +79,12 @@ def register_or_reasoning(action_type, file_mode):
         json: response
     """
     if action_type not in ["register", "test"]:
+        torch.cuda.empty_cache()
         return json.dumps({"code": 4000, "status": "fail", "err_type": 1, "err_msg": "action_type error"})
     if request.method == "POST":
         # try:
         response = general(request_form=request.form, file_mode=file_mode, action_type=action_type)
+        torch.cuda.empty_cache()
         return json.dumps(response, ensure_ascii=False)
         # except Exception as e:
         #     return json.dumps({"code": 4000, "status": "fail", "err_type": 10, "err_msg": str(e)})
@@ -103,9 +105,7 @@ def get_vad(file_mode):
         json: response
     """
     response = vadp(request_form=request.form, file_mode=file_mode)
-    if "cuda" in cfg.DEVICE:
-        # clear cuda cache
-        torch.cuda.empty_cache()
+    torch.cuda.empty_cache()
     return json.dumps(response, ensure_ascii=False)
 
 
@@ -138,20 +138,14 @@ def get_embedding(file_mode):
     """
     try:
         response = encoder_pipline(request_form=request.form, file_mode=file_mode)
-        if "cuda" in cfg.DEVICE:
-            # clear cuda cache
-            torch.cuda.empty_cache()
+        torch.cuda.empty_cache()
         return json.dumps(response, ensure_ascii=False)
         
     except Exception as e:
-        if "cuda" in cfg.DEVICE:
-            # clear cuda cache
-            torch.cuda.empty_cache()
+        torch.cuda.empty_cache()
         return json.dumps({"code": 4000, "status": "fail", "err_type": 1, "err_msg": str(e)})
     finally:
-        if "cuda" in cfg.DEVICE:
-            # clear cuda cache
-            torch.cuda.empty_cache()
+        torch.cuda.empty_cache()
 
 
 # Test ALL API
@@ -180,8 +174,8 @@ def pretest(action_type):
     response = general(
         request_form=test_form, file_mode="url", action_type=action_type
     )
-    if "cuda" in cfg.DEVICE:
-        torch.cuda.empty_cache()
+    # return 之前清空cuda缓存
+    torch.cuda.empty_cache()
     return json.dumps(response, ensure_ascii=False)
 
 

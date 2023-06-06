@@ -2,6 +2,7 @@
 # Email: zhaosheng@nuaa.edu.cn
 # Time  : 2022-05-06  19:40:43.000-05:00
 # Desc  : query mysql
+import torch
 
 import pymysql
 from datetime import datetime, timedelta
@@ -94,6 +95,7 @@ def query_speaker():
         "numbers": numbers,
         "err_msg": "null",
     }
+    torch.cuda.empty_cache()
     return json.dumps(response, ensure_ascii=False)
 
 def query_hit_phone():

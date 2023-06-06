@@ -24,9 +24,8 @@ from utils.preprocess import remove_fold_and_file
 from utils.cmd import run_cmd
 import cfg
 
-if cfg.LOAD_GENDER_MODEL:
-    from utils.gender import gender_classify
-
+# if cfg.LOAD_GENDER_MODEL:
+#     from utils.gender import gender_classify
 
 if cfg.FILTER_MANDARIN:
     from utils.preprocess.mandarin_filter import filter_mandarin
@@ -121,6 +120,7 @@ def general(request_form, file_mode="url", action_type="test"):
     outinfo.after_length = vad_result["after_length"]
     outinfo.before_length = vad_result["before_length"]
     outinfo.wav_vad = vad_result["wav_torch"]
+    vad_result["wav_torch"] = vad_result["wav_torch"].to("cuda:0")
     outinfo.preprocessed_file_path = vad_result["preprocessed_file_path"]
     logger.info(f"\t\t VAD Success! Before: {vad_result['before_length']}, After: {vad_result['after_length']}")
     # =========================LOG TIME=========================
@@ -162,17 +162,17 @@ def general(request_form, file_mode="url", action_type="test"):
     # =========================LOG TIME=========================
     outinfo.log_time(name="resample_16k")
 
-    if gender and cfg.LOAD_GENDER_MODEL:
-        try:
-            print("Gender")
-            result=gender_classify(vad_result["wav_torch"])
-        except Exception as e:
-            remove_fold_and_file(new_spkid)
-            return outinfo.response_error(spkid=new_spkid, err_type=12, message=str(e))
-        outinfo.gender_result=result
-        if only_gender:
-            remove_fold_and_file(new_spkid)
-            return result
+    # if gender and cfg.LOAD_GENDER_MODEL:
+    #     try:
+    #         print("Gender")
+    #         result=gender_classify(vad_result["wav_torch"])
+    #     except Exception as e:
+    #         remove_fold_and_file(new_spkid)
+    #         return outinfo.response_error(spkid=new_spkid, err_type=12, message=str(e))
+    #     outinfo.gender_result=result
+    #     if only_gender:
+    #         remove_fold_and_file(new_spkid)
+    #         return result
 
     # STEP 2.5: filter_mandarin
     if cfg.FILTER_MANDARIN:
@@ -185,7 +185,7 @@ def general(request_form, file_mode="url", action_type="test"):
         outinfo.log_time(name="filter_mandarin")
         
     # STEP 3: Encoding
-    encode_result = encode(wav_torch_raw=vad_result["wav_torch"], action_type=action_type)
+    encode_result,outinfo = encode(wav_torch_raw=vad_result["wav_torch"], action_type=action_type, outinfo=outinfo)
     # =========================LOG TIME=========================
     outinfo.log_time(name="encode_time")
     if encode_result["pass"]:
@@ -196,7 +196,7 @@ def general(request_form, file_mode="url", action_type="test"):
                                       message=encode_result["msg"])
     outinfo.embeddings_dict = embeddings_dict
     # STEP 4: Test or Register
-
+    
     if action_num == 1:
         logger.info(f"\t\t Testing ... ")
         outinfo.class_num = 999

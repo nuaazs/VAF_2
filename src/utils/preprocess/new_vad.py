@@ -5,8 +5,8 @@ from speechbrain.pretrained import Pretrained
 from speechbrain.pretrained.fetching import fetch
 from speechbrain.utils.data_utils import split_path
 import multiprocessing
+import torch.nn.functional as F
 import copy
-
 
 import cfg
 class lyxx_VAD(Pretrained):
@@ -92,7 +92,7 @@ class lyxx_VAD(Pretrained):
 
 
             large_chunk = wav_data[:, begin_sample : begin_sample + long_chunk_len]
-            
+            # print(f"large_chunk device {large_chunk.device}")
             # large_chunk = large_chunk.to(self.device)
 
             # Manage padding of the last small chunk
@@ -187,6 +187,7 @@ class lyxx_VAD(Pretrained):
         return small_chunks_prob
 
     def get_speech_prob_chunk(self, wavs, wav_lens=None):
+        # print(f"wavs device {wavs.device}")
         """Outputs the frame-level posterior probability for the input audio chunks
         Outputs close to zero refers to time steps with a low probability of speech
         activity, while outputs closer to one likely contain speech.
@@ -216,6 +217,7 @@ class lyxx_VAD(Pretrained):
         # Storing waveform in the specified device
         wavs, wav_lens = wavs.to(self.device), wav_lens.to(self.device)
         wavs = wavs.float()
+        # print(f"wavs device {wavs.device}")
 
         # Computing features and embeddings
         feats = self.mods.compute_features(wavs)
@@ -231,7 +233,7 @@ class lyxx_VAD(Pretrained):
         outputs, h = self.mods.rnn(outputs)
         outputs = self.mods.dnn(outputs)
         output_prob = torch.sigmoid(outputs)
-        output_prob = output_prob.to("cpu")
+        # output_prob = output_prob.to("cpu")
         return output_prob
 
     def apply_threshold(
@@ -254,22 +256,30 @@ class lyxx_VAD(Pretrained):
         vad_th: torch.Tensor
             Tensor containing 1 for speech regions and 0 for non-speech regions.
        """
-        vad_activation = (vad_prob >= activation_th).int()
-        vad_deactivation = (vad_prob >= deactivation_th).int()
-        vad_th = vad_activation + vad_deactivation
+        # print("===========apply_threshold===========")
+        # vad_activation = (vad_prob >= activation_th).int()
+        # vad_deactivation = (vad_prob >= deactivation_th).int()
+        # vad_th = vad_activation + vad_deactivation
+        # vad_th_old = vad_th.clone()
+        # vad_th_new = vad_th.clone()
+        # # Loop over batches and time steps
+        # for batch in range(vad_th_old.shape[0]):
+        #     for time_step in range(vad_th_old.shape[1] - 1):
+        #         if (
+        #             vad_th_old[batch, time_step] == 2
+        #             and vad_th_old[batch, time_step + 1] == 1
+        #         ):
+        #             vad_th_old[batch, time_step + 1] = 2
 
-        # Loop over batches and time steps
-        for batch in range(vad_th.shape[0]):
-            for time_step in range(vad_th.shape[1] - 1):
-                if (
-                    vad_th[batch, time_step] == 2
-                    and vad_th[batch, time_step + 1] == 1
-                ):
-                    vad_th[batch, time_step + 1] = 2
+        # vad_th_old[vad_th_old == 1] = 0
+        # vad_th_old[vad_th_old == 2] = 1
+        # print(vad_th_old[0,:,0])
 
-        vad_th[vad_th == 1] = 0
-        vad_th[vad_th == 2] = 1
-        return vad_th
+        if vad_prob.device == torch.device("cpu"):
+            vad_prob = vad_prob.to("cuda:0")
+        vad_prob[vad_prob >= activation_th] = 1
+        vad_prob[vad_prob < activation_th] = 0
+        return vad_prob
 
     def get_boundaries(self, prob_th, output_value="seconds"):
         """Computes the time boundaries where speech activity is detected.
@@ -507,11 +517,6 @@ class lyxx_VAD(Pretrained):
             end_sample = int(boundaries[i, 1] * sample_rate)
             seg_len = end_sample - begin_sample
 
-            # Reading the speech segment
-            # segment, _ = torchaudio.load(
-            #     audio_file, frame_offset=begin_sample, num_frames=seg_len
-            # )
-            # print(begin_sample, end_sample)
             if seg_len/sample_rate < 0.1:
                 continue
             segment, _ = wav_data[:, begin_sample:end_sample], self.sample_rate
@@ -830,10 +835,9 @@ class lyxx_VAD(Pretrained):
             if outinfo:
                 # =========================LOG TIME=========================
                 outinfo.log_time(name="vad:apply_energy_VAD_before_used_time")
-        # make sure that vad is run on cfg.device
-        # wav_data = wav_data.to(cfg.DEVICE)
-        # assert wav_data on cpu
-        assert wav_data.device == torch.device("cpu")
+
+        # chang20230625
+        wav_data=wav_data.to("cuda:0")
 
         # Computing speech vs non speech probabilities
         prob_chunks = self.get_speech_prob_file(
@@ -846,43 +850,42 @@ class lyxx_VAD(Pretrained):
             # =========================LOG TIME=========================
             outinfo.log_time(name="vad:get_speech_prob_file_used_time")
 
-        # Apply a threshold to get candidate speech segments
-        # prob_chunks -> cpu
-        assert prob_chunks.device == torch.device("cpu")
-
         prob_th = self.apply_threshold(
             prob_chunks,
             activation_th=activation_th,
             deactivation_th=deactivation_th,
         ).float()
-        # prob_th = prob_th.to("cpu")
+        prob_th = prob_th.to("cuda:0")
         # Compute the boundaries of the speech segments
-
+        assert prob_th.device == torch.device("cuda:0")
         if outinfo:
             # =========================LOG TIME=========================
             outinfo.log_time(name="vad:apply_threshold_used_time")
 
         boundaries = self.get_boundaries(prob_th, output_value="seconds")
-        assert boundaries.device == torch.device("cpu")
+
+        # chang20230625
+        boundaries = boundaries.to("cuda:0")
+        # boundaries = self.merge_close_segments(boundaries, close_th=close_th)
+        assert boundaries.device == torch.device("cuda:0")
+
+
+
         if outinfo:
             # =========================LOG TIME=========================
             outinfo.log_time(name="vad:get_boundaries_used_time")
-        # Apply energy-based VAD on the detected speech segments
-        assert wav_data.device == torch.device("cpu")
+
         if apply_energy_VAD:
             boundaries = self.energy_VAD(
                 wav_data,
                 boundaries,
                 activation_th=en_activation_th,
                 deactivation_th=en_deactivation_th,
-                # time_resolution=self.time_resolution,
-                # sample_rate=self.sample_rate,
-
             )
         if outinfo:
             # =========================LOG TIME=========================
             outinfo.log_time(name="vad:apply_energy_VAD_used_time")
-        assert boundaries.device == torch.device("cpu")
+        # assert boundaries.device == torch.device("cpu")
         # Merge short segments
         boundaries = self.merge_close_segments(boundaries, close_th=close_th)
         if outinfo:
@@ -908,119 +911,3 @@ class lyxx_VAD(Pretrained):
     def forward(self, wavs, wav_lens=None):
         """Gets frame-level speech-activity predictions"""
         return self.get_speech_prob_chunk(wavs, wav_lens)
-
-# def energy_VAD_multi(
-#         wav_data,
-#         boundaries,
-#         activation_th=0.5,
-#         deactivation_th=0.0,
-#         eps=1e-6,
-#         sample_rate=8000,
-#         time_resolution=0.01,
-#     ):
-
-
-#     args = []
-#     for i in range(boundaries.shape[0]):
-#         begin_sample = int(boundaries[i, 0] * sample_rate)
-#         end_sample = int(boundaries[i, 1] * sample_rate)
-#         seg_len = end_sample - begin_sample
-
-#         if seg_len/sample_rate < 0.1:
-#             continue
-#         # deep copy
-#         segment = wav_data[:, begin_sample:end_sample]
-#         seg_copy = copy.deepcopy(segment)
-        
-#         args.append(
-#             (seg_copy, boundaries[i], activation_th, deactivation_th, eps, time_resolution,sample_rate)
-#         )
-#     pool = multiprocessing.Pool(processes=1, initializer=print("pool start"))
-    
-#     results = pool.map(process_segment, args)
-
-#     new_boundaries = []
-#     for res in results:
-#         new_boundaries += res
-
-#     # Convert boundaries to tensor
-#     new_boundaries = torch.FloatTensor(new_boundaries).to(boundaries.device)
-#     return new_boundaries
-
-# def process_segment(segment_data):
-#     seg_copy, boundaries, activation_th, deactivation_th, eps, time_resolution,sample_rate = segment_data
-#     segment = seg_copy.clone().detach()
-#     # copy segment by torch
-#     # segment = torch.tensor(seg_copy)
-#     print("segment.shape", segment.shape)
-#     print(segment.device)
-#     chunk_len = int(time_resolution * sample_rate)
-#     segment = segment.unfold(1, chunk_len, chunk_len)
-#     segment_chunks = segment.reshape(segment.shape[0] * segment.shape[1], -1)
-#     print("segment_chunks.shape", segment_chunks.shape)
-#     print(segment_chunks.abs().sum(-1))
-#     print(eps)
-#     energy_chunks = segment_chunks.abs().sum(-1) + eps
-#     # energy_chunks = energy_chunks.log()
-#     print("energy_chunks.shape", energy_chunks.shape)
-#     energy_chunks = (
-#         (energy_chunks - energy_chunks.mean())
-#         / (2 * energy_chunks.std())
-#     ) + 0.5
-#     energy_chunks = energy_chunks.unsqueeze(0).unsqueeze(2)
-#     print("energy_chunks.shape", energy_chunks.shape)
-#     vad_activation = (energy_chunks >= activation_th).int()
-#     vad_deactivation = (energy_chunks >= deactivation_th).int()
-#     energy_vad = vad_activation + vad_deactivation
-
-#     # Loop over batches and time steps
-#     for batch in range(energy_vad.shape[0]):
-#         for time_step in range(energy_vad.shape[1] - 1):
-#             if (
-#                 energy_vad[batch, time_step] == 2
-#                 and energy_vad[batch, time_step + 1] == 1
-#             ):
-#                 energy_vad[batch, time_step + 1] = 2
-#     print("energy_vad.shape", energy_vad.shape)
-#     energy_vad[energy_vad == 1] = 0
-#     energy_vad[energy_vad == 2] = 1
-
-#     prob_th=energy_vad
-#     output_value="seconds"
-#     # Shifting frame-levels binary decision by 1
-#     # This allows detecting changes in speech/non-speech activities
-#     prob_th_shifted = torch.roll(prob_th, dims=1, shifts=1)
-#     prob_th_shifted[:, 0, :] = 0
-#     prob_th = prob_th + prob_th_shifted
-
-#     # Needed to first and last time step
-#     prob_th[:, 0, :] = (prob_th[:, 0, :] >= 1).int()
-#     prob_th[:, -1, :] = (prob_th[:, -1, :] >= 1).int()
-
-#     # Fix edge cases (when a speech starts in the last frames)
-#     if (prob_th == 1).nonzero().shape[0] % 2 == 1:
-#         prob_th = torch.cat(
-#             (prob_th, torch.Tensor([1.0]).unsqueeze(0).unsqueeze(2)), dim=1
-#         )
-
-#     # Where prob_th is 1 there is a change
-#     indexes = (prob_th == 1).nonzero()[:, 1].reshape(-1, 2)
-
-#     # Remove 1 from end samples
-#     indexes[:, -1] = indexes[:, -1] - 1
-
-#     # From indexes to samples
-#     seconds = (indexes * time_resolution).float()
-#     samples = (sample_rate * seconds).round().int()
-
-#     if output_value == "seconds":
-#         energy_boundaries = seconds
-#     else:
-#         energy_boundaries = samples
-#     bounds = []
-#     for j in range(energy_boundaries.shape[0]):
-#         start_en = boundaries[0] + energy_boundaries[j, 0]
-#         end_end = boundaries[0] + energy_boundaries[j, 1]
-#         bounds.append([start_en, end_end])
-#     print("bounds", bounds)
-#     return bounds

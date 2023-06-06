@@ -14,7 +14,15 @@ import pathlib
 import collections
 import logging
 import cfg
-
+from speechbrain.lobes.features import Fbank
+from speechbrain.processing.features import (
+    STFT,
+    spectral_magnitude,
+    Filterbank,
+    DCT,
+    Deltas,
+    ContextWindow,
+)
 
 def get_nonlinear(config_str, channels):
     nonlinear = nn.Sequential()
@@ -398,20 +406,30 @@ class get_embedding:
         checkpoints_dir = "/ssd2/voiceprint-recognition-system/src/nn/CKPT-EPOCH-80-00_16k"
     ):
         super(get_embedding, self).__init__()
-        self.device = torch.device('cuda')
-        # self.load_s = torchaudio.load()
+        self.device = torch.device('cuda:0')
+        self.n_mels = n_mels
+        self.sample_rate = sample_rate
+        # self.FBank = Fbank(n_mels=n_mels,left_frames=0,right_frames=0)
         self.FBank = FBank(n_mels=n_mels,sample_rate=sample_rate,mean_nor=True)
-        self.embedding_model = CAMPPlus(feat_dim = n_mels, embedding_size = embedding_size)
-        self.embedding_model.load_state_dict(torch.load(os.path.join(checkpoints_dir,'embedding_model.ckpt')))
-        self.model = self.embedding_model.to(self.device).eval()
-        
+        # self.FBank = Filterbank(n_mels=n_mels,sample_rate=sample_rate)
+        # self.FBank = torchaudio.compliance.kaldi.fbank(num_mel_bins=n_mels,sample_frequency=sample_rate)
+        # self.FBank = self.FBank.to(self.device).eval()
+        self.model = CAMPPlus(feat_dim = n_mels, embedding_size = embedding_size)
+        self.model.load_state_dict(torch.load(os.path.join(checkpoints_dir,'embedding_model.ckpt')))
+        self.model = self.model.to(self.device).eval()
+
+
     def encode_batch(self, x):
         # wav, fs = self.load_s(x)
         # assert fs == 16000, f"The sample rate of wav is {fs} and inconsistent with that of the pretrained model."
-        feat = self.FBank(x)
+        # if len(x.shape) == 1:
+        #     x = x.unsqueeze(0)
+        assert x.device == self.device
+        feat = self.FBank(x)#[0]
+        # feat = feat - feat.mean(0, keepdim=True)
         # print(feat.shape,"123")#  torch.Size([4435, 80])
         feat = feat.unsqueeze(0)
-        feat = feat.to(self.device)
+
         emb = self.model(feat)#.detach().cpu().numpy()
 
         return emb

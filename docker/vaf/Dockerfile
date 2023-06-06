@@ -1,4 +1,4 @@
-FROM zhaosheng/vaf_clean:v1.0
+FROM zhaosheng/vaf_clean:v2.0
 ADD src.tar.gz /VAF
 WORKDIR /VAF/src
 RUN chmod +x /VAF/src/start.sh

@@ -102,7 +102,7 @@ def pipeline(request_form, file_mode="file"):
     outinfo.log_time(name="resample_16k")
     # STEP 3: Encoding
     logger.info(f"\t\t Start encoding ... ")
-    encode_result = encode(wav_torch_raw=vad_result["wav_torch"])
+    encode_result,outinfo = encode(wav_torch_raw=vad_result["wav_torch"],action_type="test",outinfo=outinfo)
     logger.info(f"\t\t End encoding ... ")
     # =========================LOG TIME=========================
     outinfo.log_time(name="encode_time")

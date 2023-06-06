@@ -121,7 +121,7 @@ def test(outinfo, pool=False):
             save_days=cfg.MINIO["test_save_days"],
         )
         try:
-            html_content, vue_k, vue_kwd = get_html(outinfo.raw_minio_file_url, outinfo.spkid)
+            _, vue_k, vue_kwd = get_html(outinfo.raw_minio_file_url, outinfo.spkid)
         except Exception as e:
             html_content = ""
             vue_k = ""
@@ -148,7 +148,7 @@ def test(outinfo, pool=False):
             "hit_status": 1,
             "hit_scores": hit_scores,
             "top_10": top_10,
-            "content_text": html_content,
+            "content_text": "",
             "vue_k": vue_k,
             "vue_kwd": vue_kwd,
             "gender": outinfo.gender_result.get("text_lab", ""),
