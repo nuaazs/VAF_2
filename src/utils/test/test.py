@@ -19,7 +19,7 @@ from utils.orm import to_database
 from utils.preprocess import check_clip
 from utils.orm import get_blackid
 from utils.html import get_html
-from utils.preprocess import remove_fold_and_file
+from utils.preprocess.remove_fold import remove_fold_and_file
 import cfg
 
 # log
@@ -31,7 +31,7 @@ def save_audio(path: str,
     tensor = tensor.reshape(-1)
     torchaudio.save(path, tensor.unsqueeze(0), sampling_rate, bits_per_sample=16)
 
-def test(outinfo, pool=False):
+def test(outinfo, test_result,pool=False):
     """Audio reasoning, compare the audio features with the black library in full, and return the result.
 
     Args:
@@ -55,12 +55,13 @@ def test(outinfo, pool=False):
     inbase_list = []
     check_result_dict = {}
     for model_name in outinfo.embeddings_dict.keys():
-        is_inbase, check_result = test_wav(
-            embedding=outinfo.embeddings_dict[model_name],
-            black_limit=cfg.BLACK_TH[model_name],
-            embedding_type=model_name,
-        )
-        inbase_list.append(is_inbase)
+        # is_inbase, check_result = test_wav(
+        #     embedding=outinfo.embeddings_dict[model_name],
+        #     black_limit=cfg.BLACK_TH[model_name],
+        #     embedding_type=model_name,
+        # )
+        check_result = test_result[model_name]
+        inbase_list.append(check_result["inbase"])
         check_result_dict[model_name]=check_result
 
         # save to redis test db
@@ -102,7 +103,7 @@ def test(outinfo, pool=False):
         timestr = now_time_str.replace(" ", "_").replace(":", "_")
         filename = outinfo.spkid + "_" + timestr + "_vad.wav"
         temp_save_path = f"{cfg.TEMP_PATH}/{outinfo.spkid}/{filename}"
-        save_audio(temp_save_path, outinfo.wav_vad, sampling_rate=cfg.SR)
+        save_audio(temp_save_path, outinfo.wav_vad.clone().detach().cpu(), sampling_rate=cfg.SR)
         outinfo.preprocessed_file_path = upload_file(
             bucket_name="preprocessed",
             filepath=temp_save_path,
@@ -113,7 +114,7 @@ def test(outinfo, pool=False):
         # save to minio
         filename_raw = outinfo.spkid + "_" + timestr + "_raw.wav"
         temp_save_path_raw = f"{cfg.TEMP_PATH}/{outinfo.spkid}/{filename_raw}"
-        save_audio(temp_save_path_raw, outinfo.wav, sampling_rate=cfg.SR)
+        save_audio(temp_save_path_raw, outinfo.wav.clone().detach().cpu(), sampling_rate=cfg.SR)
         outinfo.raw_minio_file_url = upload_file(
             bucket_name="preprocessed",
             filepath=temp_save_path_raw,

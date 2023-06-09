@@ -6,14 +6,15 @@ from utils.preprocess import save_url
 from utils.preprocess import save_file
 from utils.preprocess import vad
 from utils.preprocess import read_wav_data, resample
-from utils.encoder import encode
+from utils.encoder import encode,only_encode
 from utils.register import register
 from utils.test import test
 from utils.info import OutInfo
-from utils.preprocess import remove_fold_and_file
+from utils.preprocess.remove_fold import remove_fold_and_file
 from utils.cmd import run_cmd
 import speechbrain
 import numpy as np
+import torch
 # cfg
 import cfg
 
@@ -76,21 +77,26 @@ def pipeline(request_form, file_mode="file"):
             return outinfo.response_error(spkid=new_spkid, err_type=4, message=str(e))
 
     outinfo.wav = read_wav_data(filepath)
-    
-    if len(outinfo.wav.shape) > 1:
-        outinfo.wav = outinfo.wav[0]
+    outinfo.wav = outinfo.wav.to("cuda:0")
+    # print(outinfo.wav.shape)
+    if len(outinfo.wav.shape) < 2:
+        outinfo.wav = outinfo.wav.unsqueeze(0)
     outinfo.wav_vad = outinfo.wav
     if not do_vad:
         vad_result = {"wav_torch":outinfo.wav_vad}
     else:
+        # STEP 2: VAD``
+        # TO GPU
+        
         # STEP 2: VAD
         logger.info(f"\t\t Doing VAD ... ")
-        if len(outinfo.wav.shape) == 1:
-            outinfo.wav = outinfo.wav.unsqueeze(0)
+        assert outinfo.wav.device == torch.device("cuda:0")
         vad_result = vad(wav=outinfo.wav, spkid=new_spkid, action_type="test", save=False,outinfo=outinfo)
         outinfo.after_length = vad_result["after_length"]
         outinfo.before_length = vad_result["before_length"]
-        outinfo.wav_vad = vad_result["wav_torch"]
+        outinfo.wav_vad = vad_result["wav_torch"].clone()
+        outinfo.wav_vad.to("cuda:0")
+        assert outinfo.wav_vad.device == torch.device("cuda:0")
         outinfo.preprocessed_file_path = vad_result["preprocessed_file_path"]
         logger.info(f"\t\t VAD Success! Before: {vad_result['before_length']}, After: {vad_result['after_length']}")
         # =========================LOG TIME=========================
@@ -102,7 +108,7 @@ def pipeline(request_form, file_mode="file"):
     outinfo.log_time(name="resample_16k")
     # STEP 3: Encoding
     logger.info(f"\t\t Start encoding ... ")
-    encode_result,outinfo = encode(wav_torch_raw=vad_result["wav_torch"],action_type="test",outinfo=outinfo)
+    encode_result,outinfo = only_encode(wav_torch_raw=vad_result["wav_torch"],action_type="test",outinfo=outinfo)
     logger.info(f"\t\t End encoding ... ")
     # =========================LOG TIME=========================
     outinfo.log_time(name="encode_time")

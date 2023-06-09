@@ -274,9 +274,6 @@ class lyxx_VAD(Pretrained):
         # vad_th_old[vad_th_old == 1] = 0
         # vad_th_old[vad_th_old == 2] = 1
         # print(vad_th_old[0,:,0])
-
-        if vad_prob.device == torch.device("cpu"):
-            vad_prob = vad_prob.to("cuda:0")
         vad_prob[vad_prob >= activation_th] = 1
         vad_prob[vad_prob < activation_th] = 0
         return vad_prob
@@ -821,24 +818,8 @@ class lyxx_VAD(Pretrained):
             (e.g, [1.0, 1.5, 5,.0 6.0] means that we have two speech segment;
              one from 1.0 to 1.5 seconds and another from 5.0 to 6.0 seconds).
         """
-
-        # Fetch audio file from web if not local
-        if apply_energy_VAD_before:
-
-            boundaries = self.energy_VAD_before_nn(
-                wav_data,
-                activation_th=en_activation_th,
-                deactivation_th=en_deactivation_th,
-            )
-            upsampled_boundaries = self.upsample_boundaries(boundaries, wav_data)
-            wav_data = wav_data[upsampled_boundaries > 0.5].unsqueeze(0)
-            if outinfo:
-                # =========================LOG TIME=========================
-                outinfo.log_time(name="vad:apply_energy_VAD_before_used_time")
-
-        # chang20230625
-        wav_data=wav_data.to("cuda:0")
-
+        wav_data = wav_data.to("cuda:0")
+        assert wav_data.device == torch.device("cuda:0")
         # Computing speech vs non speech probabilities
         prob_chunks = self.get_speech_prob_file(
             wav_data,
@@ -849,28 +830,27 @@ class lyxx_VAD(Pretrained):
         if outinfo:
             # =========================LOG TIME=========================
             outinfo.log_time(name="vad:get_speech_prob_file_used_time")
-
+        # prob_chunks = prob_chunks.to("cuda:0")
+        assert prob_chunks.device == torch.device("cuda:0")
+        # move prob_chunks to cpu
+        # prob_chunks = prob_chunks.to("cuda:0")
+        # print(prob_chunks.device)
+        assert prob_chunks.device == torch.device("cuda:0")
         prob_th = self.apply_threshold(
             prob_chunks,
             activation_th=activation_th,
             deactivation_th=deactivation_th,
         ).float()
-        prob_th = prob_th.to("cuda:0")
-        # Compute the boundaries of the speech segments
         assert prob_th.device == torch.device("cuda:0")
+        # prob_th = prob_th.to("cuda:0")
+        # Compute the boundaries of the speech segments
+        # assert prob_th.device == torch.device("cuda:0")
         if outinfo:
             # =========================LOG TIME=========================
             outinfo.log_time(name="vad:apply_threshold_used_time")
 
         boundaries = self.get_boundaries(prob_th, output_value="seconds")
-
-        # chang20230625
-        boundaries = boundaries.to("cuda:0")
-        # boundaries = self.merge_close_segments(boundaries, close_th=close_th)
         assert boundaries.device == torch.device("cuda:0")
-
-
-
         if outinfo:
             # =========================LOG TIME=========================
             outinfo.log_time(name="vad:get_boundaries_used_time")
@@ -885,20 +865,24 @@ class lyxx_VAD(Pretrained):
         if outinfo:
             # =========================LOG TIME=========================
             outinfo.log_time(name="vad:apply_energy_VAD_used_time")
-        # assert boundaries.device == torch.device("cpu")
+
         # Merge short segments
         boundaries = self.merge_close_segments(boundaries, close_th=close_th)
+        assert boundaries.device == torch.device("cuda:0")
         if outinfo:
             # =========================LOG TIME=========================
             outinfo.log_time(name="vad:merge_close_segments_used_time")
         # # Remove short segments
         boundaries = self.remove_short_segments(boundaries, len_th=len_th)
+        assert boundaries.device == torch.device("cuda:0")
         if outinfo:
             # =========================LOG TIME=========================
             outinfo.log_time(name="vad:remove_short_segments_used_time")
 
         # Double check speech segments
         if double_check:
+            assert boundaries.device == torch.device("cuda:0")
+            assert wav_data.device == torch.device("cuda:0")
             boundaries = self.double_check_speech_segments(
                 boundaries, wav_data, speech_th=speech_th
             )

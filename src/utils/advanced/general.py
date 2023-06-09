@@ -8,7 +8,7 @@ import numpy as np
 import speechbrain
 import torchaudio
 from flask import request
-
+import torch
 # utils
 from utils.orm import check_spkid
 from utils.log import logger
@@ -20,16 +20,13 @@ from utils.encoder import encode
 from utils.register import register
 from utils.test import test
 from utils.info import OutInfo
-from utils.preprocess import remove_fold_and_file
+from utils.preprocess.remove_fold import remove_fold_and_file
 from utils.cmd import run_cmd
+from utils.orm import to_log
 import cfg
-
-# if cfg.LOAD_GENDER_MODEL:
-#     from utils.gender import gender_classify
 
 if cfg.FILTER_MANDARIN:
     from utils.preprocess.mandarin_filter import filter_mandarin
-
 
 def general(request_form, file_mode="url", action_type="test"):
     """_summary_
@@ -111,16 +108,26 @@ def general(request_form, file_mode="url", action_type="test"):
     outinfo.log_time(name="download_used_time")
     logger.info(f"\t\t Download success. Filepath: {filepath}")
     outinfo.wav = read_wav_data(wav_filepath=filepath)
+    # TO GPU
+    outinfo.wav = outinfo.wav.to("cuda:0")
+    
+
     # STEP 2: VAD
     logger.info(f"\t\t Doing VAD ... ")
     save = False
     if only_vad:
         save = True
+
+    assert outinfo.wav.device == torch.device("cuda:0")
     vad_result = vad(wav=outinfo.wav, spkid=new_spkid, action_type=action_type, save=save,outinfo=outinfo)
     outinfo.after_length = vad_result["after_length"]
     outinfo.before_length = vad_result["before_length"]
-    outinfo.wav_vad = vad_result["wav_torch"]
-    vad_result["wav_torch"] = vad_result["wav_torch"].to("cuda:0")
+    outinfo.wav_vad = vad_result["wav_torch"].clone()
+    outinfo.wav_vad.to("cuda:0")
+
+    assert outinfo.wav_vad.device == torch.device("cuda:0")
+
+
     outinfo.preprocessed_file_path = vad_result["preprocessed_file_path"]
     logger.info(f"\t\t VAD Success! Before: {vad_result['before_length']}, After: {vad_result['after_length']}")
     # =========================LOG TIME=========================
@@ -154,30 +161,27 @@ def general(request_form, file_mode="url", action_type="test"):
         }
         remove_fold_and_file(new_spkid)
         return response
+    assert outinfo.wav_vad.device == torch.device("cuda:0")
+    
+    raw_wav_length = len(outinfo.wav.reshape(-1))/cfg.SR
+    after_wav_length = len(outinfo.wav_vad.reshape(-1))/cfg.SR
+    if after_wav_length < cfg.MIN_LENGTH_TEST:
+        remove_fold_and_file(new_spkid)
+        return outinfo.response_error(spkid=new_spkid, err_type=6, message=f"Length too short, length:{after_wav_length}")
 
-    vad_result["wav_torch"] = resample(vad_result["wav_torch"], cfg.SR, cfg.ENCODE_SR)
-    if len(vad_result["wav_torch"].shape) > 1:
-        vad_result["wav_torch"] = vad_result["wav_torch"][0]
-    logger.info(f"\t\t vad_result wav_torch shape {vad_result['wav_torch'].shape} ")
+
+    outinfo.wav_vad = resample(outinfo.wav_vad, cfg.SR, cfg.ENCODE_SR)
+    
+    if len(outinfo.wav_vad.shape) > 1:
+        outinfo.wav_vad = outinfo.wav_vad[0]
+    logger.info(f"\t\t vad_result wav_torch shape {outinfo.wav_vad.shape} ")
     # =========================LOG TIME=========================
     outinfo.log_time(name="resample_16k")
+    #vad_result["wav_torch"] = vad_result["wav_torch"].to("cuda:0")
 
-    # if gender and cfg.LOAD_GENDER_MODEL:
-    #     try:
-    #         print("Gender")
-    #         result=gender_classify(vad_result["wav_torch"])
-    #     except Exception as e:
-    #         remove_fold_and_file(new_spkid)
-    #         return outinfo.response_error(spkid=new_spkid, err_type=12, message=str(e))
-    #     outinfo.gender_result=result
-    #     if only_gender:
-    #         remove_fold_and_file(new_spkid)
-    #         return result
-
-    # STEP 2.5: filter_mandarin
     if cfg.FILTER_MANDARIN:
-        logger.info(f"\t\t Doing filter_mandarin ... ")
-        is_mandarin, lang, score = filter_mandarin(wavdata=vad_result["wav_torch"],score_threshold=cfg.FILTER_MANDARIN_TH) # True,result[3][0],score
+        assert outinfo.wav_vad.device == torch.device("cuda:0")
+        is_mandarin, lang, score = filter_mandarin(wavdata=outinfo.wav_vad,score_threshold=cfg.FILTER_MANDARIN_TH) # True,result[3][0],score
         if not is_mandarin:
             remove_fold_and_file(new_spkid)
             return outinfo.response_error(spkid=new_spkid, err_type=7, message=f"Language is {lang}, score is {score}")
@@ -185,13 +189,44 @@ def general(request_form, file_mode="url", action_type="test"):
         outinfo.log_time(name="filter_mandarin")
         
     # STEP 3: Encoding
-    encode_result,outinfo = encode(wav_torch_raw=vad_result["wav_torch"], action_type=action_type, outinfo=outinfo)
+    assert outinfo.wav_vad.device == torch.device("cuda:0")
+    encode_result,outinfo,test_result = encode(wav_torch_raw=outinfo.wav_vad, action_type=action_type, outinfo=outinfo)
     # =========================LOG TIME=========================
     outinfo.log_time(name="encode_time")
     if encode_result["pass"]:
         embeddings_dict = encode_result["embeddings_dict"]
     else:
         remove_fold_and_file(new_spkid)
+        if encode_result["err_type"] == 88:
+            response = {
+                "code": 2000,
+                "status": "success",
+                "inbase": False,
+                "err_msg": "null",
+                "before_vad_length": outinfo.before_length,
+                "after_vad_length": outinfo.after_length,
+                "hit_scores": encode_result["best_score"],
+                "blackbase_phone": encode_result["blackbase_phone"],
+                "top_10": encode_result["top_10"],
+                "used_time": outinfo.used_time,
+                "gender": outinfo.gender_result,
+            }
+            to_log(
+                phone=outinfo.spkid,
+                action_type=1,
+                err_type=88,
+                message=encode_result["msg"],
+                file_url=outinfo.oss_path,
+                preprocessed_file_path=outinfo.preprocessed_file_path,
+                valid_length=outinfo.after_length,
+                show_phone=outinfo.show_phone,
+                before_length=outinfo.before_length,
+                after_length=outinfo.after_length
+            )
+            # remove_fold_and_file(outinfo.spkid)
+            return response
+            # return outinfo.response_error(spkid=new_spkid, err_type=encode_result["err_type"],
+            #                               message=encode_result["msg"], before_score=encode_result["before_score"])
         return outinfo.response_error(spkid=new_spkid, err_type=encode_result["err_type"],
                                       message=encode_result["msg"])
     outinfo.embeddings_dict = embeddings_dict
@@ -200,7 +235,7 @@ def general(request_form, file_mode="url", action_type="test"):
     if action_num == 1:
         logger.info(f"\t\t Testing ... ")
         outinfo.class_num = 999
-        return test(outinfo)
+        return test(outinfo,test_result)
     elif action_num == 2:
         logger.info(f"\t\t Registering ... ")
         outinfo.class_num = register_date

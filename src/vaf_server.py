@@ -69,6 +69,7 @@ def index():
 # Register Or Reasoning.
 @app.route("/<action_type>/<file_mode>", methods=["POST"])
 def register_or_reasoning(action_type, file_mode):
+    torch.cuda.empty_cache()
     """register or reasoning API
 
     Args:
@@ -128,6 +129,7 @@ def get_fbank(file_mode):
 
 @app.route("/get_embedding/<file_mode>", methods=["POST"])
 def get_embedding(file_mode):
+    torch.cuda.empty_cache()
     """get vad result
 
     Args:
@@ -136,11 +138,12 @@ def get_embedding(file_mode):
     Returns:
         json: response
     """
+    # print("get_embedding")
     try:
         response = encoder_pipline(request_form=request.form, file_mode=file_mode)
         torch.cuda.empty_cache()
         return json.dumps(response, ensure_ascii=False)
-        
+    
     except Exception as e:
         torch.cuda.empty_cache()
         return json.dumps({"code": 4000, "status": "fail", "err_type": 1, "err_msg": str(e)})

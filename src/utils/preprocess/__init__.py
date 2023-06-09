@@ -11,6 +11,6 @@ from utils.preprocess.resample import resample
 from utils.preprocess.classify import classify
 from utils.preprocess.mydenoiser import denoise_wav
 from utils.preprocess.remove_segments import remove
-from utils.preprocess.remove_fold import remove_fold_and_file
+# from utils.preprocess.remove_fold import remove_fold_and_file
 from utils.preprocess.resample import read_wav_data
 # from utils.preprocess.mandarin_filter import filter_mandarin

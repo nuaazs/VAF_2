@@ -6,3 +6,4 @@
 from utils.encoder.similarity import similarity
 # from utils.encoder.encoder import spkreg
 from utils.encoder.encode import encode
+from utils.encoder.encode import only_encode

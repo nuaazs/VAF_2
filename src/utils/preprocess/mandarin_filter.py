@@ -12,8 +12,9 @@ def filter_mandarin(wavdata,score_threshold=0.9):
     Filter the mandarin audio
     """
     # read the wav file
-    waveform = wavdata.to(cfg.DEVICE)
-    result = language_id.classify_batch(waveform)
+    # waveform = wavdata.to(cfg.DEVICE)
+    assert wavdata.device == torch.device("cuda:0")
+    result = language_id.classify_batch(wavdata)
     score = result[1].exp()
     if score > score_threshold and result[3][0].startswith("zh"):
         return True,result[3][0],score

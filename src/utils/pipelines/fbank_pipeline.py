@@ -13,7 +13,7 @@ from utils.encoder import encode
 from utils.register import register
 from utils.test import test
 from utils.info import OutInfo
-from utils.preprocess import remove_fold_and_file
+from utils.preprocess.remove_fold import remove_fold_and_file
 from utils.cmd import run_cmd
 import speechbrain
 import numpy as np

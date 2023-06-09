@@ -43,10 +43,11 @@ def get_vad_result(wav,outinfo=None):
     # print(wav.shape)
     assert wav.shape[0] == 1
     assert len(wav.shape) == 2
-    wav.to(cfg.DEVICE)
-    if outinfo:
-        # =========================LOG TIME=========================
-        outinfo.log_time(name="vad:to_cuda_used_time")
+    assert wav.device == torch.device("cuda:0")
+    # wav.to(cfg.DEVICE)
+    # if outinfo:
+    #     # =========================LOG TIME=========================
+    #     outinfo.log_time(name="vad:to_cuda_used_time")
     boundaries = VAD.get_speech_segments(
         wav_data=wav,
         large_chunk_size=cfg.large_chunk_size,
@@ -75,6 +76,7 @@ def get_vad_result(wav,outinfo=None):
 
 def vad(wav, spkid, action_type=None, device=cfg.DEVICE,save=False,outinfo=None):
     # wav = wav.to(device)
+    assert wav.device == torch.device("cuda:0")
     before_vad_length = len(wav[0]) / cfg.SR
 
     spk_dir = os.path.join(cfg.TEMP_PATH, str(spkid))
@@ -90,7 +92,7 @@ def vad(wav, spkid, action_type=None, device=cfg.DEVICE,save=False,outinfo=None)
 
     # save
     if cfg.SAVE_PREPROCESSED_OSS or save:
-        save_audio(final_save_path, output_wav, sampling_rate=cfg.SR)
+        save_audio(final_save_path, output_wav.clone().detach().cpu(), sampling_rate=cfg.SR)
         preprocessed_file_path = upload_file(
             bucket_name="preprocessed",
             filepath=final_save_path,
@@ -101,7 +103,7 @@ def vad(wav, spkid, action_type=None, device=cfg.DEVICE,save=False,outinfo=None)
         preprocessed_file_path = ""
 
     after_vad_length = len(output_wav) / cfg.SR
-    output_wav = torch.FloatTensor(output_wav)
+    # output_wav = torch.FloatTensor(output_wav)
     
     result = {
         "wav_torch": output_wav,

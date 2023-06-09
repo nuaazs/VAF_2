@@ -415,6 +415,7 @@ def to_log(
         before_length=0,
         after_length=0,
 ):
+    message=message.replace("'","")
     date_num = int(time.strftime("%d", time.localtime()))
     query_sql = f"INSERT INTO log_{date_num} (phone,show_phone,action_type,time,err_type, message,file_url,\
                  preprocessed_file_url,before_length,after_length) VALUES ('{phone}','{show_phone}','{action_type}', curtime(),'{err_type}', \
