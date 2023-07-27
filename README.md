@@ -13,7 +13,7 @@
 <br>
 <br>
 </div>
-[**简体中文**](./README_cn.md) | [**Roadmap**]() | [**Docs**](./docs.md) | [**Runtime**]() | [**Pretrained Models**]() 
+[简体中文](./README_cn.md) | [Roadmap]() | [Docs](./docs.md) | [Runtime]() | [Pretrained Models]() 
 
 
 
