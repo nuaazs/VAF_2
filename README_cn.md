@@ -4,9 +4,9 @@
 
 
 
- [**文档**](./docs/main.md) |  [**预训练模型**](./docs/models.md) | [**电信测试pipeline**](./docs/pipeline.md) | [**测试结果**](./docs/test_result.md)
+ [文档](./docs/main.md) |  [预训练模型](./docs/models.md) | [电信测试pipeline](./docs/pipeline.md) | [测试结果](./docs/test_result.md)
 
- [**部署文档**](./docs/icnoc_deploy_README.md) 
+ [部署文档](./docs/icnoc_deploy_README.md) 
 
 
 
