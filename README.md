@@ -1,12 +1,11 @@
 <div align=center>
 <h1>D-Guard Speaker Recognition System</h1>
-<img src="D-guard.png"  width="400" height="80" />
+<img src="D-guard.png"  width="380" height="75" />
 </div>
 <div align=center>
     <img src="https://img.shields.io/badge/License-Apache%202.0-brightgreen.svg" />
 <img src="https://img.shields.io/badge/Pytorch-1.10.1-green.svg"  />
 <img src="https://img.shields.io/badge/Python-3.9-blue.svg"  />
-<img src="https://img.shields.io/badge/MINIO-blue.svg"  />
 <img src="https://img.shields.io/badge/Long-Yuan-green.svg"  />
 </div>
 <div>
