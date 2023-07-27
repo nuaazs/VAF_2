@@ -34,5 +34,5 @@ The D-Guard Speaker Recognition System is a full-stack production solution for v
 
 
 **Please note:**
-1. The project is still under development, and the models have not been open-sourced.
+1. The project is **still under development**, and the models have not been open-sourced.
 2. This project has borrowed extensively from the code of [SpeechBrain](https://github.com/speechbrain/speechbrain), [3D-Speaker](https://github.com/alibaba-damo-academy/3D-Speaker), [FunASR](https://github.com/alibaba-damo-academy/FunASR), and [WeSpeaker](https://github.com/wenet-e2e/wespeaker).
