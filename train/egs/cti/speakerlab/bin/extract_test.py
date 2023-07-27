@@ -9,11 +9,11 @@ import torchaudio
 from kaldiio import WriteHelper
 from tqdm import tqdm
 
-from speakerlab.utils.builder import build
-from speakerlab.utils.utils import get_logger
-from speakerlab.utils.config import build_config
-from speakerlab.utils.fileio import load_wav_scp
-from speakerlab.utils.builder import dynamic_import
+from dguard.utils.builder import build
+from dguard.utils.utils import get_logger
+from dguard.utils.config import build_config
+from dguard.utils.fileio import load_wav_scp
+from dguard.utils.builder import dynamic_import
 parser = argparse.ArgumentParser(description='Extract embeddings for evaluation.')
 parser.add_argument('--exp_dir', default='', type=str, help='Exp dir')
 parser.add_argument('--data', default='', type=str, help='Data dir')
@@ -62,7 +62,7 @@ def main():
     # torch.save(pretrained_state, save_dir / 'CAMPP.pth')
     # load model
     # CAMPPLUS_COMMON = {
-    # 'obj': 'speakerlab.models.campplus.DTDNN.CAMPPlus',
+    # 'obj': 'dguard.models.campplus.DTDNN.CAMPPlus',
     # 'args': {
     #     'feat_dim': 80,
     #     'embedding_size': 192,

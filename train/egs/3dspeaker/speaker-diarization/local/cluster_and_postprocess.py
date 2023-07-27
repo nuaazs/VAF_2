@@ -12,8 +12,8 @@ import pickle
 import pathlib
 import numpy as np
 
-from speakerlab.utils.config import build_config
-from speakerlab.utils.builder import build
+from dguard.utils.config import build_config
+from dguard.utils.builder import build
 
 parser = argparse.ArgumentParser(description='Cluster embeddings and output rttm files')
 parser.add_argument('--conf', default=None, help='Config file')

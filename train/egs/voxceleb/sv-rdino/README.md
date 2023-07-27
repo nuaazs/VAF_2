@@ -27,7 +27,7 @@ pip install modelscope
 # RDINO trained on VoxCeleb
 model_id=damo/speech_rdino_ecapa_tdnn_sv_en_voxceleb_16k
 # Run inference
-python speakerlab/bin/infer_sv_rdino.py --model_id $model_id --wavs $wav_path
+python dguard/bin/infer_sv_rdino.py --model_id $model_id --wavs $wav_path
 ```
 
 ## Citations

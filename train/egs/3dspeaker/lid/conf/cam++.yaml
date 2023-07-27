@@ -31,26 +31,26 @@ num_classes: null
 
 
 wav_reader:
-  obj: speakerlab.process.processor.WavReader
+  obj: dguard.process.processor.WavReader
   args:
     duration: <wav_len>
     sample_rate: <sample_rate>
     speed_pertub: <speed_pertub>
 
 label_encoder:
-  obj: speakerlab.process.processor.SpkLabelEncoder
+  obj: dguard.process.processor.SpkLabelEncoder
   args:
     data_file: <data>
 
 feature_extractor:
-  obj: speakerlab.process.processor.FBank
+  obj: dguard.process.processor.FBank
   args:
     n_mels: <fbank_dim>
     sample_rate: <sample_rate>
     mean_nor: True
 
 augmentations:
-  obj: speakerlab.process.processor.SpkVeriAug
+  obj: dguard.process.processor.SpkVeriAug
   args:
     aug_prob: <aug_prob>
     noise_file: <noise>
@@ -63,12 +63,12 @@ preprocessor:
   feature_extractor: <feature_extractor>
 
 epoch_counter:
-  obj: speakerlab.utils.epoch.EpochCounter
+  obj: dguard.utils.epoch.EpochCounter
   args:
     limit: <num_epoch>
 
 dataset:
-  obj: speakerlab.dataset.dataset.WavSVDataset
+  obj: dguard.dataset.dataset.WavSVDataset
   args:
     data_file: <data>
     preprocessor: <preprocessor>
@@ -83,13 +83,13 @@ dataloader:
     drop_last: True
 
 embedding_model:
-  obj: speakerlab.models.campplus.DTDNN.CAMPPlus
+  obj: dguard.models.campplus.DTDNN.CAMPPlus
   args:
     feat_dim: <fbank_dim>
     embedding_size: <embedding_size>
 
 classifier:
-  obj: speakerlab.models.campplus.classifier.LinearClassifier
+  obj: dguard.models.campplus.classifier.LinearClassifier
   args:
     input_dim: <embedding_size>
     out_neurons: <num_classes>
@@ -104,7 +104,7 @@ optimizer:
     weight_decay: 0.0005
 
 lr_scheduler:
-  obj: speakerlab.process.scheduler.StepScheduler
+  obj: dguard.process.scheduler.StepScheduler
   args:
     optimizer: <optimizer>
     lr: <lr>
@@ -112,11 +112,11 @@ lr_scheduler:
     step_per_epoch:
 
 loss:
-  obj: speakerlab.loss.margin_loss.EntropyLoss
+  obj: dguard.loss.margin_loss.EntropyLoss
   args: {}
 
 margin_scheduler:
-  obj: speakerlab.process.scheduler.MarginScheduler
+  obj: dguard.process.scheduler.MarginScheduler
   args:
     criterion: <loss>
     initial_margin: 0.0
@@ -126,7 +126,7 @@ margin_scheduler:
     step_per_epoch:
 
 checkpointer:
-  obj: speakerlab.utils.checkpoint.Checkpointer
+  obj: dguard.utils.checkpoint.Checkpointer
   args:
     checkpoints_dir: <exp_dir>/models
     recoverables:

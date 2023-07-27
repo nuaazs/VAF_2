@@ -9,11 +9,11 @@ import torchaudio
 import importlib
 from kaldiio import WriteHelper
 from tqdm import tqdm
-import speakerlab.models as M
-from speakerlabduanyibo.utils.builder import build
-from speakerlabduanyibo.utils.utils import get_logger
-from speakerlabduanyibo.utils.config import build_config
-from speakerlabduanyibo.utils.fileio import load_wav_scp
+import dguard.models as M
+from dguardduanyibo.utils.builder import build
+from dguardduanyibo.utils.utils import get_logger
+from dguardduanyibo.utils.config import build_config
+from dguardduanyibo.utils.fileio import load_wav_scp
 
 parser = argparse.ArgumentParser(description='Extract embeddings for evaluation.')
 parser.add_argument('--exp_dir', default='', type=str, help='Exp dir')
@@ -38,7 +38,7 @@ CKPT_PATH = {
 
 def main():
     args = parser.parse_args(sys.argv[1:])
-    config_file = os.path.join("/home/duanyibo/dyb/test_model/speakerlabduanyibo", 'config.yaml')
+    config_file = os.path.join("/home/duanyibo/dyb/test_model/dguardduanyibo", 'config.yaml')
     config = build_config(config_file)
     # rank = 0
     # world_size = 1

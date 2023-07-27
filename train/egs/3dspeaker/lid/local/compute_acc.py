@@ -5,7 +5,7 @@ import os
 import argparse
 import numpy as np
 import pandas as pd
-from speakerlab.utils.utils import get_utt2spk_dict
+from dguard.utils.utils import get_utt2spk_dict
 
 parser = argparse.ArgumentParser(description='Output the score.')
 parser.add_argument('--predict', default='', type=str, help='Prediction results')

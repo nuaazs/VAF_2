@@ -27,9 +27,9 @@ model_id=damo/speech_eres2net_sv_en_voxceleb_16k
 # ERes2Net trained on 200k labeled speakers
 model_id=damo/speech_eres2net_sv_zh-cn_16k-common
 # Run CAM++ or ERes2Net inference
-python speakerlab/bin/infer_sv.py --model_id $model_id --wavs $wav_path
+python dguard/bin/infer_sv.py --model_id $model_id --wavs $wav_path
 
 # RDINO trained on VoxCeleb
 model_id=damo/speech_rdino_ecapa_tdnn_sv_en_voxceleb_16k
 # Run rdino inference
-python speakerlab/bin/infer_sv_rdino.py --model_id $model_id --wavs $wav_path
+python dguard/bin/infer_sv_rdino.py --model_id $model_id --wavs $wav_path

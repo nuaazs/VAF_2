@@ -7,7 +7,7 @@ import yaml
 import numpy as np
 
 import torch
-from speakerlab.utils.fileio import load_yaml
+from dguard.utils.fileio import load_yaml
 
 def parse_config(config_file):
     if config_file.endwith('.yaml'):

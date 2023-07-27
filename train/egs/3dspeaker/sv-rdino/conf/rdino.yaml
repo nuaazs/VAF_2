@@ -54,7 +54,7 @@ dcf_c_miss: 1
 dcf_c_fa: 1
 
 dataset:
-  obj: speakerlab.dataset.dataset_rdino.RDINODataset
+  obj: dguard.dataset.dataset_rdino.RDINODataset
   args:
     data: <data>
     noise: <noise>
@@ -75,45 +75,45 @@ dataloader:
 
 
 student_ecapa:
-  obj: speakerlab.models.rdino.ECAPA_TDNN.ECAPA_TDNN
+  obj: dguard.models.rdino.ECAPA_TDNN.ECAPA_TDNN
   args:
     input_size: <n_mels>
     channels: [1024, 1024, 1024, 1024, 3072]
 
 teacher_ecapa:
-  obj: speakerlab.models.rdino.ECAPA_TDNN.ECAPA_TDNN
+  obj: dguard.models.rdino.ECAPA_TDNN.ECAPA_TDNN
   args:
     input_size: <n_mels>
     channels: [1024, 1024, 1024, 1024, 3072]
 
 student_head:
-  obj: speakerlab.models.rdino.RDINO_Head.RDINOHead
+  obj: dguard.models.rdino.RDINO_Head.RDINOHead
   args:
     in_dim: <embed_dim>
     out_dim: <out_dim>
     use_bn: <use_bn_in_head>
 
 teacher_head:
-  obj: speakerlab.models.rdino.RDINO_Head.RDINOHead
+  obj: dguard.models.rdino.RDINO_Head.RDINOHead
   args:
     in_dim: <embed_dim>
     out_dim: <out_dim>
     use_bn: <use_bn_in_head>
 
 student_model:
-  obj: speakerlab.models.rdino.combiner.Combiner
+  obj: dguard.models.rdino.combiner.Combiner
   args:
     backbone: <student_ecapa>
     head: <student_head>
 
 teacher_model:
-  obj: speakerlab.models.rdino.combiner.Combiner
+  obj: dguard.models.rdino.combiner.Combiner
   args:
     backbone: <teacher_ecapa>
     head: <teacher_head>
 
 dino_loss:
-  obj: speakerlab.loss.dino_loss.DINOLoss
+  obj: dguard.loss.dino_loss.DINOLoss
   args:
     out_dim: <out_dim>
     ncrops: <crop_total_num>
@@ -124,7 +124,7 @@ dino_loss:
 
 
 regularized_loss:
-  obj: speakerlab.loss.dino_loss.RegLoss
+  obj: dguard.loss.dino_loss.RegLoss
   args:
     out_dim: <out_dim>
     std_coeff: <std_coeff>

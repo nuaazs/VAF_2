@@ -12,10 +12,10 @@ import time
 import torch
 import torch.nn as nn
 import torch.distributed as dist
-import speakerlab.utils.utils as utils
-import speakerlab.utils.utils_rdino as utils_rdino
-from speakerlab.utils.config import build_config
-from speakerlab.utils.builder import build
+import dguard.utils.utils as utils
+import dguard.utils.utils_rdino as utils_rdino
+from dguard.utils.config import build_config
+from dguard.utils.builder import build
 
 parser = argparse.ArgumentParser(description='Regularized DINO Framework Training')
 parser.add_argument('--config', default='', type=str, help='Config file')

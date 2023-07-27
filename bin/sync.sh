@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # 设置源目录和目标目录
-source_dir="/home/zhaosheng/3D-Speaker/speakerlab"
-target_dir="/VAF/train/speakerlab"
+# source_dir="/home/zhaosheng/3D-Speaker/dguard"
+# target_dir="/VAF/train/dguard"
 
 source_dir2="/home/zhaosheng/3D-Speaker/egs"
 target_dir2="/VAF/train/egs"
@@ -21,12 +21,12 @@ sync_directories() {
 cron_expr="0 0 * * *"
 
 # 检查目标目录是否存在，若不存在则创建
-mkdir -p "$target_dir"
+# mkdir -p "$target_dir"
 mkdir -p "$target_dir2"
 mkdir -p "$target_dir3"
 
 # 执行一次初始同步
-sync_directories "$source_dir" "$target_dir"
+# sync_directories "$source_dir" "$target_dir"
 sync_directories "$source_dir2" "$target_dir2"
 sync_directories "$source_dir3" "$target_dir3"
 

@@ -4,7 +4,7 @@ augmentations:
     aug_prob: <aug_prob>
     noise_file: <noise>
     reverb_file: <reverb>
-  obj: speakerlab.process.processor.SpkVeriAug
+  obj: dguard.process.processor.SpkVeriAug
 batch_size: 512
 checkpointer:
   args:
@@ -13,12 +13,12 @@ checkpointer:
       classifier: <classifier>
       embedding_model: <embedding_model>
       epoch_counter: <epoch_counter>
-  obj: speakerlab.utils.checkpoint.Checkpointer
+  obj: dguard.utils.checkpoint.Checkpointer
 classifier:
   args:
     input_dim: <embedding_size>
     out_neurons: <num_classes>
-  obj: speakerlab.models.campplus.classifier.CosineClassifier
+  obj: dguard.models.campplus.classifier.CosineClassifier
 data: data/vox2_dev/train.csv
 dataloader:
   args:
@@ -32,17 +32,17 @@ dataset:
   args:
     data_file: <data>
     preprocessor: <preprocessor>
-  obj: speakerlab.dataset.dataset.WavSVDataset
+  obj: dguard.dataset.dataset.WavSVDataset
 embedding_model:
   args:
     embedding_size: <embedding_size>
     feat_dim: <fbank_dim>
-  obj: speakerlab.models.eres2net.ResNet.ERes2Net
+  obj: dguard.models.eres2net.ResNet.ERes2Net
 embedding_size: 192
 epoch_counter:
   args:
     limit: <num_epoch>
-  obj: speakerlab.utils.epoch.EpochCounter
+  obj: dguard.utils.epoch.EpochCounter
 exp_dir: exp/eres2net_base_vox_phone
 fbank_dim: 80
 feature_extractor:
@@ -50,18 +50,18 @@ feature_extractor:
     mean_nor: true
     n_mels: <fbank_dim>
     sample_rate: <sample_rate>
-  obj: speakerlab.process.processor.FBank
+  obj: dguard.process.processor.FBank
 label_encoder:
   args:
     data_file: <data>
-  obj: speakerlab.process.processor.SpkLabelEncoder
+  obj: dguard.process.processor.SpkLabelEncoder
 log_batch_freq: 100
 loss:
   args:
     easy_margin: false
     margin: 0.3
     scale: 32.0
-  obj: speakerlab.loss.margin_loss.ArcMarginLoss
+  obj: dguard.loss.margin_loss.ArcMarginLoss
 lr: 0.2
 lr_scheduler:
   args:
@@ -71,7 +71,7 @@ lr_scheduler:
     optimizer: <optimizer>
     step_per_epoch: null
     warmup_epoch: 5
-  obj: speakerlab.process.scheduler.WarmupCosineScheduler
+  obj: dguard.process.scheduler.WarmupCosineScheduler
 margin_scheduler:
   args:
     criterion: <loss>
@@ -80,7 +80,7 @@ margin_scheduler:
     increase_start_epoch: 20
     initial_margin: 0.0
     step_per_epoch: null
-  obj: speakerlab.process.scheduler.MarginScheduler
+  obj: dguard.process.scheduler.MarginScheduler
 min_lr: 5.0e-05
 noise: data/musan/wav.scp
 num_classes: 5994
@@ -109,4 +109,4 @@ wav_reader:
     duration: <wav_len>
     sample_rate: <sample_rate>
     speed_pertub: <speed_pertub>
-  obj: speakerlab.process.processor.WavReader
+  obj: dguard.process.processor.WavReader

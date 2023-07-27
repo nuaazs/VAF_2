@@ -8,8 +8,8 @@ import torchaudio
 import torch.nn.functional as F
 import torchaudio.compliance.kaldi as Kaldi
 
-from speakerlab.process.augmentation import NoiseReverbCorrupter
-from speakerlab.utils.fileio import load_data_csv
+from dguard.process.augmentation import NoiseReverbCorrupter
+from dguard.utils.fileio import load_data_csv
 
 
 class WavReader(object):

@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from speakerlab.utils.utils_rdino import trunc_normal_
+from dguard.utils.utils_rdino import trunc_normal_
 
 class RDINOHead(nn.Module):
     def __init__(

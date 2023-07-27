@@ -28,7 +28,7 @@ model_id=damo/speech_campplus_sv_en_voxceleb_16k
 # CAM++ trained on 200k labeled speakers
 model_id=damo/speech_campplus_sv_zh-cn_16k-common
 # Run inference
-python speakerlab/bin/infer_sv.py --model_id $model_id --wavs $wav_path
+python dguard/bin/infer_sv.py --model_id $model_id --wavs $wav_path
 ```
 
 ## Citations

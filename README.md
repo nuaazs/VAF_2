@@ -14,7 +14,7 @@
 </div>
 
 <div align=center>
-<a href="./README_cn.md">Chinese</a> | <a href="">Roadmap</a> | <a href="./docs.md">Docs</a> | <a href="">Runtime</a> | <a href="">Models</a> | <a href="./docs/icnoc_deploy_README.md">Deploy</a>
+<a href="./chinese.md">Chinese</a> | <a href="">Roadmap</a> | <a href="./docs.md">Docs</a> | <a href="">Runtime</a> | <a href="">Models</a> | <a href="./docs/icnoc_deploy_README.md">Deploy</a>
 </div>
 
 

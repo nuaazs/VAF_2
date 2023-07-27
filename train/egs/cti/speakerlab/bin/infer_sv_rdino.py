@@ -25,15 +25,15 @@ import torchaudio
 from torchaudio import transforms
 
 try:
-    from speakerlab.process.processor import FBank
+    from dguard.process.processor import FBank
 except ImportError:
     sys.path.append('%s/../..'%os.path.dirname(__file__))
-    from speakerlab.process.processor import FBank
+    from dguard.process.processor import FBank
 
-from speakerlab.utils.builder import build
-from speakerlab.utils.config import build_config
-from speakerlab.utils.builder import dynamic_import
-from speakerlab.utils.utils import load_params
+from dguard.utils.builder import build
+from dguard.utils.config import build_config
+from dguard.utils.builder import dynamic_import
+from dguard.utils.utils import load_params
 
 from modelscope.hub.snapshot_download import snapshot_download
 from modelscope.pipelines.util import is_official_hub_path

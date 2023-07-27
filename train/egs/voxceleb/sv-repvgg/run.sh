@@ -33,7 +33,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   # Train the speaker embedding model.
   echo "Stage3: Training the speaker model..."
   num_gpu=$(echo $gpus | awk -F ' ' '{print NF}')
-  torchrun --nproc_per_node=$num_gpu speakerlab/bin/train.py --config conf/$exp_name.yaml --gpu $gpus \
+  torchrun --nproc_per_node=$num_gpu dguard/bin/train.py --config conf/$exp_name.yaml --gpu $gpus \
            --data $data/vox2_dev/train.csv --noise $data/musan/wav.scp --reverb $data/rirs/wav.scp --exp_dir $exp_dir
 fi
 
@@ -42,7 +42,7 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
   # Extract embeddings of test datasets.
   echo "Stage4: Extracting speaker embeddings..."
   nj=8
-  torchrun --nproc_per_node=$nj speakerlab/bin/extract.py --exp_dir $exp_dir \
+  torchrun --nproc_per_node=$nj dguard/bin/extract.py --exp_dir $exp_dir \
            --data $data/vox1/wav.scp --use_gpu --gpu $gpus
 fi
 
@@ -50,6 +50,6 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
   # Output score metrics.
   echo "Stage5: Computing score metrics..."
   trials="$data/vox1/trials/vox1_O_cleaned.trial $data/vox1/trials/vox1_E_cleaned.trial $data/vox1/trials/vox1_H_cleaned.trial"
-  python speakerlab/bin/compute_score_metrics.py --enrol_data $exp_dir/embeddings --test_data $exp_dir/embeddings \
+  python dguard/bin/compute_score_metrics.py --enrol_data $exp_dir/embeddings --test_data $exp_dir/embeddings \
                                                  --scores_dir $exp_dir/scores --trials $trials
 fi

@@ -18,8 +18,8 @@ import torch
 import torchaudio
 import torch.distributed as dist
 
-from speakerlab.utils.config import yaml_config_loader, Config
-from speakerlab.utils.builder import build
+from dguard.utils.config import yaml_config_loader, Config
+from dguard.utils.builder import build
 
 from modelscope.hub.snapshot_download import snapshot_download
 from modelscope.pipelines.util import is_official_hub_path
@@ -34,7 +34,7 @@ parser.add_argument('--gpu', nargs='+', help='GPU id to use.')
 
 
 FEATURE_COMMON = {
-    'obj': 'speakerlab.process.processor.FBank',
+    'obj': 'dguard.process.processor.FBank',
     'args': {
         'n_mels': 80,
         'sample_rate': 16000,
@@ -43,7 +43,7 @@ FEATURE_COMMON = {
 }
 
 CAMPPLUS_VOX = {
-    'obj': 'speakerlab.models.campplus.DTDNN.CAMPPlus',
+    'obj': 'dguard.models.campplus.DTDNN.CAMPPlus',
     'args': {
         'feat_dim': 80,
         'embedding_size': 512,
@@ -51,7 +51,7 @@ CAMPPLUS_VOX = {
 }
 
 CAMPPLUS_COMMON = {
-    'obj': 'speakerlab.models.campplus.DTDNN.CAMPPlus',
+    'obj': 'dguard.models.campplus.DTDNN.CAMPPlus',
     'args': {
         'feat_dim': 80,
         'embedding_size': 192,

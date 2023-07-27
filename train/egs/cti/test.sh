@@ -17,10 +17,10 @@ exp_dir=$exp/$exp_name
 
 echo "Extracting speaker embeddings..."
 nj=8
-python speakerlab/bin/extract.py --exp_dir $exp_dir \
+python dguard/bin/extract.py --exp_dir $exp_dir \
            --data $data_scp --use_gpu --gpu $gpus
 
 echo "Stage5: Computing score metrics..."
 trials=$trial
-python speakerlab/bin/compute_score_metrics.py --enrol_data $exp_dir/embeddings --test_data $exp_dir/embeddings \
+python dguard/bin/compute_score_metrics.py --enrol_data $exp_dir/embeddings --test_data $exp_dir/embeddings \
                                                  --scores_dir $exp_dir/scores --trials $trials
