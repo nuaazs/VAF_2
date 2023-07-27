@@ -1,0 +1,3 @@
+Results of trail_cross is:
+EER = 8.2726
+minDCF (p_target:0.01 c_miss:1 c_fa:1) = 0.5231
