@@ -1,11 +1,9 @@
-## DingGuard VoicePrint Recognition System
+## D-Guard Speaker Recognition System
 
 <div align=center>
     <img src="https://img.shields.io/badge/License-Apache%202.0-brightgreen.svg"  />
 <img src="https://img.shields.io/badge/Pytorch-1.10.1-green.svg"  />
 <img src="https://img.shields.io/badge/Python-3.9-blue.svg"  />
-<img src="https://img.shields.io/badge/ECAPATDNN-pink.svg"  />
-<img src="https://img.shields.io/badge/CAM++-red.svg"  />
 <img src="https://img.shields.io/badge/MINIO-blue.svg"  />
 <img src="https://img.shields.io/badge/Long-Yuan-green.svg"  />
 </div>
@@ -14,7 +12,7 @@
 <br>
 </div>
 
-[简体中文](./README_cn.md) | [Roadmap]() | [Docs](./docs.md) | [Runtime]() | [Pretrained Models]() 
+[**简体中文**](./README_cn.md) | [**Roadmap**]() | [**Docs**](./docs.md) | [**Runtime**]() | [**Models**]() | [**Deploy**](./docs/icnoc_deploy_README.md) 
 
 
 
