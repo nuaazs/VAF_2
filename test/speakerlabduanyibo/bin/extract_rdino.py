@@ -9,10 +9,10 @@ import torchaudio
 from kaldiio import WriteHelper
 from torchaudio import transforms
 
-from dguard.utils.builder import build
-from dguard.utils.utils import get_logger, load_params
-from dguard.utils.config import build_config
-from dguard.utils.fileio import load_wav_scp
+from speakerlab.utils.builder import build
+from speakerlab.utils.utils import get_logger, load_params
+from speakerlab.utils.config import build_config
+from speakerlab.utils.fileio import load_wav_scp
 
 parser = argparse.ArgumentParser(description='Extract embeddings for evaluation.')
 parser.add_argument('--exp_dir', default='', type=str, help='Exp dir')

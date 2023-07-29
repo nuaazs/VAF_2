@@ -10,8 +10,8 @@ from tqdm import tqdm
 from kaldiio import ReadHelper
 from sklearn.metrics.pairwise import cosine_similarity
 
-from dguardduanyibo.utils.utils import get_logger
-from dguardduanyibo.utils.score_metrics import (compute_pmiss_pfa_rbst, compute_eer, compute_c_norm)
+from speakerlabduanyibo.utils.utils import get_logger
+from speakerlabduanyibo.utils.score_metrics import (compute_pmiss_pfa_rbst, compute_eer, compute_c_norm)
 
 parser = argparse.ArgumentParser(description='Compute score and metrics')
 parser.add_argument('--enrol_data', default='', type=str, help='Enroll data dir')

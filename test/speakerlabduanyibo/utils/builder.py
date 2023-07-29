@@ -3,7 +3,7 @@
 
 import re
 import importlib
-from dguard.utils.config import Config
+from speakerlab.utils.config import Config
 
 
 def dynamic_import(import_path):

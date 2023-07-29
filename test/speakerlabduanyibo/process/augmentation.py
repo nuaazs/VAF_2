@@ -7,7 +7,7 @@ from scipy import signal
 import numpy as np
 import random
 
-from dguard.utils.fileio import load_wav_scp
+from speakerlab.utils.fileio import load_wav_scp
 
 def addreverb(wav, rir_wav):
     # wav: [T,], rir_wav: [T,]

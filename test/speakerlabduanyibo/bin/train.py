@@ -10,11 +10,11 @@ import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
-from dguard.utils.builder import dynamic_import
-from dguard.utils.utils import set_seed, get_logger, AverageMeters, ProgressMeter, accuracy
-from dguard.utils.config import build_config
-from dguard.utils.builder import build
-from dguard.utils.epoch import EpochCounter, EpochLogger
+from speakerlab.utils.builder import dynamic_import
+from speakerlab.utils.utils import set_seed, get_logger, AverageMeters, ProgressMeter, accuracy
+from speakerlab.utils.config import build_config
+from speakerlab.utils.builder import build
+from speakerlab.utils.epoch import EpochCounter, EpochLogger
 
 
 parser = argparse.ArgumentParser(description='Speaker Network Training')
@@ -26,7 +26,7 @@ parser.add_argument('--model_id', default='damo/speech_campplus_sv_zh-cn_16k-com
 parser.add_argument('--model_stage', default='True', help='True: Update parameters False:Freeze the model')
 
 CAMPPLUS_VOX = {
-    'obj': 'dguard.models.campplus.DTDNN.CAMPPlus',
+    'obj': 'speakerlab.models.campplus.DTDNN.CAMPPlus',
     'args': {
         'feat_dim': 80,
         'embedding_size': 512,
@@ -34,7 +34,7 @@ CAMPPLUS_VOX = {
 }
 
 CAMPPLUS_COMMON = {
-    'obj': 'dguard.models.campplus.DTDNN.CAMPPlus',
+    'obj': 'speakerlab.models.campplus.DTDNN.CAMPPlus',
     'args': {
         'feat_dim': 80,
         'embedding_size': 192,
@@ -42,14 +42,14 @@ CAMPPLUS_COMMON = {
 }
 
 ERes2Net_VOX = {
-    'obj': 'dguard.models.eres2net.ResNet.ERes2Net',
+    'obj': 'speakerlab.models.eres2net.ResNet.ERes2Net',
     'args': {
         'feat_dim': 80,
         'embedding_size': 192,
     },
 }
 ERes2Net_common = {
-    'obj': 'dguard.models.eres2net.ResNet.ERes2Net',
+    'obj': 'speakerlab.models.eres2net.ResNet.ERes2Net',
     'args': {
         'feat_dim': 80,
         'embedding_size': 512,
@@ -118,8 +118,8 @@ def main():
         conf = supports[args.model_id]
         para =torch.load('/home/duanyibo/dyb/3dspeaker/3D-Speaker/pretrained/speech_campplus_sv_zh-cn_16k-common/CAMPP.pth')
         model = conf['model']  
-        #支持直接下载预训练模型/home/duanyibo/dyb/3dspeaker/3D-Speaker/dguard/bin/infer_sv.py
-        # python dguard/bin/infer_sv.py --model_id damo/speech_campplus_sv_zh-cn_16k-common --wavs /home/duanyibo/dyb/3dspeaker/3D-Speaker/pretrained/speech_campplus_sv_zh-cn_16k-common/exm/18659111928_001_Distance00_Dialect00.wav /home/duanyibo/dyb/3dspeaker/3D-Speaker/pretrained/speech_campplus_sv_zh-cn_16k-common/exm/19513386018_001_Distance00_Dialect00.wav
+        #支持直接下载预训练模型/home/duanyibo/dyb/3dspeaker/3D-Speaker/speakerlab/bin/infer_sv.py
+        # python speakerlab/bin/infer_sv.py --model_id damo/speech_campplus_sv_zh-cn_16k-common --wavs /home/duanyibo/dyb/3dspeaker/3D-Speaker/pretrained/speech_campplus_sv_zh-cn_16k-common/exm/18659111928_001_Distance00_Dialect00.wav /home/duanyibo/dyb/3dspeaker/3D-Speaker/pretrained/speech_campplus_sv_zh-cn_16k-common/exm/19513386018_001_Distance00_Dialect00.wav
         # 预训练model_id
         # ['damo/speech_campplus_sv_en_voxceleb_16k' ,
         # 'damo/speech_campplus_sv_zh-cn_16k-common',

@@ -24,12 +24,12 @@ import torch
 import torchaudio
 
 try:
-    from dguard.process.processor import FBank
+    from speakerlab.process.processor import FBank
 except ImportError:
     sys.path.append('%s/../..'%os.path.dirname(__file__))
-    from dguard.process.processor import FBank
+    from speakerlab.process.processor import FBank
 
-from dguard.utils.builder import dynamic_import
+from speakerlab.utils.builder import dynamic_import
 
 from modelscope.hub.snapshot_download import snapshot_download
 from modelscope.pipelines.util import is_official_hub_path
@@ -40,7 +40,7 @@ parser.add_argument('--wavs', nargs='+', type=str, help='Wavs')
 parser.add_argument('--local_model_dir', default='pretrained', type=str, help='Local model dir')
 
 CAMPPLUS_VOX = {
-    'obj': 'dguard.models.campplus.DTDNN.CAMPPlus',
+    'obj': 'speakerlab.models.campplus.DTDNN.CAMPPlus',
     'args': {
         'feat_dim': 80,
         'embedding_size': 512,
@@ -48,7 +48,7 @@ CAMPPLUS_VOX = {
 }
 
 CAMPPLUS_COMMON = {
-    'obj': 'dguard.models.campplus.DTDNN.CAMPPlus',
+    'obj': 'speakerlab.models.campplus.DTDNN.CAMPPlus',
     'args': {
         'feat_dim': 80,
         'embedding_size': 192,
@@ -56,14 +56,14 @@ CAMPPLUS_COMMON = {
 }
 
 ERes2Net_VOX = {
-    'obj': 'dguard.models.eres2net.ResNet.ERes2Net',
+    'obj': 'speakerlab.models.eres2net.ResNet.ERes2Net',
     'args': {
         'feat_dim': 80,
         'embedding_size': 192,
     },
 }
 ERes2Net_common = {
-    'obj': 'dguard.models.eres2net.ResNet.ERes2Net',
+    'obj': 'speakerlab.models.eres2net.ResNet.ERes2Net',
     'args': {
         'feat_dim': 80,
         'embedding_size': 512,

@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import numpy as np
 import torch.distributed as dist
 
-import dguard.utils.utils_rdino as utils_rdino
+import speakerlab.utils.utils_rdino as utils_rdino
 
 class DINOLoss(nn.Module):
     def __init__(
