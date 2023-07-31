@@ -201,7 +201,7 @@ def main():
                 logger.info('Compute eer')
                 # compute eer
                 # get emb_ark father dir 
-                endol_data_dir = os.path.dirname(emb_ark)
+                endol_data_dir = os.path.join(config.exp_dir, 'embeddings')
                 test_data_dir = endol_data_dir
                 scores_dir = os.path.join(config.exp_dir, 'scores')
                 eer,min_dcf,min_dcf_noc = get_eer(logger,endol_data_dir,test_data_dir,scores_dir,test_config["trials"])
