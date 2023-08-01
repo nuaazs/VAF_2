@@ -127,6 +127,8 @@ def main():
                     f"Encode failed. spkid:{spkid}.response:{response}")
         except Exception as e:
             logger.error(f"Encode failed. spkid:{spkid}.msg:{e}")
+        finally:
+            os.remove(file_name)
     with open("emb_map.txt", "w+") as f:
         for item in black_id_all:
             f.write(item + "\n")
