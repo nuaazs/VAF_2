@@ -1,0 +1,9 @@
+libdir=lib
+includedir=include
+
+Name: Yaml-cpp
+Description: A YAML parser and emitter for C++
+Version: 0.6.0
+Requires:
+Libs: -L${libdir} -lyaml-cpp
+Cflags: -I${includedir}
