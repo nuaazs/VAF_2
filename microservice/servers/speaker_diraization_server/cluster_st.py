@@ -5,18 +5,13 @@
 @Time    :   2023/07/24 10:46:54
 @Author  :   Carry
 @Version :   1.0
-@Desc    :   省厅注册逻辑
+@Desc    :   省厅注册逻辑 话术过滤+特征提取+聚类
 '''
-import glob
-import subprocess
 import numpy as np
 import pymysql
-import torchaudio
 from tqdm import tqdm
 import cfg
 import os
-import torch
-from utils.oss.upload import upload_file
 import requests
 from tqdm.contrib.concurrent import process_map
 import wget
@@ -31,10 +26,13 @@ logger.add("log/"+name+"_{time}.log", rotation="500 MB", encoding="utf-8",
 encode_url = "http://192.168.3.169:5001/encode"  # 提取特征
 cluster_url = "http://192.168.3.169:5011/cluster"  # cluster
 asr_url = "http://192.168.3.169:5000/transcribe/file"  # ASR
+
 use_model_type = "ECAPATDNN"
+threshold = 0.85
 
 
 msg_db = cfg.MYSQL
+
 
 def send_request(url, method='POST', files=None, data=None, json=None, headers=None):
     try:
@@ -46,6 +44,7 @@ def send_request(url, method='POST', files=None, data=None, json=None, headers=N
         logger.error(
             f"Request failed: spkid:{data['spkid']}. msg:{e}")
         return None
+
 
 def update_db(spkid):
     conn = pymysql.connect(
@@ -129,6 +128,7 @@ def main():
             logger.error(f"Encode failed. spkid:{spkid}.msg:{e}")
         finally:
             os.remove(file_name)
+
     with open("emb_map.txt", "w+") as f:
         for item in black_id_all:
             f.write(item + "\n")
@@ -143,10 +143,8 @@ def main():
     # print(read_data.shape)
     # read_data = read_data.reshape(-1, 192)
     # print(read_data.shape)
-    
-    
+
     # step 3 聚类
-    threshold = 0.85
     cosine_similarities = cosine_similarity(read_data)
     np.fill_diagonal(cosine_similarities, 0)
     mask = np.zeros_like(cosine_similarities, dtype=bool)
@@ -178,7 +176,7 @@ def main():
         last_index = i
     print(f"len(result):{len(result)}")
     print(f"result:{result}")
-    
+
     for i in result:
         print(i)
         update_db(str(i))
