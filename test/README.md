@@ -1,6 +1,6 @@
 ## README
 ### Test_trials
-
+By: Duanyibo
 | Trial_name  | Speaker_nums | pairs_nums | 169_PATH                                                     |
 | ----------- | ------------ | ---------- | ------------------------------------------------------------ |
 | VoxCeleb1-O | 40           | 37611      | /datasets/voxceleb1/trials/vox1_O_cleaned.trial              |
