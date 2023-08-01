@@ -98,7 +98,6 @@ def main():
     #     # todo 查找新话术逻辑
     #     return None
 
-    """
     # step 2 encode
     selected_urls = get_selected_url_from_db()
     logger.info(f"len(selected_urls):{len(selected_urls)}")
@@ -134,18 +133,16 @@ def main():
     embeddings = np.array(embeddings)
     print(embeddings.shape)  # (143, 192)
 
-    # reshape -1
-    # embeddings = embeddings.reshape(-1)
-    # type to float32
     embeddings = embeddings.astype(np.float32)
     embeddings.tofile('emb.bin')
     read_data = embeddings
-    """
 
-    read_data = np.fromfile("emb.bin", dtype=np.float32)
-    print(read_data.shape)
-    read_data = read_data.reshape(-1, 192)
-    print(read_data.shape)
+    # read_data = np.fromfile("emb.bin", dtype=np.float32)
+    # print(read_data.shape)
+    # read_data = read_data.reshape(-1, 192)
+    # print(read_data.shape)
+    
+    
     # step 3 聚类
     threshold = 0.85
     cosine_similarities = cosine_similarity(read_data)
