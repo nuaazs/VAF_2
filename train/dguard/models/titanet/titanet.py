@@ -1,3 +1,8 @@
+# coding = utf-8
+# @Time    : 2023-08-01  13:18:55
+# @Author  : zhaosheng@nuaa.edu.cn
+# @Describe: Titanet.
+
 from functools import partial
 
 import torch
@@ -7,6 +12,11 @@ import numpy as np
 
 import modules, losses
 
+"""
+TitaNet: Neural Model for speaker representation with 1D Depth-wise separable convolutions and global context,
+Nithin Rao Koluguri, Taejin Park, Boris Ginsburg,
+https://arxiv.org/abs/2110.04410.
+"""
 
 class DumbConvNet(nn.Module):
     """
