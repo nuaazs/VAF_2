@@ -16,7 +16,7 @@
 
 ### Result
 
-[2023.7.27 Result](/home/duanyibo/dyb/test_model/Model_Result.md)
+[2023.8.2 Result](Model_Result.md)
 
 ### Model
 
