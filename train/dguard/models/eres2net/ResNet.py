@@ -192,13 +192,14 @@ class ERes2Net(nn.Module):
                  num_blocks=[3, 4, 6, 3],
                  m_channels=32,
                  feat_dim=80,
-                 embed_dim=192,
+                 embedding_size=192,
                  pooling_func='TSTP',
                  two_emb_layer=False):
         super(ERes2Net, self).__init__()
         self.in_planes = m_channels
         self.feat_dim = feat_dim
-        self.embed_dim = embed_dim
+        self.embed_dim = embedding_size
+        embed_dim = embedding_size
         self.stats_dim = int(feat_dim / 8) * m_channels * 8
         self.two_emb_layer = two_emb_layer
 

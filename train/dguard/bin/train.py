@@ -51,7 +51,7 @@ from IPython import embed
 
 test_config = {
     "trials":["/datasets/voxceleb1/trials/vox1_O_cleaned.trial"], # ,"/datasets/voxceleb1/trials/vox1_E_cleaned.trial","/datasets/voxceleb1/trials/vox1_H_cleaned.trial"
-    "test_epoch_freq":2,
+    "test_epoch_freq":1,
     "wav_scp":"/datasets/voxceleb1/test/wav/wav.scp" # # /home/duanyibo/dyb/test_model/voxceleb1
 }
 
@@ -171,6 +171,7 @@ def main():
                 epoch_all=args.epoch_all
             )
         else:
+
             train_stats = train(
                 train_dataloader,
                 model,
@@ -183,6 +184,7 @@ def main():
                 config,
                 rank,
             )
+
 
         #####################################################################################
         try:
