@@ -4,7 +4,7 @@ import glob
 from tqdm import tqdm
 
 import matplotlib.pyplot as plt
-folder_path="/home/duanyibo/dyb/test_model/result"
+folder_path="result"
 paths = glob.glob(f'{folder_path}/**/*.score', recursive=True)
 # path = '/home/duanyibo/dyb/test_model/result/CAMPP_EMB_512/male_result/scores/male.trials.score'
 for path in tqdm(paths):

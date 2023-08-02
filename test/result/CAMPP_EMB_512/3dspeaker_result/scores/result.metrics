@@ -1,0 +1,21 @@
+Results of trials_cross_device is:
+EER = 25.0767
+minDCF (p_target:0.01 c_miss:1 c_fa:1) = 0.9957
+Results of trials_cross_distance is:
+EER = 25.7347
+minDCF (p_target:0.01 c_miss:1 c_fa:1) = 0.9962
+Results of trials_cross_dialect is:
+EER = 23.7733
+minDCF (p_target:0.01 c_miss:1 c_fa:1) = 0.9999
+Results of trials_cross_device is:
+EER = 25.0767
+minDCF (p_target:0.01 c_miss:1 c_fa:1) = 0.9957
+minDCF_noc (p_target:5e-06 c_miss:1 c_fa:5) = 0.9957
+Results of trials_cross_distance is:
+EER = 25.7347
+minDCF (p_target:0.01 c_miss:1 c_fa:1) = 0.9962
+minDCF_noc (p_target:5e-06 c_miss:1 c_fa:5) = 0.9970
+Results of trials_cross_dialect is:
+EER = 23.7733
+minDCF (p_target:0.01 c_miss:1 c_fa:1) = 0.9999
+minDCF_noc (p_target:5e-06 c_miss:1 c_fa:5) = 0.9999

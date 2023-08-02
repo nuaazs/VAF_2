@@ -14,6 +14,7 @@ from speakerlabduanyibo.utils.builder import build
 from speakerlabduanyibo.utils.utils import get_logger
 from speakerlabduanyibo.utils.config import build_config
 from speakerlabduanyibo.utils.fileio import load_wav_scp
+from dguard.interface.pretrained import load_by_name,ALL_MODELS
 
 parser = argparse.ArgumentParser(description='Extract embeddings for evaluation.')
 parser.add_argument('--exp_dir', default='', type=str, help='Exp dir')
@@ -38,8 +39,8 @@ CKPT_PATH = {
 
 def main():
     args = parser.parse_args(sys.argv[1:])
-    config_file = os.path.join("/home/duanyibo/dyb/test_model/speakerlabduanyibo", 'config.yaml')
-    config = build_config(config_file)
+    # config_file = os.path.join("/home/duanyibo/dyb/test_model/speakerlabduanyibo", 'config.yaml')
+    # config = build_config(config_file)
     # rank = 0
     # world_size = 1
 
@@ -66,17 +67,18 @@ def main():
     MODEL = args.exp_dir.split("/")[-2]
 
     # import model
-    model = getattr(M, MODEL.rsplit("_",1)[0])()
+    # model = getattr(M, MODEL.rsplit("_",1)[0])()
 
-    # load parameters, set to eval mode, move to GPU
-    # device = "cuda:0"
+    # # load parameters, set to eval mode, move to GPU
+    # # device = "cuda:0"
+    # model.eval()
+    # model.to(device)
+    # model.load_state_dict(torch.load(CKPT_PATH[MODEL], map_location="cpu"),strict=True)
+
+    # # Build the embedding model
+    # feature_extractor = build('feature_extractor', config)
+    model,feature_extractor,sample_rate = load_by_name(MODEL,device)
     model.eval()
-    model.to(device)
-    model.load_state_dict(torch.load(CKPT_PATH[MODEL], map_location="cpu"),strict=True)
-
-    # Build the embedding model
-    feature_extractor = build('feature_extractor', config)
-
     data = load_wav_scp(args.data)
     data_k = list(data.keys())
     local_k = data_k[rank::world_size]
@@ -95,11 +97,11 @@ def main():
             for k in tqdm(local_k):
                 wav_path = data[k]
                 if args.exp_dir.split("/")[-1] == "cti_result":
-                    num_samples = int(10*config.sample_rate)
+                    num_samples = int(10*sample_rate)
                     wav, fs = torchaudio.load(wav_path, frame_offset=0, num_frames=num_samples)
                 else:
                     wav, fs = torchaudio.load(wav_path)
-                assert fs == config.sample_rate, f"The sample rate of wav is {fs} and inconsistent with that of the pretrained model."
+                assert fs == sample_rate, f"The sample rate of wav is {fs} and inconsistent with that of the pretrained model."
                 feat = feature_extractor(wav)
                 feat = feat.unsqueeze(0)
                 feat = feat.to(device)

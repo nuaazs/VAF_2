@@ -1,0 +1,12 @@
+Results of vox1_O_cleaned.trial is:
+EER = 1.2600
+minDCF (p_target:0.01 c_miss:1 c_fa:1) = 0.1381
+minDCF_noc (p_target:5e-06 c_miss:1 c_fa:5) = 0.2141
+Results of vox1_E_cleaned.trial is:
+EER = 1.1939
+minDCF (p_target:0.01 c_miss:1 c_fa:1) = 0.1367
+minDCF_noc (p_target:5e-06 c_miss:1 c_fa:5) = 0.2980
+Results of vox1_H_cleaned.trial is:
+EER = 2.1311
+minDCF (p_target:0.01 c_miss:1 c_fa:1) = 0.2026
+minDCF_noc (p_target:5e-06 c_miss:1 c_fa:5) = 0.5681

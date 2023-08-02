@@ -1,0 +1,8 @@
+Results of male.trials is:
+EER = 6.4626
+minDCF (p_target:0.01 c_miss:1 c_fa:1) = 0.4284
+minDCF_noc (p_target:5e-06 c_miss:1 c_fa:5) = 0.9864
+Results of male.trials is:
+EER = 6.4626
+minDCF (p_target:0.01 c_miss:1 c_fa:1) = 0.4284
+minDCF_noc (p_target:5e-06 c_miss:1 c_fa:5) = 0.9864
