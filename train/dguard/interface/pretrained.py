@@ -106,3 +106,7 @@ def inference(model,feature_extractor,wav_path,sample_rate=16000):
         output = model(feat)
     return output
 
+# useage
+# from dguard.interface.pretrained import load_by_name,ALL_MODELS
+# print(ALL_MODELS)
+# model,feature_extractor,sample_rate = load_by_name('dfresnet_233')
