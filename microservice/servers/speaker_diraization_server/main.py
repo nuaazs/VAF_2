@@ -198,7 +198,7 @@ def insert_to_db(data):
                        data['selected_url'], data['asr_result'], data['total_duration'], str(data['selected_times'])))
         conn.commit()
     except Exception as e:
-        logger.error(f"Insert to db failed. spkid:{spkid}. msg:{e}.")
+        logger.error(f"Insert to db failed. spkid:{data['spkid']}. msg:{e}.")
         conn.rollback()
     cursor.close()
     conn.close()

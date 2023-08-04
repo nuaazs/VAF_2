@@ -5,7 +5,7 @@
 @Time    :   2023/07/24 10:46:54
 @Author  :   Carry
 @Version :   1.0
-@Desc    :   省厅注册逻辑 话术过滤+特征提取+聚类
+@Desc    :   省厅新音频筛选逻辑 话术过滤+特征提取+聚类
 '''
 import numpy as np
 import pymysql
@@ -23,14 +23,11 @@ name = os.path.basename(__file__).split(".")[0]
 logger.add("log/"+name+"_{time}.log", rotation="500 MB", encoding="utf-8",
            enqueue=True, compression="zip", backtrace=True, diagnose=True)
 
-encode_url = "http://192.168.3.169:5001/encode"  # 提取特征
-cluster_url = "http://192.168.3.169:5011/cluster"  # cluster
-asr_url = "http://192.168.3.169:5000/transcribe/file"  # ASR
-
-use_model_type = "ECAPATDNN"
-threshold = 0.85
-
-
+host = "http://192.168.3.169"
+encode_url = f"{host}:5001/encode"  # 提取特征
+cluster_url = f"{host}:5011/cluster"  # cluster
+asr_url = f"{host}:5000/transcribe/file"  # ASR
+use_model_type = "ERES2NET_Base"
 msg_db = cfg.MYSQL
 
 
@@ -57,7 +54,7 @@ def update_db(spkid):
     )
     cursor = conn.cursor()
     try:
-        sql = "update check_for_speaker_diraization set after_cluster=1 where record_id=%s"
+        sql = "update check_for_speaker_diraization set is_duplicate=1 where record_id=%s"
         cursor.execute(sql, (spkid))
         conn.commit()
     except Exception as e:
@@ -90,7 +87,46 @@ def get_selected_url_from_db():
     return result
 
 
-def main():
+def cluster_handler(read_data, threshold):
+    # step 3 聚类
+    cosine_similarities = cosine_similarity(read_data)
+    np.fill_diagonal(cosine_similarities, 0)
+    mask = np.zeros_like(cosine_similarities, dtype=bool)
+
+    filtered_results = []
+    for i in range(cosine_similarities.shape[0]):
+        for j in range(i+1, cosine_similarities.shape[1]):
+            if cosine_similarities[i, j] > threshold and not mask[i, j]:
+                filtered_results.append((i, j))
+                mask[i, j] = True
+
+    logger.info(
+        f"Found {len(filtered_results)} pairs above the threshold of {threshold}")
+
+    map_d = {}
+    with open("emb_map.txt", "r") as f:
+        for idx, line in enumerate(f.readlines()):
+            map_d[idx] = line.strip()
+
+    last_index = None
+    result = []
+    logger.info("Filtered results:")
+    for i, j in filtered_results:
+        if last_index == i:
+            continue
+        logger.info(
+            f"{map_d[i]} and {map_d[j]} have cosine similarity of {cosine_similarities[i, j]}")
+        result.append(map_d[i])
+        last_index = i
+    logger.info(f"len(result):{len(result)}")
+    logger.info(f"result:{result}")
+
+    # for i in result:
+    #     logger.info(i)
+    #     update_db(str(i))
+
+
+def encode_handler():
     # step 1 话术过滤
     # a, b = check_text(text)
     # if a == "正常":
@@ -105,7 +141,7 @@ def main():
     os.makedirs(tmp_folder, exist_ok=True)
     embeddings = []
     black_id_all = []
-    for idx, i in enumerate(selected_urls):
+    for i in tqdm(selected_urls):
         try:
             save_path = tmp_folder
             i = i['selected_url']
@@ -127,60 +163,30 @@ def main():
         except Exception as e:
             logger.error(f"Encode failed. spkid:{spkid}.msg:{e}")
         finally:
-            os.remove(file_name)
+            if os.path.exists(file_name):
+                os.remove(file_name)
 
     with open("emb_map.txt", "w+") as f:
         for item in black_id_all:
             f.write(item + "\n")
     embeddings = np.array(embeddings)
-    print(embeddings.shape)  # (143, 192)
+    logger.info(embeddings.shape)  # (143, 192)
 
     embeddings = embeddings.astype(np.float32)
     embeddings.tofile('emb.bin')
-    read_data = embeddings
 
-    # read_data = np.fromfile("emb.bin", dtype=np.float32)
-    # print(read_data.shape)
-    # read_data = read_data.reshape(-1, 192)
-    # print(read_data.shape)
 
-    # step 3 聚类
-    cosine_similarities = cosine_similarity(read_data)
-    np.fill_diagonal(cosine_similarities, 0)
-    mask = np.zeros_like(cosine_similarities, dtype=bool)
+def pipleline():
+    # encode_handler()
 
-    filtered_results = []
-    for i in range(cosine_similarities.shape[0]):
-        for j in range(i+1, cosine_similarities.shape[1]):
-            if cosine_similarities[i, j] > threshold and not mask[i, j]:
-                filtered_results.append((i, j))
-                mask[i, j] = True
-
-    print(
-        f"Found {len(filtered_results)} pairs above the threshold of {threshold}")
-
-    map_d = {}
-    with open("emb_map.txt", "r") as f:
-        for idx, line in enumerate(f.readlines()):
-            map_d[idx] = line.strip()
-
-    last_index = None
-    result = []
-    print("Filtered results:")
-    for i, j in filtered_results:
-        if last_index == i:
-            continue
-        logger.info(
-            f"{map_d[i]} and {map_d[j]} have cosine similarity of {cosine_similarities[i, j]}")
-        result.append(map_d[i])
-        last_index = i
-    print(f"len(result):{len(result)}")
-    print(f"result:{result}")
-
-    for i in result:
-        print(i)
-        update_db(str(i))
+    read_data = np.fromfile("emb.bin", dtype=np.float32)
+    logger.info(read_data.shape)
+    read_data = read_data.reshape(-1, 192)
+    logger.info(read_data.shape)
+    for th in np.arange(0.8, 0.9, 0.01):
+        th = round(th, 2)
+        cluster_handler(read_data, th)
 
 
 if __name__ == "__main__":
-    main()
+    pipleline()

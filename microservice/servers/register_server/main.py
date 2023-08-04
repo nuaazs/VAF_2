@@ -1,32 +1,39 @@
-
-from collections import Counter
-import glob
-import subprocess
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+@File    :   main.py
+@Time    :   2023/07/24 10:46:54
+@Author  :   Carry
+@Version :   1.0
+@Desc    :   音频注册
+'''
+import multiprocessing
+import sys
+import time
 import numpy as np
 import pymysql
-import torchaudio
+import torch
 from tqdm import tqdm
 import cfg
-from pydub import AudioSegment
 import os
-import torch
-from utils.oss.upload import upload_file
 import requests
 from tqdm.contrib.concurrent import process_map
-
-
+import wget
+from utils.orm.db_orm import get_embeddings, to_database
 from loguru import logger
+sys.path.append("../")
 
-logger.add("log/file_{time}.log", rotation="500 MB", encoding="utf-8",
+similarity = torch.nn.CosineSimilarity(dim=-1, eps=1e-6)
+
+name = os.path.basename(__file__).split(".")[0]
+logger.add("log/"+name+"_{time}.log", rotation="500 MB", encoding="utf-8",
            enqueue=True, compression="zip", backtrace=True, diagnose=True)
 
-
-vad_url = "http://192.168.3.169:5005/energy_vad/file"  # VAD
-lang_url = "http://192.168.3.169:5002/lang_classify"  # 语种识别
-encode_url = "http://192.168.3.169:5001/encode"  # 提取特征
-cluster_url = "http://192.168.3.169:5011/cluster"  # cluster
-asr_url = "http://192.168.3.169:5000/transcribe/file"  # ASR
-use_model_type = "ECAPATDNN"
+host = "http://192.168.3.169"
+encode_url = f"{host}:5001/encode"  # 提取特征
+cluster_url = f"{host}:5011/cluster"  # cluster
+asr_url = f"{host}:5000/transcribe/file"  # ASR
+msg_db = cfg.MYSQL
 
 
 def send_request(url, method='POST', files=None, data=None, json=None, headers=None):
@@ -41,148 +48,10 @@ def send_request(url, method='POST', files=None, data=None, json=None, headers=N
         return None
 
 
-def extract_audio_segment(input_file, output_file, start_time, end_time):
-    audio = AudioSegment.from_file(input_file)
-    start_ms = start_time * 1000
-    end_ms = end_time * 1000
-    extracted_segment = audio[start_ms:end_ms]
-    extracted_segment.export(output_file, format="wav")
-
-
-def find_items_with_highest_value(dictionary):
-    value_counts = Counter(dictionary.values())
-    max_count = max(value_counts.values())
-    for key, value in dictionary.items():
-        if value_counts[value] == max_count:
-            keys_with_max_value = value
-    items_with_highest_value = {key: value for key, value in dictionary.items(
-    ) if value_counts[value] == max_count}
-    return items_with_highest_value, keys_with_max_value
-
-
-def pipeline(filepath, spkid):
-    tmp_folder = f"/tmp/{spkid}"
-    os.makedirs(tmp_folder, exist_ok=True)
-
-    # step1 VAD
-    data = {"spkid": spkid, "length": 90}
-    files = [('file', (filepath, open(filepath, 'rb')))]
-    response = send_request(vad_url, files=files, data=data)
-    if not response:
-        return None
-
-    # step2 截取音频片段
-    output_file_li = []
-    d = {}
-    for idx, i in enumerate(response['timelist']):
-        output_file = f"{tmp_folder}/{spkid}_{idx}.wav"  # 截取后的音频片段保存路径
-        extract_audio_segment(filepath, output_file,
-                              start_time=i[0]/1000, end_time=i[1]/1000)
-        output_file_li.append(output_file)
-        d[output_file] = (i[0]/1000, i[1]/1000)
-
-    # step3 普通话过滤
-    wav_files = ["local://"+i for i in output_file_li]
-    data = {"spkid": spkid, "filelist": ",".join(wav_files)}
-    response = send_request(lang_url, data=data)
-    if response['code'] == 200:
-        pass_list = response['pass_list']
-        url_list = response['file_url_list']
-        mandarin_wavs = [
-            i for i in url_list if pass_list[url_list.index(i)] == 1]
-    else:
-        logger.error(
-            f"Lang_classify failed. spkid:{spkid}.response:{response}")
-        return None
-
-    # step4 提取特征
-    data = {"spkid": spkid, "filelist": ",".join(mandarin_wavs)}
-    response = send_request(encode_url, data=data)
-    if response['code'] == 200:
-        file_emb = response['file_emb']
-    else:
-        logger.error(f"Encode failed. spkid:{spkid}.response:{response}")
-        return None
-
-    # step5 聚类
-    file_emb = file_emb[use_model_type]
-    data = {
-        "emb_dict": file_emb["embedding"],
-        "cluster_line": 3,
-        "mer_cos_th": 0.7,
-        "cluster_type": "spectral",  # spectral or umap_hdbscan
-        "min_cluster_size": 1,
-    }
-    response = send_request(cluster_url, json=data)
-    logger.info(f"\t * -> Cluster result: {response}")
-    items, keys_with_max_value = find_items_with_highest_value(
-        response['labels'])
-    max_score = response['scores'][keys_with_max_value]['max']
-    min_score = response['scores'][keys_with_max_value]['min']
-
-    if min_score  < 0.8 :
-        logger.info(
-            f"After cluster min_score  < 0.8. spkid:{spkid}.response:{response['scores']}")
-        return None
-    total_duration = 0
-    for i in items.keys():
-        total_duration += file_emb['length'][i]
-    if total_duration < cfg.MIN_LENGTH_REGISTER:
-        logger.info(
-            f"After cluster total_duration:{total_duration} < {cfg.MIN_LENGTH_REGISTER}s. spkid:{spkid}.response:{response}")
-        return None
-    selected_files = sorted(items.keys(), key=lambda x: x.split(
-        "/")[-1].replace(".wav", "").split("_")[0])
-    audio_data = np.concatenate([torchaudio.load(file.replace(
-        "local://", ""))[0] for file in selected_files], axis=-1)
-    torchaudio.save(os.path.join(tmp_folder, f"{spkid}_selected.wav"), torch.from_numpy(
-        audio_data), sample_rate=8000)
-
-    selected_times = [d[_data.replace("local://", "")]
-                      for _data in selected_files]
-
-    # step6 ASR
-    text = ""
-    data = {"spkid": spkid, "postprocess": "1"}
-    files = [('wav_file', (filepath, open(filepath, 'rb')))]
-    response = send_request(asr_url, files=files, data=data)
-    if response.get('transcription') and response.get('transcription').get('text'):
-        text = response['transcription']["text"]
-        # logger.info(f"\t * -> ASR结果: {text}")
-    else:
-        logger.error(
-            f"ASR failed. spkid:{spkid}.message:{response['message']}")
-
-    # step7 NLP
-    # nlp_result = classify_text(text)
-    # logger.info(f"\t * -> 文本分类结果: {nlp_result}")
-
-    # step7 话术过滤
-    # a, b = check_text(text)
-    # if a == "正常":
-    #     # todo 查找新话术逻辑
-    #     return None
-
-    # step8 上传OSS
-    raw_url = upload_file("raw", filepath, f"{spkid}/raw_{spkid}.wav")
-    selected_url = upload_file("raw", os.path.join(
-        tmp_folder, f"{spkid}_selected.wav"), f"{spkid}/{spkid}_selected.wav")
-
-    return {
-        "spkid": spkid,
-        "raw_file_path": raw_url,
-        "selected_url": selected_url,
-        "asr_result": text,
-        "selected_times": selected_times,
-        # "nlp_result": nlp_result,
-        "total_duration": total_duration,
-    }
-
-
-msg_db = cfg.MYSQL
-
-
-def insert_to_db(data):
+def add_speaker(spkid):
+    """
+    录入黑库表
+    """
     conn = pymysql.connect(
         host=msg_db.get("host"),
         port=msg_db.get("port"),
@@ -193,35 +62,128 @@ def insert_to_db(data):
     )
     cursor = conn.cursor()
     try:
-        sql = "INSERT INTO check_for_speaker_diraization (`record_id`, `file_url`, `selected_url`, `asr_text`, `wav_duration`,`create_time`,`selected_times`) VALUES (%s, %s, %s, %s, %s,now(), %s);"
-        cursor.execute(sql, (data['spkid'], data['raw_file_path'],
-                       data['selected_url'], data['asr_result'], data['total_duration'], str(data['selected_times'])))
+        query_sql = f"insert into speaker (phone, valid_length,file_url,preprocessed_file_url,register_time) \
+                    select record_id, wav_duration, file_url, selected_url, now() \
+                    from check_for_speaker_diraization where record_id = %s;"
+        cursor.execute(query_sql, (spkid))
         conn.commit()
     except Exception as e:
-        logger.error(f"Insert to db failed. spkid:{spkid}. msg:{e}.")
+        logger.error(f"Insert to db failed. record_id:{spkid}. msg:{e}.")
         conn.rollback()
     cursor.close()
     conn.close()
 
 
-def main(i):
+def get_selected_url_from_db():
+    """
+    获取需要注册的音频url
+    """
+    conn = pymysql.connect(
+        host=msg_db.get("host"),
+        port=msg_db.get("port"),
+        db=msg_db.get("db"),
+        user=msg_db.get("username"),
+        passwd=msg_db.get("passwd"),
+        cursorclass=pymysql.cursors.DictCursor,
+    )
+    cursor = conn.cursor()
     try:
-        spkid = os.path.basename(i).split(".")[0].split('-')[-1]
-        tmp_folder = f"/tmp/{spkid}"
-        os.makedirs(tmp_folder, exist_ok=True)
-        pipeline_result = pipeline(i, spkid)
-        logger.info(pipeline_result)
-        if pipeline_result:
-            insert_to_db(pipeline_result)
+        sql = "select record_id,selected_url from check_for_speaker_diraization"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        conn.commit()
     except Exception as e:
-        logger.error(f"Pipeline failed. spkid:{spkid}. msg:{e}.")
-    finally:
-        subprocess.call(f"rm -rf {tmp_folder}", shell=True)
+        logger.error(f"Get selected_url from db failed. msg:{e}.")
+        conn.rollback()
+    cursor.close()
+    conn.close()
+    return result
+
+
+def cosine_similarity(input_data):
+    base_item, base_embedding, embedding = input_data
+    base_embedding = torch.tensor(base_embedding)
+    return [similarity(base_embedding, embedding).numpy(), base_item]
+
+
+def compare_handler(model_type=None, embedding=None, black_limit=0.78, top_num=10):
+    """
+    是否在黑库中 并返回top1-top10
+    """
+    emb_db = get_embeddings(use_model_type=model_type)
+    embedding = torch.tensor(embedding).to('cpu')
+    input_data = [(k, emb_db[k], embedding) for k in emb_db.keys()]
+    
+    t1= time.time()
+    results = process_map(cosine_similarity, input_data, max_workers=1, desc='TQDMING---:')
+    if not results:
+        return {'best_score': 0, 'inbase': 0}
+    t2 = time.time()
+    logger.info(f"compare_handler time:{t2-t1}")
+
+    return_results = {}
+    results = sorted(results, key=lambda x: float(x[0]) * (-1))
+    return_results["best_score"] = float(np.array(results[0][0]))
+
+    if results[0][0] <= black_limit:
+        return_results["inbase"] = 0
+        return return_results
+    else:
+        return_results["inbase"] = 1
+        # top1-top10
+        if len(results) < top_num:
+            top_num = len(results)
+        for index in range(top_num):
+            return_results[f"top_{index + 1}"] = f"{results[index][0]:.5f}"
+            return_results[f"top_{index + 1}_id"] = str(results[index][1])
+    return return_results
+
+
+def main():
+    """
+    register
+    """
+    tmp_folder = "/tmp/register"
+    os.makedirs(tmp_folder, exist_ok=True)
+    selected_urls = get_selected_url_from_db()
+    logger.info(f"len(selected_urls):{len(selected_urls)}")
+
+    for file in tqdm(selected_urls[:1]):
+        try:
+            save_path = tmp_folder
+            i = file['selected_url']
+            file_name = os.path.join(save_path, os.path.basename(i))
+            wget.download(i, file_name)
+            spkid = os.path.basename(i).split(".")[0].split('_')[0]
+            data = {"spkid": spkid, "filelist": ["local://"+file_name]}
+            response = send_request(encode_url, data=data)
+
+            compare_result = {}
+            if response['code'] == 200:
+                for model_type in cfg.ENCODE_MODEL_LIST:
+                    emb_new = list(response['file_emb'][model_type]["embedding"].values())[0]
+                    return_results = compare_handler(model_type=model_type, embedding=emb_new,black_limit=cfg.BLACK_TH[model_type])
+                    compare_result[model_type] = return_results
+            else:
+                logger.error(f"Encode failed. spkid:{spkid}.response:{response}")
+                continue
+
+            need_register = [True for k, v in compare_result.items() if v['inbase'] == 0 and v['best_score'] < cfg.BLACK_TH[k]]
+            if need_register and all(need_register):
+                logger.info(f"Need register. spkid:{spkid}. compare_result:{compare_result}")
+                # add_success = to_database(embedding=torch.tensor(emb_new), spkid=spkid, use_model_type=model_type)
+                # if add_success:
+                #     logger.info(f"Add speaker success. spkid:{spkid}")
+                #     add_speaker(spkid)
+            else:
+                logger.info(f"Speaker already exists. spkid:{spkid}. Compare result:{compare_result}")
+
+        except Exception as e:
+            logger.error(f"Register failed. spkid:{spkid}.msg:{e}")
+        finally:
+            if os.path.exists(file_name):
+                os.remove(file_name)
 
 
 if __name__ == "__main__":
-    # wav_files = glob.glob("/datasets/changzhou/*.wav")
-    wav_files = glob.glob("./*.wav")
-    logger.info(f"Total wav files: {len(wav_files)}")
-    wav_files = sorted(wav_files)
-    process_map(main, wav_files, max_workers=1, desc='TQDMING---:')
+    main()
