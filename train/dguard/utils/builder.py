@@ -87,5 +87,8 @@ def deep_build(ins, config, build_space: set = None):
     else:
         return ins
 
-def build(name: str, config: Config):
+def build(name: str, config: Config, **kwargs):
+    # add kwargs to config
+    for k, v in kwargs.items():
+        setattr(config, k, v)
     return deep_build(f"<{name}>", config)

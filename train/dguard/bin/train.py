@@ -99,8 +99,21 @@ def main():
         config.num_classes = len(config.label_encoder)
 
     classifier = build('classifier', config)
-
-    feature_extractor = build('feature_extractor', config)
+    try:
+        feature_extractor = build('feature_extractor', config)
+    except:
+        feature_extractor = None
+        print(f"feature_extractor load failed, change to None")
+    try:
+        pre_extractor = build('pre_extractor', config)
+    except:
+        pre_extractor = None
+        print(f"pre_extractor load failed, change to None")
+    # feature_extractor to gpu
+    # try:
+    #     feature_extractor = feature_extractor.cuda()
+    # except:
+    #     pass
 
     
     if args.fine_tune:
@@ -167,6 +180,7 @@ def main():
                 logger,
                 config,
                 rank,
+                pre_extractor,
                 epoch_classify=args.epoch_classify,
                 epoch_all=args.epoch_all
             )
@@ -183,6 +197,7 @@ def main():
                 logger,
                 config,
                 rank,
+                pre_extractor
             )
 
 
@@ -195,7 +210,7 @@ def main():
                 os.makedirs(embedding_dir, exist_ok=True)
                 # rm all ark and scp files in embedding_dir
             
-                emb_ark,emb_scp = test(model, int(args.gpu[rank]),test_config, epoch, logger, rank,test_config["wav_scp"],embedding_dir=embedding_dir,feature_extractor=feature_extractor)
+                emb_ark,emb_scp = test(model, int(args.gpu[rank]),test_config, epoch, logger, rank,test_config["wav_scp"],embedding_dir=embedding_dir,feature_extractor=feature_extractor,pre_extractor=pre_extractor)
             # torchrun 等待其他程序运行完成
             dist.barrier()
             if epoch % config.save_epoch_freq and rank == 0:
@@ -237,7 +252,7 @@ def main():
         dist.barrier()
 
 
-def test(model, gpu,config, epoch, logger, rank, wav_scp,embedding_dir,feature_extractor):
+def test(model, gpu,config, epoch, logger, rank, wav_scp,embedding_dir,feature_extractor=None,pre_extractor=None):
     model.eval()
     # no grad
     with torch.no_grad():
@@ -266,14 +281,21 @@ def test(model, gpu,config, epoch, logger, rank, wav_scp,embedding_dir,feature_e
                 for k in local_k:
                     wav_path = data[k]
                     wav, fs = torchaudio.load(wav_path)
-                    feat = feature_extractor(wav)
+                    if feature_extractor:
+                        feat = feature_extractor(wav)
+                    else:
+                        feat = wav
+                    print(feat.shape)
+                    if pre_extractor:
+                        feat = pre_extractor(feat)
+                    print(feat.shape)
                     feat = feat.unsqueeze(0)
                     feat = feat.to(gpu)
                     emb = model(feat).detach().cpu().numpy()
                     writer(k, emb)
     return emb_ark,emb_scp
 
-def train(train_loader, model, criterion, optimizer, epoch, lr_scheduler, margin_scheduler, logger, config, rank):
+def train(train_loader, model, criterion, optimizer, epoch, lr_scheduler, margin_scheduler, logger, config, rank,pre_extractor=None):
     train_stats = AverageMeters()
     train_stats.add('Time', ':6.3f')
     train_stats.add('Data', ':6.3f')
@@ -292,38 +314,47 @@ def train(train_loader, model, criterion, optimizer, epoch, lr_scheduler, margin
 
     end = time.time()
     for i, (x, y) in enumerate(train_loader):
-        # data loading time
-        train_stats.update('Data', time.time() - end)
+        try:
+            # data loading time
+            train_stats.update('Data', time.time() - end)
 
-        # update
-        iter_num = (epoch-1)*len(train_loader) + i
-        lr_scheduler.step(iter_num)
-        margin_scheduler.step(iter_num)
+            # update
+            iter_num = (epoch-1)*len(train_loader) + i
+            lr_scheduler.step(iter_num)
+            margin_scheduler.step(iter_num)
 
-        x = x.cuda(non_blocking=True)
-        y = y.cuda(non_blocking=True)
+            x = x.cuda(non_blocking=True)
+            y = y.cuda(non_blocking=True)
 
-        # compute output
-        output = model(x)
-        loss = criterion(output, y)
-        acc1 = accuracy(output, y)
+            # compute output
+            if pre_extractor:
+                x = pre_extractor(x)
+            output = model(x)
+            loss = criterion(output, y)
+            acc1 = accuracy(output, y)
 
-        # compute gradient and do optimizer step
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            # compute gradient and do optimizer step
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-        # recording
-        train_stats.update('Loss', loss.item(), x.size(0))
-        train_stats.update('Acc@1', acc1.item(), x.size(0))
-        train_stats.update('Lr', optimizer.param_groups[0]["lr"])
-        train_stats.update('Margin', margin_scheduler.get_margin())
-        train_stats.update('Time', time.time() - end)
+            # recording
+            train_stats.update('Loss', loss.item(), x.size(0))
+            train_stats.update('Acc@1', acc1.item(), x.size(0))
+            train_stats.update('Lr', optimizer.param_groups[0]["lr"])
+            train_stats.update('Margin', margin_scheduler.get_margin())
+            train_stats.update('Time', time.time() - end)
 
-        if rank == 0 and i % config.log_batch_freq == 0:
-            logger.info(progress.display(i))
+            if rank == 0 and i % config.log_batch_freq == 0:
+                logger.info(progress.display(i))
 
-        end = time.time()
+            end = time.time()
+        except Exception as e:
+            print(e)
+            print("Error in train")
+            # embed()
+            # raise e
+            
 
     key_stats={
         'Avg_loss': train_stats.avg('Loss'),
@@ -333,7 +364,7 @@ def train(train_loader, model, criterion, optimizer, epoch, lr_scheduler, margin
     return key_stats
 
 
-def train_fine_tune(train_loader, model, criterion, optimizer, epoch, lr_scheduler, margin_scheduler, logger, config, rank,epoch_classify=0,epoch_all=0):
+def train_fine_tune(train_loader, model, criterion, optimizer, epoch, lr_scheduler, margin_scheduler, logger, config, rank,pre_extractor=None,epoch_classify=0,epoch_all=0):
     train_stats = AverageMeters()
     train_stats.add('Time', ':6.3f')
     train_stats.add('Data', ':6.3f')
@@ -364,6 +395,8 @@ def train_fine_tune(train_loader, model, criterion, optimizer, epoch, lr_schedul
         y = y.cuda(non_blocking=True)
 
         # compute output
+        if pre_extractor:
+            x = pre_extractor(x)
         output = model(x)
         loss = criterion(output, y)
         acc1 = accuracy(output, y)
@@ -472,4 +505,5 @@ def get_eer(logger,endol_data_dir,test_data_dir,scores_dir,trials,p_target=0.01,
         return eer,min_dcf,min_dcf_noc
 
 if __name__ == '__main__':
+    # torch.multiprocessing.set_start_method('spawn')
     main()
