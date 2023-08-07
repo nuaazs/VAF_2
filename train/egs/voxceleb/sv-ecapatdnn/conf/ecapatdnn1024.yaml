@@ -26,7 +26,7 @@ num_workers: 16
 
 # model
 fbank_dim: 80
-embedding_size: 512
+embedding_size: 192
 num_classes: 5994
 
 
@@ -83,7 +83,7 @@ dataloader:
     drop_last: True
 
 embedding_model:
-  obj: dguard.models.ecapatdnn.ecapatdnn.ecapatdnn
+  obj: dguard.models.ecapatdnn.ecapatdnn.ECAPA_TDNN
   args:
     input_size: <fbank_dim>
     lin_neurons: <embedding_size>
