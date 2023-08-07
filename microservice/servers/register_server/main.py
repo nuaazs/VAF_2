@@ -106,7 +106,7 @@ def cosine_similarity(input_data):
     return [similarity(base_embedding, embedding).numpy(), base_item]
 
 
-def compare_handler(model_type=None, embedding=None, black_limit=0.78, top_num=10):
+def compare_handler(model_type=None, embedding=None, black_limit=0.78):
     """
     是否在黑库中 并返回top1-top10
     """
@@ -115,7 +115,7 @@ def compare_handler(model_type=None, embedding=None, black_limit=0.78, top_num=1
     input_data = [(k, emb_db[k], embedding) for k in emb_db.keys()]
     
     t1= time.time()
-    results = process_map(cosine_similarity, input_data, max_workers=1, desc='TQDMING---:')
+    results = process_map(cosine_similarity, input_data, max_workers=10, chunksize=1000,desc='Doing----')
     if not results:
         return {'best_score': 0, 'inbase': 0}
     t2 = time.time()
@@ -171,10 +171,10 @@ def main():
             need_register = [True for k, v in compare_result.items() if v['inbase'] == 0 and v['best_score'] < cfg.BLACK_TH[k]]
             if need_register and all(need_register):
                 logger.info(f"Need register. spkid:{spkid}. compare_result:{compare_result}")
-                # add_success = to_database(embedding=torch.tensor(emb_new), spkid=spkid, use_model_type=model_type)
-                # if add_success:
-                #     logger.info(f"Add speaker success. spkid:{spkid}")
-                #     add_speaker(spkid)
+                add_success = to_database(embedding=torch.tensor(emb_new), spkid=spkid, use_model_type=model_type)
+                if add_success:
+                    logger.info(f"Add speaker success. spkid:{spkid}")
+                    add_speaker(spkid)
             else:
                 logger.info(f"Speaker already exists. spkid:{spkid}. Compare result:{compare_result}")
 
