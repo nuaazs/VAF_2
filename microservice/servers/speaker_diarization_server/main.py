@@ -1,6 +1,7 @@
 
 from collections import Counter
 import glob
+import shutil
 import subprocess
 import numpy as np
 import pymysql
@@ -17,16 +18,18 @@ from tqdm.contrib.concurrent import process_map
 
 from loguru import logger
 
-logger.add("log/file_{time}.log", rotation="500 MB", encoding="utf-8",
+name = os.path.basename(__file__).split(".")[0]
+logger.add("log/"+name+"_{time}.log", rotation="500 MB", encoding="utf-8",
            enqueue=True, compression="zip", backtrace=True, diagnose=True)
 
-
-vad_url = "http://192.168.3.169:5005/energy_vad/file"  # VAD
-lang_url = "http://192.168.3.169:5002/lang_classify"  # 语种识别
-encode_url = "http://192.168.3.169:5001/encode"  # 提取特征
-cluster_url = "http://192.168.3.169:5011/cluster"  # cluster
-asr_url = "http://192.168.3.169:5000/transcribe/file"  # ASR
+host = "http://192.168.3.169"
+vad_url = f"{host}:5005/energy_vad/file"  # VAD
+lang_url = f"{host}:5002/lang_classify"  # 语种识别
+encode_url = f"{host}:5001/encode"  # 提取特征
+cluster_url = f"{host}:5011/cluster"  # cluster
+asr_url = f"{host}:5000/transcribe/file"  # ASR
 use_model_type = "ECAPATDNN"
+msg_db = cfg.MYSQL
 
 
 def send_request(url, method='POST', files=None, data=None, json=None, headers=None):
@@ -36,8 +39,7 @@ def send_request(url, method='POST', files=None, data=None, json=None, headers=N
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        logger.error(
-            f"Request failed: spkid:{data['spkid']}. msg:{e}")
+        logger.error(f"Request failed: spkid:{data['spkid']}. msg:{e}")
         return None
 
 
@@ -60,10 +62,7 @@ def find_items_with_highest_value(dictionary):
     return items_with_highest_value, keys_with_max_value
 
 
-def pipeline(filepath, spkid):
-    tmp_folder = f"/tmp/{spkid}"
-    os.makedirs(tmp_folder, exist_ok=True)
-
+def pipeline(tmp_folder, filepath, spkid):
     # step1 VAD
     data = {"spkid": spkid, "length": 90}
     files = [('file', (filepath, open(filepath, 'rb')))]
@@ -120,7 +119,7 @@ def pipeline(filepath, spkid):
     max_score = response['scores'][keys_with_max_value]['max']
     min_score = response['scores'][keys_with_max_value]['min']
 
-    if min_score  < 0.8 :
+    if min_score < 0.8:
         logger.info(
             f"After cluster min_score  < 0.8. spkid:{spkid}.response:{response['scores']}")
         return None
@@ -179,9 +178,6 @@ def pipeline(filepath, spkid):
     }
 
 
-msg_db = cfg.MYSQL
-
-
 def insert_to_db(data):
     conn = pymysql.connect(
         host=msg_db.get("host"),
@@ -207,16 +203,17 @@ def insert_to_db(data):
 def main(i):
     try:
         spkid = os.path.basename(i).split(".")[0].split('-')[-1]
-        tmp_folder = f"/tmp/{spkid}"
+        tmp_folder = f"/tmp/speaker_diarization/{spkid}"
         os.makedirs(tmp_folder, exist_ok=True)
-        pipeline_result = pipeline(i, spkid)
+        pipeline_result = pipeline(tmp_folder, i, spkid)
         logger.info(pipeline_result)
         if pipeline_result:
             insert_to_db(pipeline_result)
     except Exception as e:
         logger.error(f"Pipeline failed. spkid:{spkid}. msg:{e}.")
     finally:
-        subprocess.call(f"rm -rf {tmp_folder}", shell=True)
+        if os.path.exists(tmp_folder):
+            shutil.rmtree(tmp_folder)
 
 
 if __name__ == "__main__":
