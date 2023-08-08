@@ -10,6 +10,8 @@ This part is based on the repository [https://github.com/alibaba-damo-academy/3D
 6. Updated training pipeline to include printing and recording of test data EER and minDCF
 7. Added pooling layers
 8. Added additional loss functions such as Sphere2
+9. Integrated WavLM (pretrained) feature extractor
+10. Other utils optimization
 
 ## Training Instructions
 Navigate to `egs/voxceleb`
