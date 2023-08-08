@@ -10,7 +10,7 @@ stop_stage=5
 
 data=data
 exp=exp
-exp_name=repvgg
+exp_name=repvgg_wavlm
 gpus="0 1 2 3 4 5 6 7"
 
 . utils/parse_options.sh || exit 1
