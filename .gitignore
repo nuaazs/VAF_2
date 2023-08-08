@@ -25,7 +25,7 @@ docs/
 docker/*
 .vscode
 **/*.bin
-**/*build*
+**/build
 **/*third_party*
 **/*pretrained_models*
 **/*.tar
