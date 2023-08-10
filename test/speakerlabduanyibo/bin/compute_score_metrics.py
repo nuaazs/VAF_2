@@ -12,6 +12,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from speakerlabduanyibo.utils.utils import get_logger
 from speakerlabduanyibo.utils.score_metrics import (compute_pmiss_pfa_rbst, compute_eer, compute_c_norm)
+import matplotlib.pyplot as plt
+
 
 parser = argparse.ArgumentParser(description='Compute score and metrics')
 parser.add_argument('--enrol_data', default='', type=str, help='Enroll data dir')
@@ -96,3 +98,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

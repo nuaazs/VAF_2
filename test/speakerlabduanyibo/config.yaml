@@ -33,11 +33,22 @@ dataset:
     data_file: <data>
     preprocessor: <preprocessor>
   obj: speakerlab.dataset.dataset.WavSVDataset
+
 embedding_model:
-  args:
-    embedding_size: <embedding_size>
-    feat_dim: <fbank_dim>
   obj: speakerlab.models.campplus.DTDNN.CAMPPlus
+  args:
+    embedding_size: 512
+    feat_dim: 80
+  
+
+embedding_model2:
+  obj: speakerlab.models.eres2net.ResNet_aug.ERes2Net
+  args:
+    feat_dim: 80
+    embedding_size: 192
+    m_channels: 64
+
+
 embedding_size: 512
 epoch_counter:
   args:

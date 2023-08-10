@@ -66,7 +66,6 @@ def compute_pmiss_pfa_rbst(scores, labels, weights=None):
         weights = weights[sorted_ndx]
     else:
         weights = np.ones((labels.shape), dtype='f8')
-
     tgt_wghts = weights * (labels == 1).astype('f8')
     imp_wghts = weights * (labels == 0).astype('f8')
 
