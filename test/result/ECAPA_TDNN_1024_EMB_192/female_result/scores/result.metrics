@@ -1,4 +1,0 @@
-Results of female.trials is:
-EER = 9.6667
-minDCF (p_target:0.01 c_miss:1 c_fa:1) = 0.4906
-minDCF_noc (p_target:5e-06 c_miss:1 c_fa:5) = 0.6600

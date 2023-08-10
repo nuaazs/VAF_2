@@ -24,19 +24,19 @@ model_info ={
     },
     'eres2net':{
         "config": "/VAF/train/egs/voxceleb/sv-eres2net/conf/eres2net.yaml",
-        "ckpt": '/home/zhaosheng/asr_damo_websocket/online/microservice/servers/encode_utils/damo_models/eres2netbase_voxceleb/eres2netbase_voxceleb.ckpt',
+        "ckpt": '/VAF/train/egs/voxceleb/sv-eres2net/exp/eres2net/models/eres2net_voxceleb.ckpt',
         'embedding_size': '192',
         'sample_rate': '16000'
     },
     'campp':{
         "config": "/VAF/train/egs/voxceleb/sv-cam++/conf/cam++.yaml",
-        "ckpt": '/home/zhaosheng/asr_damo_websocket/online/microservice/servers/encode_utils/damo_models/campp_voxceleb/campp_voxceleb.bin',
+        "ckpt": '/VAF/train/egs/voxceleb/sv-cam++/exp/campp/models/campp_voxceleb.bin',
         'embedding_size': '512',
         'sample_rate': '16000'
     },
     'ecapatdnn_1024':{
         "config": "/VAF/train/egs/voxceleb/sv-ecapatdnn/conf/ecapatdnn1024.yaml",
-        "ckpt": '/home/zhaosheng/asr_damo_websocket/online/microservice/servers/encode_utils/damo_models/ecapatdnn1024_voxceleb/ecapatdnn1024_voxceleb.bin',
+        "ckpt": '/VAF/train/egs/voxceleb/sv-ecapatdnn/exp/models/ecapatdnn_voxceleb.bin',
         'embedding_size': '192',
         'sample_rate': '16000'
     },
@@ -106,3 +106,7 @@ def inference(model,feature_extractor,wav_path,sample_rate=16000):
         output = model(feat)
     return output
 
+# useage
+# from dguard.interface.pretrained import load_by_name,ALL_MODELS
+# print(ALL_MODELS)
+# model,feature_extractor,sample_rate = load_by_name('dfresnet_233')

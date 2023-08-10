@@ -1,6 +1,6 @@
 ## Model Result
 
-Time: 2023.8.6 21:22
+
 
 ### EER:
 | Model Name             | Emb_dim | (ms)     | Size (M) | Dataset  | EER(%)      |             |             |        |          |                  |                    |                   |        |        |           |

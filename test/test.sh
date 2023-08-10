@@ -2,28 +2,36 @@
 set -e
 . ./path.sh || exit 1
 
+<<<<<<< HEAD
 gpus="0" 
 #模型选择
 model_path="dfresnet_233 mfa_conformer ecapatdnn_1024 repvgg campplus" #dfresnet_233 mfa_conformer ecapatdnn_1024 repvgg CAMPP_EMB_512 ECAPA_TDNN_1024_EMB_192 ERES2NET_BASE_EMB_192 REPVGG_TINY_A0_EMB_512 DFRESNET56_EMB_512
 #测试集选择
 trials_class="cti2" # voxceleb cnceleb cti 3dspeaker male female cti2
+=======
+gpus="0 1 2 3 " 
+#模型选择
+model_path="REPVGG_TINY_A0_EMB_512_95 DFRESNET56_EMB_512_95 REPVGG_TINY_A0_EMB_512_90 DFRESNET56_EMB_512_90 REPVGG_TINY_A0_EMB_512_85 DFRESNET56_EMB_512_85 REPVGG_TINY_A0_EMB_512_80 DFRESNET56_EMB_512_80" #CAMPP_EMB_512 ECAPA_TDNN_1024_EMB_192 ERES2NET_BASE_EMB_192 REPVGG_TINY_A0_EMB_512 DFRESNET56_EMB_512
+#测试集选择
+trials_class="voxceleb" # voxceleb cnceleb cti 3dspeaker male female
+>>>>>>> master
 # trials_class="voxceleb"
 
 #测试集数据scp文件地址
-vox_scp=/home/duanyibo/dyb/test_model/dataset/voxceleb1/wav.scp
-cnceleb_scp=/home/duanyibo/dyb/test_model/dataset/cnceleb_files/eval/wav.scp
-cti_scp=/home/duanyibo/dyb/test_model/dataset/cti_test/cti.scp
-speaker_scp=/home/duanyibo/dyb/test_model/dataset/3D-speaker/files/wav.scp
+vox_scp=/home/duanyibo/dyb/test_model/voxceleb1/wav.scp
+cnceleb_scp=/home/duanyibo/dyb/test_model/cnceleb_files/eval/wav.scp
+cti_scp=/home/duanyibo/dyb/test_model/cti_test/cti.scp
+speaker_scp=/home/duanyibo/dyb/test_model/3D-speaker/files/wav.scp
 male_scp=/datasets/test/testdata_1c_vad_16k/test_scp/male.scp
 female_scp=/datasets/test/testdata_1c_vad_16k/test_scp/female.scp
 cti2_scp=/datasets/Phone/cti2.scp
 
 
 #测试对地址
-trials_vox="/home/duanyibo/dyb/test_model/dataset/voxceleb1/trials/vox1_O_cleaned.trial /home/duanyibo/dyb/test_model/dataset/voxceleb1/trials/vox1_E_cleaned.trial /home/duanyibo/dyb/test_model/dataset/voxceleb1/trials/vox1_H_cleaned.trial"
-trials_cnceleb=/home/duanyibo/dyb/test_model/dataset/cnceleb_files/eval/trials/CNC-Eval-Avg.lst
-trials_cti=/home/duanyibo/dyb/test_model/dataset/cti_test/cti.trials
-trials_3dspeaker="/home/duanyibo/dyb/test_model/dataset/3D-speaker/files/trials/trials_cross_device /home/duanyibo/dyb/test_model/dataset/3D-speaker/files/trials/trials_cross_distance /home/duanyibo/dyb/test_model/dataset/3D-speaker/files/trials/trials_cross_dialect"
+trials_vox="/datasets/voxceleb1/trials/vox1_O_cleaned.trial /datasets/voxceleb1/trials/vox1_E_cleaned.trial /datasets/voxceleb1/trials/vox1_H_cleaned.trial"
+trials_cnceleb=/home/duanyibo/dyb/test_model/cnceleb_files/eval/trials/CNC-Eval-Avg.lst
+trials_cti=/home/duanyibo/dyb/test_model/cti_test/cti.trials
+trials_3dspeaker="/home/duanyibo/dyb/test_model/3D-speaker/files/trials/trials_cross_device /home/duanyibo/dyb/test_model/3D-speaker/files/trials/trials_cross_distance /home/duanyibo/dyb/test_model/3D-speaker/files/trials/trials_cross_dialect"
 trials_male=/datasets/test/testdata_1c_vad_16k/test_trials/male.trials
 trials_female=/datasets/test/testdata_1c_vad_16k/test_trials/female.trials
 trials_cti2="/datasets/Phone/cti2.trial" #/datasets/Phone/cti2_male.trial /datasets/Phone/cti2.trial #/datasets/Phone/cti2_female.trial
