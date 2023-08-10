@@ -2,10 +2,8 @@
 train/
 microservice/models/
 microservice/cfg.py
-
 microservice/**/.vscode
 microservice/**/__pycache__
-
 microservice/**/*.bin
 microservice/**/*.tar
 microservice/**/*.zip
@@ -15,7 +13,6 @@ microservice/**/*.txt
 microservice/**/*.log
 microservice/**/*.ckpt
 microservice/**/*.wav
-
 **/**/*.scp
 
 src/nn/*
@@ -31,6 +28,7 @@ test/dataset/*
 **/*.pl
 **/*.metrics
 **/*build*
+**/build
 **/*third_party*
 **/*pretrained_models*
 **/*.tar
