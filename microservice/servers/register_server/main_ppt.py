@@ -6,8 +6,9 @@
 @Author  :   Carry
 @Version :   1.0
 @Desc    :   音频注册单模型接口，演示使用，
-前提，录制时长符合要求，有效音大于10s
+前提，录制时长符合要求，有效音大于10s 新建一张和speaker一样的表，speaker_ppt
 '''
+import shutil
 from utils.preprocess.save import save_file, save_url
 from flask import Flask, request, jsonify
 from loguru import logger
@@ -25,7 +26,7 @@ import time
 import multiprocessing
 from pydub import AudioSegment
 import sys
-sys.path.append("/home/xuekaixiang/workplace/vaf/microservice/servers/register_server")
+from utils.oss.upload import upload_file
 
 
 app = Flask(__name__)
@@ -40,8 +41,7 @@ asr_url = f"{host}:5000/transcribe/file"  # ASR
 vad_url = f"{host}:5005/energy_vad/file"  # VAD
 msg_db = cfg.MYSQL
 
-# TODO:
-model_type = "ECAPATDNN"
+model_type = "ERES2NET_Base"
 
 
 def send_request(url, method='POST', files=None, data=None, json=None, headers=None):
@@ -54,7 +54,7 @@ def send_request(url, method='POST', files=None, data=None, json=None, headers=N
         return None
 
 
-def add_speaker(spkid):
+def add_speaker(spkid, raw_url, selected_url):
     """
     录入黑库表
     """
@@ -68,10 +68,8 @@ def add_speaker(spkid):
     )
     cursor = conn.cursor()
     try:
-        query_sql = f"insert into speaker (phone, valid_length,file_url,preprocessed_file_url,register_time) \
-                    select record_id, wav_duration, file_url, selected_url, now() \
-                    from check_for_speaker_diraization where record_id = %s;"
-        cursor.execute(query_sql, (spkid))
+        query_sql = f"insert into speaker_ppt (phone, file_url,preprocessed_file_url,register_time) VALUES (%s, %s, %s,now())"
+        cursor.execute(query_sql, (spkid, raw_url, selected_url))
         conn.commit()
     except Exception as e:
         logger.error(f"Insert to db failed. record_id:{spkid}. msg:{e}.")
@@ -112,7 +110,7 @@ def cosine_similarity(input_data):
     return [similarity(base_embedding, embedding).numpy(), base_item]
 
 
-def compare_handler(model_type=None, embedding=None, black_limit=0.78):
+def compare_handler(model_type=None, embedding=None, black_limit=0.78,top_num=10):
     """
     是否在黑库中 并返回top1-top10
     """
@@ -121,7 +119,7 @@ def compare_handler(model_type=None, embedding=None, black_limit=0.78):
     input_data = [(k, emb_db[k], embedding) for k in emb_db.keys()]
 
     t1 = time.time()
-    results = process_map(cosine_similarity, input_data, max_workers=10, chunksize=1000, desc='Doing----')
+    results = process_map(cosine_similarity, input_data, max_workers=1, chunksize=1000, desc='Doing----')
     if not results:
         return {'best_score': 0, 'inbase': 0}
     t2 = time.time()
@@ -163,7 +161,7 @@ def get_joint_wav(phone, wav_list):
     playlist = AudioSegment.empty()
     for wav in wav_list:
         playlist = playlist + AudioSegment.from_wav(wav)
-    output_name = f'{tmp_folder}/{phone}_joint.wav'
+    output_name = f'{tmp_folder}/{phone}/{phone}_joint.wav'
     playlist.export(output_name, format='wav')
     return output_name
 
@@ -175,8 +173,8 @@ def main(filetype):
     """
     try:
         spkid = request.form.get('spkid', "init_id")
+        spkid_folder=f"{tmp_folder}/{spkid}"
         channel = request.form.get('channel', 0)
-        save_oss = True
         if filetype == "file":
             filedata = request.files.get('wav_file')
             filepath, raw_url = save_file(filedata, spkid, channel=channel, server_name="register")
@@ -194,7 +192,7 @@ def main(filetype):
         output_file_li = []
         d = {}
         for idx, i in enumerate(response['timelist']):
-            output_file = f"{tmp_folder}/{spkid}_{idx}.wav"  # 截取后的音频片段保存路径
+            output_file = f"{spkid_folder}/{spkid}_{idx}.wav"  # 截取后的音频片段保存路径
             extract_audio_segment(filepath, output_file, start_time=i[0]/1000, end_time=i[1]/1000)
             output_file_li.append(output_file)
             d[output_file] = (i[0]/1000, i[1]/1000)
@@ -214,19 +212,23 @@ def main(filetype):
 
         if not compare_results['inbase']:
             logger.info(f"Need register. spkid:{spkid}. compare_result:{compare_results}")
-            add_success = to_database(embedding=torch.tensor(emb_new), spkid=spkid, use_model_type=model_type)
+            add_success = to_database(embedding=torch.tensor(emb_new), spkid=spkid, use_model_type=model_type, mode="register")
             if add_success:
+                # upload to oss
+                raw_url = upload_file("raw", filepath, f"{spkid}/raw_{spkid}.wav")
+                selected_url = upload_file("raw", selected_path, f"{spkid}/{spkid}_selected.wav")
+
                 logger.info(f"Add speaker success. spkid:{spkid}")
-                add_speaker(spkid)
+                add_speaker(spkid, raw_url, selected_url)
+                return jsonify({"code": 200, "spkid": spkid, "msg": "Add speaker success."})
         else:
             logger.info(f"Speaker already exists. spkid:{spkid}. Compare result:{compare_results}")
+            return jsonify({"code": 200, "spkid": spkid, "msg": "Speaker already exists. Compare result:{}".format(compare_results)})
 
     except Exception as e:
         logger.error(f"Register failed. spkid:{spkid}.msg:{e}")
-    # finally:
-    #     if os.path.exists(file_name):
-    #         os.remove(file_name)
-
+    finally:
+        shutil.rmtree(spkid_folder)
 
 if __name__ == "__main__":
     tmp_folder = "/tmp/register"

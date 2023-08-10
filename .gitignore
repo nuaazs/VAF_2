@@ -47,6 +47,7 @@ src/cfg*
 **/*.ark
 **/*.scp
 **/*.log
+**/*.pid
 **/*.ckpt
 **/*CKPT*
 **/*.tar.gz
