@@ -280,30 +280,7 @@ class MQMHASTP(torch.nn.Module):
         self.out_dim = self.in_dim * 2 * self.query_num
         return self.out_dim
 
-class GSP(nn.Module):
-    """
-    Global statistics pooling, concatenate mean and std, which is used in
-    x-vector
-    Comment: simple concatenation can not make full use of both statistics
-    """
 
-    def __init__(self, in_dim=0, **kwargs):
-        super(GSP, self).__init__()
-        self.in_dim = in_dim
-
-    def forward(self, x):
-        # The last dimension is the temporal axis
-        pooling_mean = x.mean(dim=-1)
-        pooling_std = torch.sqrt(torch.var(x, dim=-1) + 1e-7)
-        pooling_mean = pooling_mean.flatten(start_dim=1)
-        pooling_std = pooling_std.flatten(start_dim=1)
-        stats = torch.cat((pooling_mean, pooling_std), 1)
-        return stats
-
-    def get_out_dim(self):
-        self.out_dim = self.in_dim * 2
-        return self.out_dim
-        
 if __name__ == '__main__':
     data = torch.randn(16, 512, 10, 35)
     # model = StatisticsPooling()

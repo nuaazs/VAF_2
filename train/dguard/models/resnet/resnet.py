@@ -29,7 +29,7 @@ Reference:
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import wespeaker.models.pooling_layers as pooling_layers
+import dguard.models.resnet.pooling_layers as pooling_layers
 
 
 class BasicBlock(nn.Module):
@@ -111,7 +111,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
     def __init__(self,
-                 block,
+                 block_type,
                  num_blocks,
                  m_channels=32,
                  feat_dim=40,
@@ -119,6 +119,12 @@ class ResNet(nn.Module):
                  pooling_func='TSTP',
                  two_emb_layer=True):
         super(ResNet, self).__init__()
+        if block_type == 'BasicBlock':
+            block = BasicBlock
+        elif block_type == 'Bottleneck':
+            block = Bottleneck
+        else:
+            raise ValueError(f"block_type {block_type} not supported !!!")
         self.in_planes = m_channels
         self.feat_dim = feat_dim
         self.embed_dim = embed_dim
