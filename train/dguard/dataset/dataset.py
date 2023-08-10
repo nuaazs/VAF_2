@@ -15,6 +15,9 @@ class BaseSVDataset(Dataset):
 
 
 class WavSVDataset(BaseSVDataset):
+    def __init__(self, data_file: str, preprocessor: dict, device="cpu",load_feat_direrctly=False):
+        super(WavSVDataset, self).__init__(data_file, preprocessor)
+        self.device = device
 
     def __getitem__(self, index):
         data = self.get_data(index)
@@ -23,9 +26,15 @@ class WavSVDataset(BaseSVDataset):
         wav, speed_index = self.preprocessor['wav_reader'](wav_path)
         spkid = self.preprocessor['label_encoder'](spk, speed_index)
         wav = self.preprocessor['augmentations'](wav)
-        feat = self.preprocessor['feature_extractor'](wav)
-
-        return feat, spkid
+        wav = wav.unsqueeze(0)
+        if self.device != "cpu":
+            wav = wav.to(self.device)
+        # print(f"Wav shape: {wav.shape}")
+        if "feature_extractor" in self.preprocessor:
+            feat = self.preprocessor['feature_extractor'](wav)
+            return feat, spkid
+        else:
+            return wav, spkid
 
     def get_data(self, index):
         if not hasattr(self, 'data_keys'):

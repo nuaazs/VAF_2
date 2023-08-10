@@ -29,8 +29,7 @@ Reference:
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-# import dguard.models.resnet.pooling_layers as pooling_layers
-import pooling_layers
+import dguard.models.resnet.pooling_layers as pooling_layers
 
 
 class BasicBlock(nn.Module):
@@ -112,7 +111,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
     def __init__(self,
-                 block,
+                 block_type,
                  num_blocks,
                  m_channels=32,
                  feat_dim=40,
@@ -120,6 +119,12 @@ class ResNet(nn.Module):
                  pooling_func='TSTP',
                  two_emb_layer=True):
         super(ResNet, self).__init__()
+        if block_type == 'BasicBlock':
+            block = BasicBlock
+        elif block_type == 'Bottleneck':
+            block = Bottleneck
+        else:
+            raise ValueError(f"block_type {block_type} not supported !!!")
         self.in_planes = m_channels
         self.feat_dim = feat_dim
         self.embed_dim = embed_dim
@@ -251,16 +256,15 @@ def ResNet293(feat_dim, embed_dim, pooling_func='TSTP', two_emb_layer=True):
 
 if __name__ == '__main__':
     x = torch.zeros(10, 200, 80)
-    model = ResNet18(feat_dim=80,
+    model = ResNet34(feat_dim=80,
                      embed_dim=256,
-                     pooling_func='GSP') # MQMHASTP
+                     pooling_func='MQMHASTP')
     model.eval()
     out = model(x)
     print(out[-1].size())
 
     num_params = sum(p.numel() for p in model.parameters())
     print("{} M".format(num_params / 1e6))
-    print(model)
 
     # from thop import profile
     # x_np = torch.randn(1, 200, 80)

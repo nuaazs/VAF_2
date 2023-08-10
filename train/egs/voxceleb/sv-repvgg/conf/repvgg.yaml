@@ -6,7 +6,7 @@ noise:
 reverb:
 
 # outputs
-exp_dir:
+exp_dir: 
 
 # basic
 num_epoch: 150

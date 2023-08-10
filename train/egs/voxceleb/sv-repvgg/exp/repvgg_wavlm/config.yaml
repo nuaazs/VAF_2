@@ -1,0 +1,111 @@
+aug_prob: 0.2
+augmentations:
+  args:
+    aug_prob: <aug_prob>
+    noise_file: <noise>
+    reverb_file: <reverb>
+  obj: dguard.process.processor.SpkVeriAug
+batch_size: 64
+checkpointer:
+  args:
+    checkpoints_dir: <exp_dir>/models
+    recoverables:
+      classifier: <classifier>
+      embedding_model: <embedding_model>
+      epoch_counter: <epoch_counter>
+  obj: dguard.utils.checkpoint.Checkpointer
+classifier:
+  args:
+    input_dim: <embedding_size>
+    out_neurons: <num_classes>
+  obj: dguard.models.campplus.classifier.CosineClassifier
+data: data/vox2_dev/train.csv
+dataloader:
+  args:
+    batch_size: <batch_size>
+    dataset: <dataset>
+    drop_last: true
+    num_workers: <num_workers>
+    pin_memory: true
+  obj: torch.utils.data.DataLoader
+dataset:
+  args:
+    data_file: <data>
+    device: cpu
+    preprocessor: <preprocessor>
+  obj: dguard.dataset.dataset.WavSVDataset
+embedding_model:
+  args:
+    embed_dim: <embedding_size>
+    feat_dim: <wavlm_dim>
+  obj: dguard.models.repvgg.repvgg.RepVGG
+embedding_size: 512
+epoch_counter:
+  args:
+    limit: <num_epoch>
+  obj: dguard.utils.epoch.EpochCounter
+exp_dir: exp/repvgg_wavlm
+label_encoder:
+  args:
+    data_file: <data>
+  obj: dguard.process.processor.SpkLabelEncoder
+log_batch_freq: 100
+loss:
+  args:
+    easy_margin: false
+    margin: 0.2
+    scale: 32.0
+  obj: dguard.loss.margin_loss.ArcMarginLoss
+lr: 0.0005
+lr_scheduler:
+  args:
+    fix_epoch: <num_epoch>
+    max_lr: <lr>
+    min_lr: <min_lr>
+    optimizer: <optimizer>
+    step_per_epoch: null
+    warmup_epoch: 5
+  obj: dguard.process.scheduler.WarmupCosineScheduler
+margin_scheduler:
+  args:
+    criterion: <loss>
+    final_margin: 0.2
+    fix_epoch: 25
+    increase_start_epoch: 15
+    initial_margin: 0.0
+    step_per_epoch: null
+  obj: dguard.process.scheduler.MarginScheduler
+min_lr: 5.0e-05
+noise: data/musan/wav.scp
+num_classes: 5994
+num_epoch: 150
+num_workers: 32
+optimizer:
+  args:
+    lr: <lr>
+    momentum: 0.9
+    nesterov: true
+    params: null
+    weight_decay: 0.0001
+  obj: torch.optim.SGD
+pre_extractor:
+  args:
+    checkpoint: /VAF/train/pretrained_models/WavLM-Large.pt
+    device: cuda
+  obj: dguard.models.feature_extractor.wavlm.wavlm_extractor
+preprocessor:
+  augmentations: <augmentations>
+  label_encoder: <label_encoder>
+  wav_reader: <wav_reader>
+reverb: data/rirs/wav.scp
+sample_rate: 16000
+save_epoch_freq: 1
+speed_pertub: true
+wav_len: 3.0
+wav_reader:
+  args:
+    duration: <wav_len>
+    sample_rate: <sample_rate>
+    speed_pertub: <speed_pertub>
+  obj: dguard.process.processor.WavReader
+wavlm_dim: 1024

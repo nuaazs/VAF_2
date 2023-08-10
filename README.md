@@ -1,5 +1,4 @@
 <div align=center>
-<h1>D-Guard Speaker Recognition System</h1>
 <img src="D-guard.png"  width="380" height="75" />
 </div>
 <div align=center>
@@ -19,13 +18,19 @@
 
 
 ## 🔥 News
+0. 2023-08-08 + NLP microservices
 
-1. Added a language recognition model to screen out non-Mandarin Chinese audio, including foreign languages, dialects, and low-quality audio.
+1. 2023-08-08 + Integrated WavLM (pretrained) feature extractor
 
-2. Added DFResNet233/MFA-Conformer/CAM++/ERes2Net model to fuse results.
+2. 2023-07-15 + Language recognition model to screen out non-Mandarin Chinese audio, including foreign languages, dialects, and low-quality audio.
+
+3. 2023-07-03 + DFResNet233/repvgg/MFA-Conformer/CAM++/ERes2Net model to fuse results.
 
 
 ## 🚩 TODOs
+- Pre-trained large model feature extractor integration and model training.
+
+- Android runtime development
 
 
 ## ⭐ Highlights
