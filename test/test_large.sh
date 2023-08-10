@@ -2,47 +2,40 @@
 set -e
 . ./path.sh || exit 1
 
-gpus="0" 
+gpus="1 2 3" 
 #模型选择
-model_path="dfresnet_233 mfa_conformer ecapatdnn_1024 repvgg campplus" #dfresnet_233 mfa_conformer ecapatdnn_1024 repvgg CAMPP_EMB_512 ECAPA_TDNN_1024_EMB_192 ERES2NET_BASE_EMB_192 REPVGG_TINY_A0_EMB_512 DFRESNET56_EMB_512
+model_path="eres2net_200k" #campplus_200k dfresnet_233 mfa_conformer ecapatdnn_1024 repvgg campplus CAMPP_EMB_512 ECAPA_TDNN_1024_EMB_192 ERES2NET_BASE_EMB_192 REPVGG_TINY_A0_EMB_512 DFRESNET56_EMB_512
 #测试集选择
 trials_class="cti2" # voxceleb cnceleb cti 3dspeaker male female cti2
 # trials_class="voxceleb"
 
 #测试集数据scp文件地址
-vox_scp=/home/duanyibo/dyb/test_model/voxceleb1/wav.scp
-cnceleb_scp=/home/duanyibo/dyb/test_model/cnceleb_files/eval/wav.scp
-cti_scp=/home/duanyibo/dyb/test_model/cti_test/cti.scp
-speaker_scp=/home/duanyibo/dyb/test_model/3D-speaker/files/wav.scp
+vox_scp=/home/duanyibo/dyb/test_model/dataset/voxceleb1/wav.scp
+cnceleb_scp=/home/duanyibo/dyb/test_model/dataset/cnceleb_files/eval/wav.scp
+cti_scp=/home/duanyibo/dyb/test_model/dataset/cti_test/cti.scp
+speaker_scp=/home/duanyibo/dyb/test_model/dataset/3D-speaker/files/wav.scp
 male_scp=/datasets/test/testdata_1c_vad_16k/test_scp/male.scp
 female_scp=/datasets/test/testdata_1c_vad_16k/test_scp/female.scp
 cti2_scp=/datasets/Phone/cti2.scp
 
 
 #测试对地址
-trials_vox="/datasets/voxceleb1/trials/vox1_O_cleaned.trial /datasets/voxceleb1/trials/vox1_E_cleaned.trial /datasets/voxceleb1/trials/vox1_H_cleaned.trial"
-trials_cnceleb=/home/duanyibo/dyb/test_model/cnceleb_files/eval/trials/CNC-Eval-Avg.lst
-trials_cti=/home/duanyibo/dyb/test_model/cti_test/cti.trials
-trials_3dspeaker="/home/duanyibo/dyb/test_model/3D-speaker/files/trials/trials_cross_device /home/duanyibo/dyb/test_model/3D-speaker/files/trials/trials_cross_distance /home/duanyibo/dyb/test_model/3D-speaker/files/trials/trials_cross_dialect"
+trials_vox="/home/duanyibo/dyb/test_model/dataset/voxceleb1/trials/vox1_O_cleaned.trial /home/duanyibo/dyb/test_model/dataset/voxceleb1/trials/vox1_E_cleaned.trial /home/duanyibo/dyb/test_model/dataset/voxceleb1/trials/vox1_H_cleaned.trial"
+trials_cnceleb=/home/duanyibo/dyb/test_model/dataset/cnceleb_files/eval/trials/CNC-Eval-Avg.lst
+trials_cti=/home/duanyibo/dyb/test_model/dataset/cti_test/cti.trials
+trials_3dspeaker="/home/duanyibo/dyb/test_model/dataset/3D-speaker/files/trials/trials_cross_device /home/duanyibo/dyb/test_model/dataset/3D-speaker/files/trials/trials_cross_distance /home/duanyibo/dyb/test_model/dataset/3D-speaker/files/trials/trials_cross_dialect"
 trials_male=/datasets/test/testdata_1c_vad_16k/test_trials/male.trials
 trials_female=/datasets/test/testdata_1c_vad_16k/test_trials/female.trials
 trials_cti2="/datasets/Phone/cti2.trial" #/datasets/Phone/cti2_male.trial /datasets/Phone/cti2.trial #/datasets/Phone/cti2_female.trial
 
 
+
 #并发数（跟GPU有关，最好为GPU的整数倍）
-<<<<<<< HEAD
-nj=16
+nj=3
 
 . utils/parse_options.sh || exit 1
 #保存结果的地址
-result_path=/home/duanyibo/dyb/test_model/result
-=======
-nj=1
-
-. utils/parse_options.sh || exit 1
-#保存结果的地址
-result_path=./result_8_7
->>>>>>> 3525cf9a1f80c164abf263b8a23d5636be0ade6e
+result_path=./result_200k
 
 #准备3Dspeaker,voxceleb1,cnceleb1数据
 # In this stage we prepare the raw datasets, including Voxceleb1 and Voxceleb2.
@@ -102,18 +95,18 @@ for model_id in $model_path; do
                         echo "male dataset"
                         if [ ! -d $result_path/$model_id/male/embeddings ]; then
                                 torchrun --nproc_per_node=$nj --master_port=54688 speakerlabduanyibo/bin/extract.py --exp_dir $result_path/$model_id/male_result \
-                                                                --data $male_scp --use_gpu --gpu $gpus || wechat echo "cti_male torchrun error"
+                                                                --data $male_scp --use_gpu --gpu $gpus || wechat echo "3d torchrun error"
                                 mkdir -p $result_path/$model_id/male_result
                         fi
                         python speakerlabduanyibo/bin/compute_score_metrics.py --enrol_data $result_path/$model_id/male_result/embeddings --test_data $result_path/$model_id/male_result/embeddings \
-                                                                        --scores_dir $result_path/$model_id/male_result/scores --trials $trials_male || wechat echo "cti_male compute_score_metrics error"
+                                                                        --scores_dir $result_path/$model_id/male_result/scores --trials $trials_male || wechat echo "3d compute_score_metrics error"
                 fi  
 
                 if [ "$trial_class" == 'female' ]; then
                         echo "female dataset"
                         if [ ! -d $result_path/$model_id/female/embeddings ]; then
                                 torchrun --nproc_per_node=$nj --master_port=53688 speakerlabduanyibo/bin/extract.py --exp_dir $result_path/$model_id/female_result \
-                                                                --data $female_scp --use_gpu --gpu $gpus || wechat echo "cti_female torchrun error"
+                                                                --data $female_scp --use_gpu --gpu $gpus || wechat echo "3d torchrun error"
                                 mkdir -p $result_path/$model_id/female_result
                         fi
                         python speakerlabduanyibo/bin/compute_score_metrics.py --enrol_data $result_path/$model_id/female_result/embeddings --test_data $result_path/$model_id/female_result/embeddings \
@@ -123,12 +116,12 @@ for model_id in $model_path; do
                 if [ "$trial_class" == 'cti2' ]; then
                         echo "cti2 dataset"
                         if [ ! -d $result_path/$model_id/cti2/embeddings ]; then
-                                torchrun --nproc_per_node=$nj --master_port=53688 speakerlabduanyibo/bin/extract.py --exp_dir $result_path/$model_id/cti2_result \
+                                torchrun --nproc_per_node=$nj --master_port=53688 speakerlabduanyibo/bin/extract_200k.py --exp_dir $result_path/$model_id/cti2_result \
                                                                 --data $cti2_scp --use_gpu --gpu $gpus || wechat echo "cti2 torchrun error"
                                 mkdir -p $result_path/$model_id/cti2_result
                         fi
                         python speakerlabduanyibo/bin/compute_score_metrics.py --enrol_data $result_path/$model_id/cti2_result/embeddings --test_data $result_path/$model_id/cti2_result/embeddings \
-                                                                        --scores_dir $result_path/$model_id/cti2_result/scores_male --trials $trials_cti2 || wechat echo "cti2 compute_score_metrics error"
+                                                                        --scores_dir $result_path/$model_id/cti2_result/scores --trials $trials_cti2 || wechat echo "cti2 compute_score_metrics error"
                 fi 
         done
         wechat echo "$model_id done"
