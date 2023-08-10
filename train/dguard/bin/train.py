@@ -293,7 +293,9 @@ def test(model, gpu,config, epoch, logger, rank, wav_scp,embedding_dir,feature_e
                     print(feat.shape)
                     feat = feat.unsqueeze(0)
                     feat = feat.to(gpu)
-                    emb = model(feat).detach().cpu().numpy()
+                    outputs = model(feat)
+                    embeds = outputs[-1] if isinstance(outputs, tuple) else outputs
+                    emb = embeds.detach().cpu().numpy()
                     writer(k, emb)
     return emb_ark,emb_scp
 
@@ -331,7 +333,11 @@ def train(train_loader, model, criterion, optimizer, epoch, lr_scheduler, margin
             # compute output
             if pre_extractor:
                 x = pre_extractor(x)
-            output = model(x)
+            # output = model(x)
+            outputs = model(x)
+            embeds = outputs[-1] if isinstance(outputs, tuple) else outputs
+            output = embeds.detach().cpu().numpy()
+            
             loss = criterion(output, y)
             acc1 = accuracy(output, y)
 
@@ -398,7 +404,9 @@ def train_fine_tune(train_loader, model, criterion, optimizer, epoch, lr_schedul
         # compute output
         if pre_extractor:
             x = pre_extractor(x)
-        output = model(x)
+        outputs = model(x)
+        embeds = outputs[-1] if isinstance(outputs, tuple) else outputs
+        output = embeds.detach().cpu().numpy()
         loss = criterion(output, y)
         acc1 = accuracy(output, y)
 
