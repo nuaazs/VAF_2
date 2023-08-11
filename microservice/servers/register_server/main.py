@@ -5,7 +5,7 @@
 @Time    :   2023/07/24 10:46:54
 @Author  :   Carry
 @Version :   1.0
-@Desc    :   音频注册
+@Desc    :   省厅音频注册
 '''
 import multiprocessing
 import sys
@@ -59,8 +59,8 @@ def add_speaker(spkid):
     )
     cursor = conn.cursor()
     try:
-        query_sql = f"insert into speaker (phone, valid_length,file_url,preprocessed_file_url,register_time) \
-                    select record_id, wav_duration, file_url, selected_url, now() \
+        query_sql = f"insert into black_speaker_info (record_id, valid_length,file_url,preprocessed_file_url,record_month,register_time) \
+                    select record_id, wav_duration, file_url, selected_url,record_month, now() \
                     from check_for_speaker_diraization where record_id = %s;"
         cursor.execute(query_sql, (spkid))
         conn.commit()
@@ -103,7 +103,7 @@ def cosine_similarity(input_data):
     return [similarity(base_embedding, embedding).numpy(), base_item]
 
 
-def compare_handler(model_type=None, embedding=None, black_limit=0.78):
+def compare_handler(model_type=None, embedding=None, black_limit=0.78, top_num=10):
     """
     是否在黑库中 并返回top1-top10
     """
@@ -112,7 +112,7 @@ def compare_handler(model_type=None, embedding=None, black_limit=0.78):
     input_data = [(k, emb_db[k], embedding) for k in emb_db.keys()]
 
     t1 = time.time()
-    results = process_map(cosine_similarity, input_data, max_workers=10, chunksize=1000, desc='Doing----')
+    results = process_map(cosine_similarity, input_data, max_workers=4, chunksize=1000, desc='Doing----')
     if not results:
         return {'best_score': 0, 'inbase': 0}
     t2 = time.time()

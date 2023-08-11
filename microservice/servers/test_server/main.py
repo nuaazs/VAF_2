@@ -7,6 +7,10 @@
 @Version :   1.0
 @Desc    :   音频推理，检测是否再黑库中
 '''
+import sys
+
+from utils.oss.upload import upload_file
+from speaker_diarization_server.main import find_items_with_highest_value
 from sklearn.metrics.pairwise import cosine_similarity
 from pydub import AudioSegment
 from loguru import logger
@@ -25,11 +29,8 @@ import time
 import glob
 import shutil
 from flask import Flask, request, jsonify
-import sys
-sys.path.append("/home/xuekaixiang/workplace/vaf/microservice/servers")
-from speaker_diarization_server.main import find_items_with_highest_value
+from utils.preprocess.save import save_file, save_url
 
-from utils.oss.upload import upload_file
 app = Flask(__name__)
 
 similarity = torch.nn.CosineSimilarity(dim=-1, eps=1e-6)
@@ -44,18 +45,16 @@ asr_url = f"{host}:5000/transcribe/file"  # ASR
 vad_url = f"{host}:5005/energy_vad/file"  # VAD
 lang_url = f"{host}:5002/lang_classify"  # 语种识别
 msg_db = cfg.MYSQL
-use_model_type = "ECAPATDNN"
+use_model_type = "ERES2NET_Base"
 
 
 def send_request(url, method='POST', files=None, data=None, json=None, headers=None):
     try:
-        response = requests.request(
-            method, url, files=files, data=data, json=json, headers=headers)
+        response = requests.request(method, url, files=files, data=data, json=json, headers=headers)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        logger.error(
-            f"Request failed: spkid:{data['spkid']}. msg:{e}")
+        logger.error(f"Request failed: spkid:{data['spkid']}. msg:{e}")
         return None
 
 
@@ -84,7 +83,7 @@ def add_hit(spkid):
     )
     cursor = conn.cursor()
     try:
-        query_sql = f"insert into speaker (phone, valid_length,file_url,preprocessed_file_url,register_time) \
+        query_sql = f"insert into hit (phone, valid_length,file_url,preprocessed_file_url,register_time) \
                     select record_id, wav_duration, file_url, selected_url, now() \
                     from check_for_speaker_diraization where record_id = %s;"
         cursor.execute(query_sql, (spkid))
@@ -95,17 +94,16 @@ def add_hit(spkid):
     cursor.close()
     conn.close()
 
-def get_similarities_result(emb_db, emb_new):
+
+def get_similarities_result(emb_type,emb_db, emb_new):
     """
     获取相似度最高的spkid
     """
     cosine_similarities = cosine_similarity(emb_db, emb_new)
-    print(f"cosine_similarities: {cosine_similarities}")
     top_indices = np.argsort(cosine_similarities.ravel())[-1]
-    spkid = list(emb_db_dic.keys())[top_indices]
+    spkid = list(emb_db_dic[emb_type].keys())[top_indices]
     score = cosine_similarities[top_indices][0]
     print(f"top1_index: {top_indices}, spkid: {spkid}, score: {score}")
-    print(emb_db[top_indices])
     return spkid, score
 
 
@@ -115,7 +113,7 @@ def pipeline(tmp_folder, filepath, spkid):
     files = [('file', (filepath, open(filepath, 'rb')))]
     response = send_request(vad_url, files=files, data=data)
     if not response:
-        return None
+        return {"code": 500, "msg": "VAD failed."}
 
     # step2 截取音频片段
     output_file_li = []
@@ -136,7 +134,7 @@ def pipeline(tmp_folder, filepath, spkid):
         mandarin_wavs = [i for i in url_list if pass_list[url_list.index(i)] == 1]
     else:
         logger.error(f"Lang_classify failed. spkid:{spkid}.response:{response}")
-        return None
+        return {"code": 500, "msg": "Lang_classify failed."}
 
     # step4 提取特征
     data = {"spkid": spkid, "filelist": ",".join(mandarin_wavs)}
@@ -145,10 +143,9 @@ def pipeline(tmp_folder, filepath, spkid):
         file_emb = response['file_emb']
     else:
         logger.error(f"Encode failed. spkid:{spkid}.response:{response}")
-        return None
+        return {"code": 500, "msg": "Encode failed."}
 
     # step5 聚类
-    # TODO:选择最优的模型
     file_emb = file_emb[use_model_type]
     data = {
         "emb_dict": file_emb["embedding"],
@@ -165,13 +162,13 @@ def pipeline(tmp_folder, filepath, spkid):
 
     if min_score < 0.8:
         logger.info(f"After cluster min_score  < 0.8. spkid:{spkid}.response:{response['scores']}")
-        return None
+        return {"code": 500, "msg": "After cluster min_score  < 0.8."}
     total_duration = 0
     for i in items.keys():
         total_duration += file_emb['length'][i]
     if total_duration < cfg.MIN_LENGTH_REGISTER:
         logger.info(f"After cluster total_duration:{total_duration} < {cfg.MIN_LENGTH_REGISTER}s. spkid:{spkid}.response:{response}")
-        return None
+        return {"code": 500, "msg": "After cluster total_duration < 10s."}
     selected_files = sorted(items.keys(), key=lambda x: x.split("/")[-1].replace(".wav", "").split("_")[0])
     audio_data = np.concatenate([torchaudio.load(file.replace("local://", ""))[0] for file in selected_files], axis=-1)
     _selected_path = os.path.join(tmp_folder, f"{spkid}_selected.wav")
@@ -201,8 +198,8 @@ def pipeline(tmp_folder, filepath, spkid):
     #     # todo 查找新话术逻辑
     #     return None
 
-
     return {
+        "code": 200,
         "spkid": spkid,
         "raw_file_path": filepath,
         "selected_path": _selected_path,
@@ -211,56 +208,73 @@ def pipeline(tmp_folder, filepath, spkid):
     }
 
 
-
-def main(filepath):
+@app.route("/test/<filetype>", methods=["POST"])
+def main(filetype):
     try:
-        spkid = os.path.basename(filepath).split(".")[0].split('-')[-1]
+        spkid = request.form.get('spkid', "init_id")
+        channel = request.form.get('channel', 0)
+        if filetype == "file":
+            filedata = request.files.get('wav_file')
+            filepath, raw_url = save_file(filedata, spkid,sr=8000, channel=channel, server_name="test")
+        else:
+            filepath, raw_url = save_url(request.form.get('url'), spkid,sr=8000, channel=channel, server_name="test")
+
         tmp_folder = f"/tmp/test/{spkid}"
         os.makedirs(tmp_folder, exist_ok=True)
         pipeline_result = pipeline(tmp_folder, filepath, spkid)
-        if pipeline_result:
+        if pipeline_result['code'] == 200:
             # 提取特征
-            data = {"spkid": spkid, "filelist": ",".join(pipeline_result['selected_path'])}
+            data = {"spkid": spkid, "filelist": "local://"+pipeline_result['selected_path']}
             response = send_request(encode_url, data=data)
             if response['code'] == 200:
                 file_emb = response['file_emb']
             else:
                 logger.error(f"Encode failed. spkid:{spkid}.response:{response}")
-                return 
-            
+                return jsonify({"code": 500, "message": "Encode failed."})
+
             # 撞库
             compare_result = {}
             for i in cfg.ENCODE_MODEL_LIST:
-                spkid, score = get_similarities_result( np.array(list(emb_db_dic[i].values())), file_emb[i]['embedding'])
-                logger.info(f"spkid:{spkid}, score:{score}")
+                hit_spkid, score = get_similarities_result(i,np.array(list(emb_db_dic[i].values())),  
+                                                           np.array(list(file_emb[i]['embedding'].values())[0]).reshape(1, -1))
+                logger.info(f"hit_spkid:{hit_spkid}, score:{score}")
                 if score < cfg.BLACK_TH[i]:
                     logger.info(f"spkid:{spkid} is not in black list. score:{score}")
-                    return
-                compare_result[i]={"spkid":spkid,"score":score}
+                    return jsonify({"code": 200, "message": "{} is not in black list. hit_spkid:{}, score:{}.".format(spkid,hit_spkid, score)})
+                compare_result[i] = {"is_hit": True, "hit_spkid": hit_spkid, "score": score}
             # ASR
 
             # NLP
 
             # OSS
             raw_url = upload_file("test", filepath, f"{spkid}/raw_{spkid}.wav")
-            selected_url = upload_file("test", os.path.join(tmp_folder, f"{spkid}_selected.wav"), f"{spkid}/{spkid}_selected.wav")
+            selected_url = upload_file("test",pipeline_result['selected_path'], f"{spkid}/{spkid}_selected.wav")
             pipeline_result['raw_url']=raw_url
             pipeline_result['selected_url']=selected_url
 
-            add_hit(pipeline_result)
+            #TODO: add hit
+            # add_hit(pipeline_result)
+            return jsonify({"code": 200, "message": "success", "file_url":raw_url, "compare_result": compare_result})
+        else:
+            return jsonify(pipeline_result)
     except Exception as e:
         logger.error(f"Pipeline failed. spkid:{spkid}. msg:{e}.")
+        return jsonify({"code": 500, "message": "{}".format(e)})
     finally:
         if os.path.exists(tmp_folder):
             shutil.rmtree(tmp_folder)
 
 
-if __name__ == "__main__":
-    emb_db_dic={}
-    for i in cfg.ENCODE_MODEL_LIST:
-        emb_db_dic[i] = get_embeddings(use_model_type=i)
+emb_db_dic = {}
+for i in cfg.ENCODE_MODEL_LIST:
+    emb_db_dic[i] = get_embeddings(use_model_type=i)
 
-    wav_files = glob.glob("./*.wav")
-    logger.info(f"Total wav files: {len(wav_files)}")
-    wav_files = sorted(wav_files)
-    process_map(main, wav_files, max_workers=1, desc='TQDMING---:')
+if __name__ == "__main__":
+    # tmp_folder = "/tmp/test"
+    # os.makedirs(tmp_folder, exist_ok=True)
+    app.run(host="0.0.0.0", port=8989)
+
+    # wav_files = glob.glob("./*.wav")
+    # logger.info(f"Total wav files: {len(wav_files)}")
+    # wav_files = sorted(wav_files)
+    # process_map(main, wav_files, max_workers=1, desc='TQDMING---:')

@@ -174,8 +174,8 @@ def insert_to_db(data):
     )
     cursor = conn.cursor()
     try:
-        sql = "INSERT INTO check_for_speaker_diraization (`record_id`, `file_url`, `selected_url`, `asr_text`, `wav_duration`,`create_time`,`selected_times`) VALUES (%s, %s, %s, %s, %s,now(), %s);"
-        cursor.execute(sql, (data['spkid'], data['raw_file_path'], data['selected_url'], data['asr_result'], data['total_duration'], str(data['selected_times'])))
+        sql = "INSERT INTO check_for_speaker_diraization (`record_id`, `file_url`, `selected_url`, `asr_text`, `wav_duration`,`create_time`,`selected_times`, `record_month`) VALUES (%s, %s, %s, %s, %s,now(), %s, %s);"
+        cursor.execute(sql, (data['spkid'], data['raw_file_path'], data['selected_url'], data['asr_result'], data['total_duration'], str(data['selected_times']),month))
         conn.commit()
     except Exception as e:
         logger.error(f"Insert to db failed. spkid:{data['spkid']}. msg:{e}.")
@@ -201,6 +201,7 @@ def main(i):
 
 
 if __name__ == "__main__":
+    month="7"
     # wav_files = glob.glob("/datasets/changzhou/*.wav")
     wav_files = glob.glob("./*.wav")
     logger.info(f"Total wav files: {len(wav_files)}")
