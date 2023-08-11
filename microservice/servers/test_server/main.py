@@ -23,20 +23,19 @@ import pymysql
 import numpy as np
 import time
 import glob
-import multiprocessing
 import shutil
-import subprocess
+from flask import Flask, request, jsonify
 import sys
 sys.path.append("/home/xuekaixiang/workplace/vaf/microservice/servers")
 from speaker_diarization_server.main import find_items_with_highest_value
 
 from utils.oss.upload import upload_file
+app = Flask(__name__)
 
 similarity = torch.nn.CosineSimilarity(dim=-1, eps=1e-6)
 
 name = os.path.basename(__file__).split(".")[0]
-logger.add("log/"+name+"_{time}.log", rotation="500 MB", encoding="utf-8",
-           enqueue=True, compression="zip", backtrace=True, diagnose=True)
+logger.add("log/"+name+"_{time}.log", rotation="500 MB", encoding="utf-8", enqueue=True, compression="zip", backtrace=True, diagnose=True)
 
 host = "http://192.168.3.169"
 encode_url = f"{host}:5001/encode"  # 提取特征

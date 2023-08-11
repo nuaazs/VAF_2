@@ -7,7 +7,7 @@ config = {
         "model_config": {
             "sample_rate": 16000
         },
-        "pretrained_model": "pretrained_eres2net_base.ckpt",
+        "pretrained_model": "eres2net_voxceleb.ckpt",
         "yesOrno_thr": 0.43
     },
     "pipeline": {
@@ -74,11 +74,11 @@ def conv3x3(in_planes, out_planes, stride=1):
         bias=False)
 
 
-class BasicBlockERes2Net(nn.Module):
-    expansion = 4
+class BasicBlockRes2Net(nn.Module):
+    expansion = 2
 
-    def __init__(self, in_planes, planes, stride=1, baseWidth=24, scale=3):
-        super(BasicBlockERes2Net, self).__init__()
+    def __init__(self, in_planes, planes, stride=1, baseWidth=32, scale=2):
+        super(BasicBlockRes2Net, self).__init__()
         width = int(math.floor(planes * (baseWidth / 64.0)))
         self.conv1 = conv1x1(in_planes, width * scale, stride)
         self.bn1 = nn.BatchNorm2d(width * scale)
@@ -115,6 +115,7 @@ class BasicBlockERes2Net(nn.Module):
         out = self.bn1(out)
         out = self.relu(out)
         spx = torch.split(out, self.width, 1)
+        # torch.split是torch.chunk（）函数的升级版本，它不仅可以按份数均匀分割，还可以按特定方案进行分割。
         for i in range(self.nums):
             if i == 0:
                 sp = spx[i]
@@ -137,15 +138,14 @@ class BasicBlockERes2Net(nn.Module):
         return out
 
 
-class BasicBlockERes2Net_diff_AFF(nn.Module):
-    expansion = 4
+class BasicBlockRes2Net_diff_AFF(nn.Module):
+    expansion = 2
 
-    def __init__(self, in_planes, planes, stride=1, baseWidth=24, scale=3):
-        super(BasicBlockERes2Net_diff_AFF, self).__init__()
+    def __init__(self, in_planes, planes, stride=1, baseWidth=32, scale=2):
+        super(BasicBlockRes2Net_diff_AFF, self).__init__()
         width = int(math.floor(planes * (baseWidth / 64.0)))
         self.conv1 = conv1x1(in_planes, width * scale, stride)
         self.bn1 = nn.BatchNorm2d(width * scale)
-
         self.nums = scale
 
         convs = []
@@ -154,7 +154,6 @@ class BasicBlockERes2Net_diff_AFF(nn.Module):
         for i in range(self.nums):
             convs.append(conv3x3(width, width))
             bns.append(nn.BatchNorm2d(width))
-        # Add different fuse_model parameters
         for j in range(self.nums - 1):
             fuse_models.append(AFF(channels=width))
 
@@ -208,21 +207,22 @@ class BasicBlockERes2Net_diff_AFF(nn.Module):
         return out
 
 
-class ERes2Net_aug(nn.Module):
+class ERes2Net(nn.Module):
 
     def __init__(self,
-                 block=BasicBlockERes2Net,
-                 block_fuse=BasicBlockERes2Net_diff_AFF,
+                 block=BasicBlockRes2Net,
+                 block_fuse=BasicBlockRes2Net_diff_AFF,
                  num_blocks=[3, 4, 6, 3],
                  m_channels=32,
                  feat_dim=80,
                  embedding_size=192,
                  pooling_func='TSTP',
                  two_emb_layer=False):
-        super(ERes2Net_aug, self).__init__()
+        super(ERes2Net, self).__init__()
         self.in_planes = m_channels
         self.feat_dim = feat_dim
-        self.embedding_size = embedding_size
+        self.embed_dim = embedding_size
+        embed_dim = embedding_size
         self.stats_dim = int(feat_dim / 8) * m_channels * 8
         self.two_emb_layer = two_emb_layer
 
@@ -238,40 +238,42 @@ class ERes2Net_aug(nn.Module):
         self.layer4 = self._make_layer(
             block_fuse, m_channels * 8, num_blocks[3], stride=2)
 
+        # downsampling
         self.layer1_downsample = nn.Conv2d(
+            m_channels * 2,
+            m_channels * 4,
+            kernel_size=3,
+            stride=2,
+            padding=1,
+            bias=False)
+        self.layer2_downsample = nn.Conv2d(
             m_channels * 4,
             m_channels * 8,
             kernel_size=3,
             padding=1,
             stride=2,
             bias=False)
-        self.layer2_downsample = nn.Conv2d(
+        self.layer3_downsample = nn.Conv2d(
             m_channels * 8,
             m_channels * 16,
             kernel_size=3,
             padding=1,
             stride=2,
             bias=False)
-        self.layer3_downsample = nn.Conv2d(
-            m_channels * 16,
-            m_channels * 32,
-            kernel_size=3,
-            padding=1,
-            stride=2,
-            bias=False)
 
-        self.fuse_mode12 = AFF(channels=m_channels * 8)
-        self.fuse_mode123 = AFF(channels=m_channels * 16)
-        self.fuse_mode1234 = AFF(channels=m_channels * 32)
+        # bottom-up fusion
+        self.fuse_mode12 = AFF(channels=m_channels * 4)
+        self.fuse_mode123 = AFF(channels=m_channels * 8)
+        self.fuse_mode1234 = AFF(channels=m_channels * 16)
 
         self.n_stats = 1 if pooling_func == 'TAP' or pooling_func == 'TSDP' else 2
         self.pool = getattr(pooling_layers, pooling_func)(
             in_dim=self.stats_dim * block.expansion)
         self.seg_1 = nn.Linear(self.stats_dim * block.expansion * self.n_stats,
-                               embedding_size)
+                               embed_dim)
         if self.two_emb_layer:
-            self.seg_bn_1 = nn.BatchNorm1d(embedding_size, affine=False)
-            self.seg_2 = nn.Linear(embedding_size, embedding_size)
+            self.seg_bn_1 = nn.BatchNorm1d(embed_dim, affine=False)
+            self.seg_2 = nn.Linear(embed_dim, embed_dim)
         else:
             self.seg_bn_1 = nn.Identity()
             self.seg_2 = nn.Identity()
@@ -285,17 +287,21 @@ class ERes2Net_aug(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        x = x.permute(0, 2, 1)  # (B,T,F) => (B,F,T)
+        x = x.permute(0, 2, 1)
 
         x = x.unsqueeze_(1)
         out = F.relu(self.bn1(self.conv1(x)))
         out1 = self.layer1(out)
+
+        # bottom-up fusion
         out2 = self.layer2(out1)
         out1_downsample = self.layer1_downsample(out1)
         fuse_out12 = self.fuse_mode12(out2, out1_downsample)
+
         out3 = self.layer3(out2)
         fuse_out12_downsample = self.layer2_downsample(fuse_out12)
         fuse_out123 = self.fuse_mode123(out3, fuse_out12_downsample)
+
         out4 = self.layer4(out3)
         fuse_out123_downsample = self.layer3_downsample(fuse_out123)
         fuse_out1234 = self.fuse_mode1234(out4, fuse_out123_downsample)
@@ -309,7 +315,6 @@ class ERes2Net_aug(nn.Module):
             return embed_b
         else:
             return embed_a
-
 
 # @MODELS.register_module(
 #     Tasks.speaker_verification, module_name=Models.eres2net_aug_sv)
@@ -329,7 +334,7 @@ class SpeakerVerificationERes2Net(TorchModel):
         self.other_config = kwargs
         self.feature_dim = 80
         self.device = cfg.ENCODE_ERES2NET_DEVICE
-        self.embedding_model = ERes2Net_aug()
+        self.embedding_model = ERes2Net()
         # eval
         self.embedding_model = self.embedding_model.eval()
         self.embedding_model = self.embedding_model.to(self.device)
