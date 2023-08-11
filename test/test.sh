@@ -2,12 +2,12 @@
 set -e
 . ./path.sh || exit 1
 
-gpus="0" 
+gpus="0 1 2 3 " 
 #模型选择
-model_path="dfresnet_233 mfa_conformer ecapatdnn_1024 repvgg campplus" #dfresnet_233 mfa_conformer ecapatdnn_1024 repvgg CAMPP_EMB_512 ECAPA_TDNN_1024_EMB_192 ERES2NET_BASE_EMB_192 REPVGG_TINY_A0_EMB_512 DFRESNET56_EMB_512
+model_path="REPVGG_TINY_A0_EMB_512_95 DFRESNET56_EMB_512_95 REPVGG_TINY_A0_EMB_512_90 DFRESNET56_EMB_512_90 REPVGG_TINY_A0_EMB_512_85 DFRESNET56_EMB_512_85 REPVGG_TINY_A0_EMB_512_80 DFRESNET56_EMB_512_80" #CAMPP_EMB_512 ECAPA_TDNN_1024_EMB_192 ERES2NET_BASE_EMB_192 REPVGG_TINY_A0_EMB_512 DFRESNET56_EMB_512
 #测试集选择
-trials_class="cti2" # voxceleb cnceleb cti 3dspeaker male female cti2
-# trials_class="voxceleb"
+trials_class="voxceleb" # voxceleb cnceleb cti 3dspeaker male female
+
 
 #测试集数据scp文件地址
 vox_scp=/home/duanyibo/dyb/test_model/voxceleb1/wav.scp
@@ -31,18 +31,12 @@ trials_cti2="/datasets/Phone/cti2.trial" #/datasets/Phone/cti2_male.trial /datas
 
 #并发数（跟GPU有关，最好为GPU的整数倍）
 <<<<<<< HEAD
+<<<<<<< HEAD
 nj=16
 
 . utils/parse_options.sh || exit 1
 #保存结果的地址
 result_path=/home/duanyibo/dyb/test_model/result
-=======
-nj=1
-
-. utils/parse_options.sh || exit 1
-#保存结果的地址
-result_path=./result_8_7
->>>>>>> 3525cf9a1f80c164abf263b8a23d5636be0ade6e
 
 #准备3Dspeaker,voxceleb1,cnceleb1数据
 # In this stage we prepare the raw datasets, including Voxceleb1 and Voxceleb2.
