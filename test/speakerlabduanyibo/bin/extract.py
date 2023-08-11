@@ -9,11 +9,12 @@ import torchaudio
 import importlib
 from kaldiio import WriteHelper
 from tqdm import tqdm
-import speakerlab.models as M
+import dguard.models as M
 from speakerlabduanyibo.utils.builder import build
 from speakerlabduanyibo.utils.utils import get_logger
 from speakerlabduanyibo.utils.config import build_config
 from speakerlabduanyibo.utils.fileio import load_wav_scp
+from dguard.interface.pretrained import load_by_name,ALL_MODELS
 
 parser = argparse.ArgumentParser(description='Extract embeddings for evaluation.')
 parser.add_argument('--exp_dir', default='', type=str, help='Exp dir')
@@ -66,17 +67,18 @@ def main():
     MODEL = args.exp_dir.split("/")[-2]
 
     # import model
-    model = getattr(M, MODEL.rsplit("_",1)[0])()
+    # model = getattr(M, MODEL)()
 
     # load parameters, set to eval mode, move to GPU
     # device = "cuda:0"
-    model.eval()
-    model.to(device)
-    model.load_state_dict(torch.load(CKPT_PATH[MODEL], map_location="cpu"),strict=True)
+
+    # model.load_state_dict(torch.load(CKPT_PATH[MODEL], map_location="cpu"),strict=True)
 
     # Build the embedding model
-    feature_extractor = build('feature_extractor', config)
-
+    # feature_extractor = build('feature_extractor', config)
+    model,feature_extractor,sample_rate = load_by_name(MODEL,device)
+    model.eval()
+    model.to(device)
     data = load_wav_scp(args.data)
     data_k = list(data.keys())
     local_k = data_k[rank::world_size]
@@ -103,7 +105,7 @@ def main():
                 feat = feature_extractor(wav)
                 feat = feat.unsqueeze(0)
                 feat = feat.to(device)
-                emb = model(feat).detach().cpu().numpy()
+                emb = model(feat)[-1].detach().cpu().numpy()
                 # emb = mode(feat).detach().cpu().numpy()
                 writer(k, emb)
 
