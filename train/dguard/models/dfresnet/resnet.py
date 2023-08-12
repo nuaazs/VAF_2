@@ -29,7 +29,7 @@ Reference:
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import dguard.models.resnet.pooling_layers as pooling_layers
+import dguard.models.dfresnet.pooling_layers as pooling_layers
 
 class Depthwise(nn.Module):
     # conv2d → depthwise conv2d: In the original bottleneck
