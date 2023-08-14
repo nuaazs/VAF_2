@@ -1,6 +1,11 @@
 import importlib
 import torch
-import speakerlab.models as M
+import dguard.models as M
+from speakerlabduanyibo.utils.builder import build
+from speakerlabduanyibo.utils.utils import get_logger
+from speakerlabduanyibo.utils.config import build_config
+from speakerlabduanyibo.utils.fileio import load_wav_scp
+from dguard.interface.pretrained import load_by_name,ALL_MODELS
 CKPT_PATH = {
     "CAMPP_EMB_512":"/home/zhaosheng/asr_damo_websocket/online/microservice/servers/encode_utils/damo_models/campp_voxceleb/campp_voxceleb.bin",
     "ECAPA_TDNN_1024_EMB_192":"/home/zhaosheng/asr_damo_websocket/online/microservice/servers/encode_utils/damo_models/ecapatdnn1024_voxceleb/ecapatdnn1024_voxceleb.bin",
@@ -11,19 +16,16 @@ CKPT_PATH = {
 
 
 if __name__ == '__main__':
-    MODEL = "DFRESNET56_EMB_512"
-
-    # import model
-    model = getattr(M, MODEL)()
-
-    # load parameters, set to eval mode, move to GPU
+    MODELs = ["resnet34_lm","resnet152_lm","resnet221_lm","resnet293_lm"] 
     device = "cuda:0"
-    model.eval()
-    model.to(device)
-    model.load_state_dict(torch.load(CKPT_PATH[MODEL], map_location="cpu"),strict=True)
-
-    # test inference
-    with torch.no_grad():
-        output = model(torch.randn(1, 200,80).to(device))
-    print(output.shape)
-    print(output)
+    # import model
+    for MODEL in MODELs:
+        model,feature_extractor,sample_rate = load_by_name(MODEL,device)
+        # load parameters, set to eval mode, move to GPU
+        model.eval()
+        model.to(device)
+        # test inference
+        with torch.no_grad():
+            output = model(torch.randn(1, 200,80).to(device))
+        print(output.shape)
+        print(output)
