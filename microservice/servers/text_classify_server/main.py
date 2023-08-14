@@ -4,9 +4,9 @@ from dguard_nlp.interface.pretrained import load_by_name,inference
 
 MODEL_DICT ={
     'bert_cos_b1_entropyloss':{
-        "config": "/home/zhaosheng/bert_fraud_classify/text_classification/egs/easy_tc_fraud/conf/config.yaml",
-        "embedding_model": '/home/zhaosheng/bert_fraud_classify/text_classification/egs/easy_tc_fraud/bert_entropyloss_simple/models/CKPT-EPOCH-17-00/embedding_model.ckpt',
-        'classifier': '/home/zhaosheng/bert_fraud_classify/text_classification/egs/easy_tc_fraud/bert_entropyloss_simple/models/CKPT-EPOCH-17-00/classifier.ckpt',
+        "config": "/home/xuekaixiang/workplace/vaf/microservice/models/text_classification/config.yaml",
+        "embedding_model": '/home/xuekaixiang/workplace/vaf/microservice/models/text_classification/embedding_model.ckpt',
+        'classifier': '/home/xuekaixiang/workplace/vaf/microservice/models/text_classification/classifier.ckpt',
     },
 }
 embedding_model, classifier = load_by_name('bert_cos_b1_entropyloss',device='cpu',model_dict=MODEL_DICT)
