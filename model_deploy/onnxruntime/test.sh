@@ -6,7 +6,7 @@ wav_scp=/VAF/model_deploy/onnxruntime/test_input.scp
 onnx_dir="/VAF/train/pretrained_models/onnx/dfresnet233_epoch76.onnx" #512
 # onnx_dir="/VAF/train/pretrained_models/onnx/repvgg_epoch142.onnx" #512
 embed_out=/VAF/model_deploy/onnxruntime/test_output.txt
-./build/bin/extract_emb_main \
+/VAF/model_deploy/onnxruntime/build/bin/extract_emb_main \
   --wav_list $wav_scp \
   --result $embed_out \
   --speaker_model_path $onnx_dir \
