@@ -12,41 +12,20 @@ import pymysql
 from tqdm import tqdm
 import cfg
 import os
-import requests
 from tqdm.contrib.concurrent import process_map
 import wget
 from sklearn.metrics.pairwise import cosine_similarity
-
 from loguru import logger
-
-name = os.path.basename(__file__).split(".")[0]
-logger.add("log/"+name+"_{time}.log", rotation="500 MB", encoding="utf-8", enqueue=True, compression="zip", backtrace=True, diagnose=True)
-
-host = "http://192.168.3.169"
-encode_url = f"{host}:5001/encode"  # 提取特征
-cluster_url = f"{host}:5011/cluster"  # cluster
-asr_url = f"{host}:5000/transcribe/file"  # ASR
-use_model_type = "ERES2NET_Base"
-msg_db = cfg.MYSQL
-
-
-def send_request(url, method='POST', files=None, data=None, json=None, headers=None):
-    try:
-        response = requests.request(method, url, files=files, data=data, json=json, headers=headers)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        logger.error( f"Request failed: spkid:{data['spkid']}. msg:{e}")
-        return None
+from tools import send_request
 
 
 def update_db(spkid):
     conn = pymysql.connect(
-        host=msg_db.get("host"),
-        port=msg_db.get("port"),
-        db=msg_db.get("db"),
-        user=msg_db.get("username"),
-        passwd=msg_db.get("passwd"),
+        host=cfg.MYSQL.get("host"),
+        port=cfg.MYSQL.get("port"),
+        db=cfg.MYSQL.get("db"),
+        user=cfg.MYSQL.get("username"),
+        passwd=cfg.MYSQL.get("passwd"),
         cursorclass=pymysql.cursors.DictCursor,
     )
     cursor = conn.cursor()
@@ -61,18 +40,18 @@ def update_db(spkid):
     conn.close()
 
 
-def get_selected_url_from_db():
+def get_selected_url_from_db(record_month):
     conn = pymysql.connect(
-        host=msg_db.get("host"),
-        port=msg_db.get("port"),
-        db=msg_db.get("db"),
-        user=msg_db.get("username"),
-        passwd=msg_db.get("passwd"),
+        host=cfg.MYSQL.get("host"),
+        port=cfg.MYSQL.get("port"),
+        db=cfg.MYSQL.get("db"),
+        user=cfg.MYSQL.get("username"),
+        passwd=cfg.MYSQL.get("passwd"),
         cursorclass=pymysql.cursors.DictCursor,
     )
     cursor = conn.cursor()
     try:
-        sql = "select record_id,selected_url from check_for_speaker_diraization"
+        sql = f"select record_id,selected_url from check_for_speaker_diraization where record_month={record_month}"
         cursor.execute(sql)
         result = cursor.fetchall()
         conn.commit()
@@ -121,7 +100,7 @@ def cluster_handler(read_data, threshold):
         update_db(str(i))
 
 
-def encode_handler():
+def encode_handler(record_month):
     # step 1 话术过滤
     # a, b = check_text(text)
     # if a == "正常":
@@ -129,7 +108,7 @@ def encode_handler():
     #     return None
 
     # step 2 encode
-    selected_urls = get_selected_url_from_db()
+    selected_urls = get_selected_url_from_db(record_month)
     logger.info(f"len(selected_urls):{len(selected_urls)}")
 
     tmp_folder = "/tmp/cluster_diraization"
@@ -139,18 +118,18 @@ def encode_handler():
     for i in tqdm(selected_urls):
         try:
             save_path = tmp_folder
+            spkid = i['record_id']
             i = i['selected_url']
             file_name = os.path.join(save_path, os.path.basename(i))
             wget.download(i, file_name)
 
-            spkid = os.path.basename(i).split(".")[0].split('_')[0]
             # step4 提取特征
             data = {"spkid": spkid, "filelist": ["local://"+file_name]}
-            response = send_request(encode_url, data=data)
+            response = send_request(cfg.ENCODE_URL, data=data)
             if response['code'] == 200:
                 black_id_all.append(spkid)
-                for key in response['file_emb'][use_model_type]["embedding"].keys():
-                    file_emb = response['file_emb'][use_model_type]["embedding"][key]
+                for key in response['file_emb'][cfg.USE_MODEL_TYPE]["embedding"].keys():
+                    file_emb = response['file_emb'][cfg.USE_MODEL_TYPE]["embedding"][key]
                     embeddings.append(file_emb)
             else:
                 logger.error(f"Encode failed. spkid:{spkid}.response:{response}")
@@ -170,17 +149,13 @@ def encode_handler():
     embeddings.tofile('emb.bin')
 
 
-def pipleline():
-    encode_handler()
+def pipleline(record_month):
+    encode_handler(record_month)
 
     read_data = np.fromfile("emb.bin", dtype=np.float32)
     logger.info(read_data.shape)
-    read_data = read_data.reshape(-1, cfg.EMBEDDING_LEN[use_model_type])
+    read_data = read_data.reshape(-1, cfg.EMBEDDING_LEN[cfg.USE_MODEL_TYPE])
     logger.info(read_data.shape)
-    # for th in np.arange(0.8, 0.9, 0.01):
-    #     th = round(th, 2)
-    #     cluster_handler(read_data, th)
-    
     cluster_handler(read_data, 0.85)
 
 

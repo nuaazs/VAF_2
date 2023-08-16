@@ -50,6 +50,17 @@ lang_url = f"{host}:5002/lang_classify"  # 语种识别
 model_type = "ERES2NET_Base"
 ENCODE_MODEL_LIST = ["ERES2NET_Base"]
 
+status_code_map = {
+    7001: "音频文件为空",
+    7002: "VAD内部逻辑错误",
+    7003: "音频文件有效时长小于十秒",
+    7004: "Encode内部逻辑错误",
+    7005: "LANG内部逻辑错误",
+    7006: "说话人声纹已存在",
+    7007: "内部逻辑错误",
+    200: "注册成功"
+}
+
 
 @app.route("/register/<filetype>", methods=["POST"])
 def register(filetype):
@@ -66,6 +77,8 @@ def register(filetype):
         gender = request.form.get('gender', "")
         if filetype == "file":
             filedata = request.files.get('wav_file')
+            if not filedata:
+                return jsonify({"code": 7001, "phone": phone, "message": "wav_file is empty"})
             filepath, raw_url = save_file(filedata, phone, channel=channel, server_name="register")
         else:
             filepath, raw_url = save_url(request.form.get('url'), phone, channel, server_name="register")
@@ -75,8 +88,8 @@ def register(filetype):
         files = [('file', (filepath, open(filepath, 'rb')))]
         response = send_request(vad_url, files=files, data=data)
         if not response:
-            logger.error(f"VAD failed. spkid:{phone}.response:{response}") 
-            return jsonify({"code": 500, "phone": phone, "msg": "VAD failed. response:{}".format(response)})
+            logger.error(f"VAD failed. spkid:{phone}. response:{response}")
+            return jsonify({"code": 7002, "phone": phone, "message": "VAD failed. response:{}".format(response)})
 
         # step2 截取音频片段
         output_file_li = []
@@ -89,14 +102,13 @@ def register(filetype):
             valid_length += (i[1]-i[0])/1000
             d[output_file] = (i[0]/1000, i[1]/1000)
 
-
         selected_path = get_joint_wav(tmp_folder, phone, output_file_li)
         file_name = selected_path
 
         if valid_length < 10:
             logger.error(f"VAD failed. spkid:{phone}. valid_length:{valid_length}.file_path:{file_name}")
-            return jsonify({"code": 500, "phone": phone, "msg": "VAD failed. valid_length:{}".format(valid_length)})
-        
+            return jsonify({"code": 7003, "phone": phone, "message": "Audio duration less than 10 seconds. valid_length:{}".format(valid_length)})
+
         # 提取特征
         data = {"spkid": phone, "filelist": ["local://"+file_name]}
         response = send_request(encode_url, data=data)
@@ -105,7 +117,7 @@ def register(filetype):
             compare_results = compare_handler(model_type=model_type, embedding=emb_new, black_limit=cfg.BLACK_TH[model_type])
         else:
             logger.error(f"Encode failed. spkid:{phone}.response:{response}")
-            return jsonify({"code": 500, "phone": phone, "msg": "Encode failed. response:{}".format(response)})
+            return jsonify({"code": 7004, "phone": phone, "message": "Encode failed. response:{}".format(response)})
 
         if not compare_results['inbase']:
             logger.info(f"Need register. spkid:{phone}. compare_result:{compare_results}")
@@ -124,38 +136,39 @@ def register(filetype):
                 db_info['selected_url'] = selected_url
                 db_info['valid_length'] = valid_length
                 info = ph.Phone().find(phone)
-                phone_area = info['province'] +"-"+ info['city']
+                phone_area = info['province'] + "-" + info['city']
                 db_info['phone_area'] = phone_area
 
                 add_speaker(db_info)
                 logger.info(f"Add speaker success. spkid:{phone}")
-                return jsonify({"code": 200, "phone": phone, "msg": "Add speaker success."})
+                return jsonify({"code": 200, "phone": phone, "message": "Add speaker success."})
         else:
             logger.info(f"Speaker already exists. spkid:{phone}. Compare result:{compare_results}")
             ret_dic = {
-                "code": 200,
+                "code": 7006,
                 "phone": phone,
                 "inbase": compare_results['inbase'],
                 "hit_spkid": compare_results['top_1_id'],
                 "best_score": compare_results['best_score'],
-                "msg": "Speaker already exists. Compare result:{}".format(compare_results)
+                "message": "Speaker already exists. Compare result:{}".format(compare_results)
             }
             return jsonify(ret_dic)
 
     except Exception as e:
-        logger.error(f"Register failed. spkid:{phone}.msg:{e}")
-    finally:
-        shutil.rmtree(spkid_folder)
+        logger.error(f"Register failed. spkid:{phone}.message:{e}")
+        return jsonify({"code": 7007, "phone": phone, "message": "Register failed. message:{}".format(e)})
+    # finally:
+    #     shutil.rmtree(spkid_folder)
 
 
-def pipeline(tmp_folder, filepath, spkid,use_cluster):
+def pipeline(tmp_folder, filepath, spkid, use_cluster):
     # step1 VAD
     data = {"spkid": spkid, "length": 90}
     files = [('file', (filepath, open(filepath, 'rb')))]
     response = send_request(vad_url, files=files, data=data)
     if not response:
         logger.error(f"VAD failed. spkid:{spkid}.response:{response}")
-        return {"code": 500, "msg": "VAD failed."}
+        return {"code": 7002, "message": "VAD failed."}
 
     # step2 截取音频片段
     output_file_li = []
@@ -170,28 +183,29 @@ def pipeline(tmp_folder, filepath, spkid,use_cluster):
 
     if valid_length < 5:
         logger.error(f"VAD failed. spkid:{spkid}. valid_length:{valid_length}.output_file:{output_file}")
-        return {"code": 500, "phone": spkid, "msg": "VAD failed. valid_length:{}. output_file:{}".format(valid_length,output_file)}
+        return {"code": 7003, "phone": spkid, "message": "VAD failed. valid_length:{}. output_file:{}".format(valid_length, output_file)}
 
     # step3 普通话过滤
     wav_files = ["local://"+i for i in output_file_li]
-    data = {"spkid": spkid, "filelist": ",".join(wav_files)}
-    response = send_request(lang_url, data=data)
-    if response['code'] == 200:
-        pass_list = response['pass_list']
-        url_list = response['file_url_list']
-        mandarin_wavs = [i for i in url_list if pass_list[url_list.index(i)] == 1]
-    else:
-        logger.error(f"Lang_classify failed. spkid:{spkid}.response:{response}")
-        return {"code": 500, "msg": "Lang_classify failed."}
+    # data = {"spkid": spkid, "filelist": ",".join(wav_files)}
+    # response = send_request(lang_url, data=data)
+    # if response['code'] == 200:
+    #     pass_list = response['pass_list']
+    #     url_list = response['file_url_list']
+    #     mandarin_wavs = [i for i in url_list if pass_list[url_list.index(i)] == 1]
+    # else:
+    #     logger.error(f"Lang_classify failed. spkid:{spkid}.response:{response}")
+    #     return {"code": 7005, "message": "Lang_classify failed."}
 
     # step4 提取特征
+    mandarin_wavs = wav_files
     data = {"spkid": spkid, "filelist": ",".join(mandarin_wavs)}
     response = send_request(encode_url, data=data)
     if response['code'] == 200:
         file_emb = response['file_emb']
     else:
         logger.error(f"Encode failed. spkid:{spkid}.response:{response}")
-        return {"code": 500, "msg": "Encode failed."}
+        return {"code": 7004, "message": "Encode failed."}
 
     if use_cluster:
         # step5 聚类
@@ -211,11 +225,11 @@ def pipeline(tmp_folder, filepath, spkid,use_cluster):
 
         if min_score < 0.8:
             logger.info(f"After cluster min_score  < 0.8. spkid:{spkid}.response:{response['scores']}")
-            return {"code": 500, "msg": "After cluster min_score  < 0.8."}
+            return {"code": 500, "message": "After cluster min_score  < 0.8."}
         selected_files = sorted(items.keys(), key=lambda x: x.split("/")[-1].replace(".wav", "").split("_")[0])
     else:
-        selected_files=response['file_url_list']
-    
+        selected_files = response['file_url_list']
+
     audio_data = np.concatenate([torchaudio.load(file.replace("local://", ""))[0] for file in selected_files], axis=-1)
     _selected_path = os.path.join(tmp_folder, f"{spkid}_selected.wav")
     torchaudio.save(_selected_path, torch.from_numpy(audio_data), sample_rate=8000)
@@ -251,7 +265,7 @@ def test(filetype):
 
         tmp_folder = f"/tmp/test/{spkid}"
         os.makedirs(tmp_folder, exist_ok=True)
-        pipeline_result = pipeline(tmp_folder, filepath, spkid,use_cluster)
+        pipeline_result = pipeline(tmp_folder, filepath, spkid, use_cluster)
         if pipeline_result['code'] == 200:
             # 提取特征
             data = {"spkid": spkid, "filelist": "local://"+pipeline_result['selected_path']}
@@ -260,7 +274,7 @@ def test(filetype):
                 file_emb = response['file_emb']
             else:
                 logger.error(f"Encode failed. spkid:{spkid}.response:{response}")
-                return jsonify({"code": 500, "message": "Encode failed."})
+                return jsonify({"code": 7004, "message": "Encode failed."})
 
             # 撞库
             compare_result = {}
@@ -287,7 +301,7 @@ def test(filetype):
         else:
             return jsonify(pipeline_result)
     except Exception as e:
-        logger.error(f"Pipeline failed. spkid:{spkid}. msg:{e}.")
+        logger.error(f"Pipeline failed. spkid:{spkid}. message:{e}.")
         return jsonify({"code": 500, "message": "{}".format(e)})
     # finally:
     #     if os.path.exists(tmp_folder):
@@ -298,26 +312,30 @@ def test(filetype):
 def get_spk():
     page_no = request.form.get('page_no', "1")
     page_size = request.form.get('page_size', "10")
-    ret,total = get_black_info(int(page_no), int(page_size))
+    ret, total = get_black_info(int(page_no), int(page_size))
     for i in ret:
-        i["register_time"]= str(i["register_time"]) 
-    return jsonify({"code": 200, "message": "success", "data": ret,"total":total})
+        i["register_time"] = str(i["register_time"])
+    return jsonify({"code": 200, "message": "success", "data": ret, "total": total})
+
 
 @app.route("/get_hitinfo", methods=["POST"])
 def get_hit():
     page_no = request.form.get('page_no', "1")
     page_size = request.form.get('page_size', "10")
-    ret,total= get_hit_info(int(page_no), int(page_size))
+    ret, total = get_hit_info(int(page_no), int(page_size))
     for i in ret:
-        i["hit_time"]= str(i["hit_time"]) 
-    return jsonify({"code": 200, "message": "success", "data": ret,"total":total})
+        i["hit_time"] = str(i["hit_time"])
+    return jsonify({"code": 200, "message": "success", "data": ret, "total": total})
+
 
 @app.route("/get_table_info", methods=["GET"])
 def get_table():
     ret = get_table_info()
     return jsonify({"code": 200, "message": "success", "data": ret})
 
+
 msg_db = cfg.MYSQL
+
 
 @app.route('/get_users', methods=['POST'])
 def get_users():
@@ -357,7 +375,6 @@ def delete_user():
     cursor.close()
     conn.close()
     return jsonify({'message': 'User deleted successfully', 'code': 200, "phone": phone})
-
 
 
 if __name__ == "__main__":

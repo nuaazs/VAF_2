@@ -56,5 +56,55 @@ def generate_and_insert_fake_data():
         conn.commit()
     cursor.close()
     conn.close()
+
+
+def insert_fake_data():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    for _ in range(10):
+        name = fake.name()
+        phone = fake.phone_number()
+        gender = fake.random_element(['M', 'F'])
+        valid_length = fake.random_int(min=1, max=60)
+        file_url = fake.url()
+        preprocessed_file_url = fake.url()
+        phone_type = fake.random_element(['Android', 'iOS'])
+        phone_area = fake.random_element(['Beijing', 'Shanghai', 'Guangzhou'])
+        call_begintime = fake.date_time_between(start_date='-1y', end_date='now')
+        call_endtime = call_begintime + timedelta(minutes=valid_length)
+        class_number = fake.random_int(min=1, max=10)
+        hit_time = fake.date_time_between(start_date=call_begintime, end_date=call_endtime)
+        hit_score = fake.pyfloat(left_digits=3, right_digits=2, positive=True)
+        hit_spkid = fake.random_element(['spk001', 'spk002', 'spk003'])
+        model02_blackbase_phone = fake.random_element(['black001', 'black002', 'black003'])
+        eres2net_hit_score = fake.random_element(['score001', 'score002', 'score003'])
+        model02_hit_score = fake.random_int(min=1, max=100)
+        eres2net_top_10 = fake.random_element(['top001', 'top002', 'top003'])
+        model02_top_10 = fake.random_element(['top001', 'top002', 'top003'])
+        double_check = fake.random_element(['check001', 'check002', 'check003'])
+        gender_score = fake.pyfloat(left_digits=3, right_digits=2, positive=True)
+        message = fake.sentence()
+
+        query = '''
+        INSERT INTO hit_ppt (name, phone, gender, valid_length, file_url, preprocessed_file_url,
+        phone_type, phone_area, call_begintime, call_endtime, class_number, hit_time, hit_score,
+        hit_spkid, model02_blackbase_phone, eres2net_hit_score, model02_hit_score, eres2net_top_10,
+        model02_top_10, double_check, gender_score, message)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        '''
+
+        values = (name, phone, gender, valid_length, file_url, preprocessed_file_url, phone_type,
+                  phone_area, call_begintime, call_endtime, class_number, hit_time, hit_score,
+                  hit_spkid, model02_blackbase_phone, eres2net_hit_score, model02_hit_score,
+                  eres2net_top_10, model02_top_10, double_check, gender_score, message)
+
+        cursor.execute(query, values)
+        conn.commit()
+
+    cursor.close()
+    conn.close()
+
+
 if __name__ == '__main__':
     generate_and_insert_fake_data()

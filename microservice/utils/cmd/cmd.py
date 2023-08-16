@@ -1,5 +1,5 @@
 import subprocess
-from utils.log import logger
+from loguru import logger
 import os
 def run_cmd(cmd,check=True,util_exist=None):
     """run shell command.
