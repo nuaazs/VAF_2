@@ -10,10 +10,10 @@
 '''
 
 
+import datetime
 import glob
 import shutil
 import numpy as np
-import pymysql
 import torchaudio
 from tqdm import tqdm
 import cfg
@@ -22,7 +22,7 @@ import torch
 from utils.oss.upload import upload_file
 from tqdm.contrib.concurrent import process_map
 from loguru import logger
-from cluster_st import pipleline
+from cluster_st import cluster_pipleline
 from tools import send_request, extract_audio_segment, find_items_with_highest_value
 
 name = os.path.basename(__file__).split(".")[0]
@@ -109,12 +109,6 @@ def pipeline(tmp_folder, filepath, spkid):
     # nlp_result = classify_text(text)
     # logger.info(f"\t * -> 文本分类结果: {nlp_result}")
 
-    # step7 话术过滤
-    # a, b = check_text(text)
-    # if a == "正常":
-    #     # todo 查找新话术逻辑
-    #     return None
-
     # step8 上传OSS
     raw_url = upload_file(cfg.BUCKET_NAME, filepath, f"{spkid}/raw_{spkid}.wav")
     selected_url = upload_file(cfg.BUCKET_NAME, file_selected_path, f"{spkid}/{spkid}_selected.wav")
@@ -123,43 +117,26 @@ def pipeline(tmp_folder, filepath, spkid):
         "spkid": spkid,
         "raw_file_path": raw_url,
         "selected_url": selected_url,
-        "asr_result": text,
+        "asr_text": text,
         "selected_times": selected_times,
         # "nlp_result": nlp_result,
         "total_duration": total_duration,
+        "record_month": record_month
     }
 
 
-def insert_to_db(data):
-    conn = pymysql.connect(
-        host=cfg.MYSQL.get("host"),
-        port=cfg.MYSQL.get("port"),
-        db=cfg.MYSQL.get("db"),
-        user=cfg.MYSQL.get("username"),
-        passwd=cfg.MYSQL.get("passwd"),
-        cursorclass=pymysql.cursors.DictCursor,
-    )
-    cursor = conn.cursor()
+def perprocess(filepath):
+    """
+    对单个音频进行处理
+    通过筛选后的音频后续进行聚类
+    """
     try:
-        sql = "INSERT INTO check_for_speaker_diraization (`record_id`, `file_url`, `selected_url`, `asr_text`, `wav_duration`,`create_time`,`selected_times`, `record_month`) VALUES (%s, %s, %s, %s, %s,now(), %s, %s);"
-        cursor.execute(sql, (data['spkid'], data['raw_file_path'], data['selected_url'], data['asr_result'],
-                       data['total_duration'], str(data['selected_times']), record_month))
-        conn.commit()
-    except Exception as e:
-        logger.error(f"Insert to db failed. spkid:{data['spkid']}. msg:{e}.")
-        conn.rollback()
-    cursor.close()
-    conn.close()
-
-
-def main(i):
-    try:
-        spkid = os.path.basename(i).split(".")[0].split('-')[-1]
+        spkid = os.path.basename(filepath).split(".")[0].split('-')[-1]
         tmp_folder = f"/tmp/speaker_diarization/{spkid}"
         os.makedirs(tmp_folder, exist_ok=True)
-        pipeline_result = pipeline(tmp_folder, i, spkid)
+        pipeline_result = pipeline(tmp_folder, filepath, spkid)
         if pipeline_result:
-            insert_to_db(pipeline_result)
+            need_cluster_records.append(pipeline_result)
     except Exception as e:
         logger.error(f"Pipeline failed. spkid:{spkid}. msg:{e}.")
     finally:
@@ -167,13 +144,24 @@ def main(i):
             shutil.rmtree(tmp_folder)
 
 
-if __name__ == "__main__":
-    record_month = "7"
-    # wav_files = glob.glob("/datasets/changzhou/*.wav")
-    wav_files = glob.glob("./*.wav")
+def main():
+    wav_files = glob.glob("/datasets/changzhou/*.wav")
+    # wav_files = glob.glob("./test_dataset/*.wav")
     logger.info(f"Total wav files: {len(wav_files)}")
     wav_files = sorted(wav_files)
     for i in tqdm(wav_files):
-        main(i)
+        perprocess(i)
 
-    pipleline(record_month)
+    with open(f"output/need_cluster_records.txt", "w+") as f:
+        f.write(str(need_cluster_records))
+
+    cluster_pipleline(need_cluster_records)
+
+
+if __name__ == "__main__":
+    os.makedirs("output", exist_ok=True)
+    need_cluster_records = []
+    currt_month = datetime.datetime.now().month
+    record_month= str(currt_month)
+    record_month = "8"
+    main()

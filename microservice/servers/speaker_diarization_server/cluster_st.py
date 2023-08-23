@@ -7,19 +7,26 @@
 @Version :   1.0
 @Desc    :   省厅新音频筛选逻辑 话术过滤+特征提取+聚类
 '''
+import csv
+import datetime
+import random
 import numpy as np
 import pymysql
 from tqdm import tqdm
 import cfg
 import os
-from tqdm.contrib.concurrent import process_map
 import wget
 from sklearn.metrics.pairwise import cosine_similarity
 from loguru import logger
 from tools import send_request
 
 
-def update_db(spkid):
+def check_text(text):
+    # TODO: 话术过滤
+    return random.choice(["命中", "命中"]), "命中的话术"
+
+
+def insert_to_db(data):
     conn = pymysql.connect(
         host=cfg.MYSQL.get("host"),
         port=cfg.MYSQL.get("port"),
@@ -30,41 +37,29 @@ def update_db(spkid):
     )
     cursor = conn.cursor()
     try:
-        sql = "update check_for_speaker_diraization set is_duplicate=1 where record_id=%s"
-        cursor.execute(sql, (spkid))
+        spkid = data['spkid']
+        raw_file_path = data['raw_file_path']
+        selected_url = data['selected_url']
+        asr_text = data['asr_text']
+        total_duration = data['total_duration']
+        selected_times = str(data['selected_times'])
+        record_month = data['record_month']
+
+        sql = "INSERT INTO check_for_speaker_diraization (`record_id`, `file_url`, `selected_url`, `asr_text`, `wav_duration`,`create_time`,`selected_times`, `record_month`) VALUES (%s, %s, %s, %s, %s,now(), %s, %s);"
+        cursor.execute(sql, (spkid, raw_file_path, selected_url, asr_text, total_duration, selected_times, record_month))
         conn.commit()
     except Exception as e:
-        logger.error(f"update db failed. record_id:{spkid}. msg:{e}.")
+        logger.error(f"Insert to db failed. spkid:{data['spkid']}. msg:{e}.")
         conn.rollback()
     cursor.close()
     conn.close()
-
-
-def get_selected_url_from_db(record_month):
-    conn = pymysql.connect(
-        host=cfg.MYSQL.get("host"),
-        port=cfg.MYSQL.get("port"),
-        db=cfg.MYSQL.get("db"),
-        user=cfg.MYSQL.get("username"),
-        passwd=cfg.MYSQL.get("passwd"),
-        cursorclass=pymysql.cursors.DictCursor,
-    )
-    cursor = conn.cursor()
-    try:
-        sql = f"select record_id,selected_url from check_for_speaker_diraization where record_month={record_month}"
-        cursor.execute(sql)
-        result = cursor.fetchall()
-        conn.commit()
-    except Exception as e:
-        logger.error(f"Get selected_url from db failed. msg:{e}.")
-        conn.rollback()
-    cursor.close()
-    conn.close()
-    return result
 
 
 def cluster_handler(read_data, threshold):
-    # step 3 聚类
+    """
+    聚类
+    return: 需要删除的record list
+    """
     cosine_similarities = cosine_similarity(read_data)
     np.fill_diagonal(cosine_similarities, 0)
     mask = np.zeros_like(cosine_similarities, dtype=bool)
@@ -79,7 +74,7 @@ def cluster_handler(read_data, threshold):
     logger.info(f"Found {len(filtered_results)} pairs above the threshold of {threshold}")
 
     map_d = {}
-    with open("emb_map.txt", "r") as f:
+    with open("output/emb_map.txt", "r") as f:
         for idx, line in enumerate(f.readlines()):
             map_d[idx] = line.strip()
 
@@ -93,35 +88,36 @@ def cluster_handler(read_data, threshold):
         result.append(map_d[i])
         last_index = i
     logger.info(f"len(result):{len(result)}")
-    logger.info(f"result:{result}")
+    logger.info(f"duplicate result:{result}")
 
-    for i in result:
-        logger.info(i)
-        update_db(str(i))
+    return result
 
 
-def encode_handler(record_month):
-    # step 1 话术过滤
-    # a, b = check_text(text)
-    # if a == "正常":
-    #     # todo 查找新话术逻辑
-    #     return None
-
-    # step 2 encode
-    selected_urls = get_selected_url_from_db(record_month)
-    logger.info(f"len(selected_urls):{len(selected_urls)}")
+def encode_handler(need_cluster_records):
+    """
+    get embeddings from records and save to emb.bin
+    """
+    records_lis = need_cluster_records
+    logger.info(f"len(records_lis):{len(records_lis)}")
 
     tmp_folder = "/tmp/cluster_diraization"
     os.makedirs(tmp_folder, exist_ok=True)
     embeddings = []
     black_id_all = []
-    for i in tqdm(selected_urls):
+    for i in tqdm(records_lis):
         try:
+            spkid = i['spkid']
+            selected_url = i['selected_url']
             save_path = tmp_folder
-            spkid = i['record_id']
-            i = i['selected_url']
-            file_name = os.path.join(save_path, os.path.basename(i))
-            wget.download(i, file_name)
+            file_name = os.path.join(save_path, os.path.basename(selected_url))
+
+            asr_text = i['asr_text']
+            a, b = check_text(asr_text)
+            if a == "未命中":
+                with open("output/new_text.txt", "a+") as f:
+                    f.write(f"{spkid}\t{asr_text}\n")
+                continue
+            wget.download(selected_url, file_name)
 
             # step4 提取特征
             data = {"spkid": spkid, "filelist": ["local://"+file_name]}
@@ -138,26 +134,72 @@ def encode_handler(record_month):
         finally:
             if os.path.exists(file_name):
                 os.remove(file_name)
+    assert len(embeddings) == len(black_id_all), "len(embeddings) != len(black_id_all)"
 
-    with open("emb_map.txt", "w+") as f:
+    with open("output/emb_map.txt", "w+") as f:
         for item in black_id_all:
             f.write(item + "\n")
     embeddings = np.array(embeddings)
     logger.info(embeddings.shape)  # (143, 192)
 
     embeddings = embeddings.astype(np.float32)
-    embeddings.tofile('emb.bin')
+    embeddings.tofile('output/emb.bin')
+    logger.info("Save embeddings to emb.bin")
 
 
-def pipleline(record_month):
-    encode_handler(record_month)
+def cluster_pipleline(need_cluster_records):
+    """
+    话术过滤+特征提取+聚类
+    """
+    encode_handler(need_cluster_records)
 
-    read_data = np.fromfile("emb.bin", dtype=np.float32)
+    logger.info("Read embeddings from emb.bin")
+    read_data = np.fromfile("output/emb.bin", dtype=np.float32)
     logger.info(read_data.shape)
     read_data = read_data.reshape(-1, cfg.EMBEDDING_LEN[cfg.USE_MODEL_TYPE])
     logger.info(read_data.shape)
-    cluster_handler(read_data, 0.85)
+
+    cluster_result = cluster_handler(read_data, 0.81)
+
+    date = datetime.datetime.now().strftime("%Y-%m-%d")
+    csv_file = f"output/check_result_{date}.csv"
+    with open(csv_file, 'w+', newline='') as csvfile:
+        for i in need_cluster_records:
+            if i['spkid'] not in cluster_result:
+                insert_to_db(i)  # backup to db
+                fieldnames = i.keys()
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                if csvfile.tell() == 0:
+                    writer.writeheader()
+                writer.writerow(i)
+
+
+def local_test():
+    """
+    直接读取本地的emb.bin文件测试
+    """
+    with open("output/need_cluster_records.txt", "r") as f:
+        need_cluster_records = eval(f.read())
+    logger.info("Read embeddings from emb.bin")
+    read_data = np.fromfile("output/emb.bin", dtype=np.float32)
+    logger.info(read_data.shape)
+    read_data = read_data.reshape(-1, cfg.EMBEDDING_LEN[cfg.USE_MODEL_TYPE])
+    logger.info(read_data.shape)
+
+    cluster_result = cluster_handler(read_data, 0.81)
+
+    date = datetime.datetime.now().strftime("%Y-%m-%d")
+    csv_file = f"output/check_result_{date}.csv"
+    with open(csv_file, 'w+', newline='') as csvfile:
+        for i in need_cluster_records:
+            if i['spkid'] not in cluster_result:
+                insert_to_db(i)  # backup to db
+                fieldnames = i.keys()
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                if csvfile.tell() == 0:
+                    writer.writeheader()
+                writer.writerow(i)
 
 
 if __name__ == "__main__":
-    pipleline()
+    local_test()
