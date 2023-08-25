@@ -56,7 +56,7 @@ loss:
     margin: 0.2
     scale: 32.0
   obj: dguard.loss.margin_loss.ArcMarginLoss
-lr: 0.005
+lr: 0.004
 lr_scheduler:
   args:
     fix_epoch: <num_epoch>

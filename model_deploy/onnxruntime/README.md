@@ -31,7 +31,7 @@ wav_scp 文件是一个包含音频文件列表的文本文件。每行表示一
 以下是一个使用示例：
 
 ```
-bash my_script.sh --model dfresnet233 --wav_scp /path/to/wav.scp --output_txt /path/to/output.txt
+encode --model dfresnet233 --wav_scp /path/to/wav.scp --output_txt /path/to/output.txt
 ```
 
 本示例中，使用 `dfresnet233` 模型对 `/path/to/wav.scp` 文件中列出的音频文件进行特征提取，并将输出结果保存到 `/path/to/output.txt` 文件中。
