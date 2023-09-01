@@ -302,6 +302,8 @@ def test(model, gpu,config, epoch, logger, rank, wav_scp,embedding_dir,feature_e
                         feat = pre_extractor(feat)
                     dev_print(f"Test: WAV pre_extractor shape: {feat.shape}")
                     # feat = feat.unsqueeze(0)
+                    if len(feat.shape) == 2:
+                        feat = feat.unsqueeze(0)
                     feat = feat.to(gpu)
                     dev_print(f"Test: WAV to gpu shape: {feat.shape}")
                     outputs = model(feat)
