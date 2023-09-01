@@ -104,6 +104,9 @@ def main():
         print(f"feature_extractor load failed, change to None")
     try:
         pre_extractor = build('pre_extractor', config)
+        pre_extractor.train()
+        for param in pre_extractor.parameters():
+            param.requires_grad = True
     except:
         pre_extractor = None
         print(f"pre_extractor load failed, change to None")
@@ -124,7 +127,7 @@ def main():
     classify_checkpoint = torch.load(args.classify_model_ckpt)
     classifier.load_state_dict(classify_checkpoint['state_dict'])
     
-    model = nn.Sequential(embedding_model, classifier)
+    model = nn.Sequential(pre_extractor,embedding_model, classifier)
     model.cuda()
     model = torch.nn.parallel.DistributedDataParallel(model)
    
