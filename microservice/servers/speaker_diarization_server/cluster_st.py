@@ -44,9 +44,10 @@ def insert_to_db(data):
         total_duration = data['total_duration']
         selected_times = str(data['selected_times'])
         record_month = data['record_month']
+        vad_times = str(data['vad_times'])
 
-        sql = "INSERT INTO check_for_speaker_diraization (`record_id`, `file_url`, `selected_url`, `asr_text`, `wav_duration`,`create_time`,`selected_times`, `record_month`) VALUES (%s, %s, %s, %s, %s,now(), %s, %s);"
-        cursor.execute(sql, (spkid, raw_file_path, selected_url, asr_text, total_duration, selected_times, record_month))
+        sql = "INSERT INTO check_for_speaker_diraization (`record_id`, `file_url`, `selected_url`, `asr_text`, `wav_duration`,`create_time`,`selected_times`, `record_month`,`vad_times`) VALUES (%s, %s, %s, %s, %s,now(), %s, %s, %s);"
+        cursor.execute(sql, (spkid, raw_file_path, selected_url, asr_text, total_duration, selected_times, record_month,vad_times))
         conn.commit()
     except Exception as e:
         logger.error(f"Insert to db failed. spkid:{data['spkid']}. msg:{e}.")

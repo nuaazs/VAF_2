@@ -127,3 +127,87 @@ def get_joint_wav(tmp_folder,phone, wav_list):
     output_name = f'{tmp_folder}/{phone}/{phone}_joint.wav'
     playlist.export(output_name, format='wav')
     return output_name
+
+
+def pipeline(tmp_folder, filepath, spkid, use_cluster=False):
+    # step1 VAD
+    data = {"spkid": spkid, "length": 90}
+    files = [('file', (filepath, open(filepath, 'rb')))]
+    response = send_request(cfg.VAD_URL, files=files, data=data)
+    if not response:
+        logger.error(f"VAD failed. spkid:{spkid}.response:{response}")
+        return {"code": 7002, "message": "VAD请求失败"}
+
+    # step2 截取音频片段
+    output_file_li = []
+    d = {}
+    valid_length = 0
+    for idx, i in enumerate(response['timelist']):
+        output_file = f"{tmp_folder}/{spkid}_{idx}.wav"  # 截取后的音频片段保存路径
+        extract_audio_segment(filepath, output_file, start_time=i[0]/1000, end_time=i[1]/1000)
+        output_file_li.append(output_file)
+        valid_length += (i[1]-i[0])/1000
+        d[output_file] = (i[0]/1000, i[1]/1000)
+
+    if valid_length < cfg.MIN_LENGTH:
+        logger.error(f"VAD failed. spkid:{spkid}. valid_length:{valid_length}.output_file:{output_file}")
+        return {"code": 7003, "phone": spkid, "message": "音频有效长度小于{}秒".format(cfg.MIN_LENGTH)}
+
+    # step3 普通话过滤
+    wav_files = ["local://"+i for i in output_file_li]
+    # data = {"spkid": spkid, "filelist": ",".join(wav_files)}
+    # response = send_request(lang_url, data=data)
+    # if response['code'] == 200:
+    #     pass_list = response['pass_list']
+    #     url_list = response['file_url_list']
+    #     mandarin_wavs = [i for i in url_list if pass_list[url_list.index(i)] == 1]
+    # else:
+    #     logger.error(f"Lang_classify failed. spkid:{spkid}.response:{response}")
+    #     return {"code": 7005, "message": "Lang_classify failed."}
+
+    # step4 提取特征
+    mandarin_wavs = wav_files
+    data = {"spkid": spkid, "filelist": ",".join(mandarin_wavs)}
+    response = send_request(cfg.ENCODE_URL, data=data)
+    if response['code'] == 200:
+        file_emb = response['file_emb']
+    else:
+        logger.error(f"Encode failed. spkid:{spkid}.response:{response}")
+        return {"code": 7004, "message": "编码请求失败"}
+
+    # step5 聚类
+    if use_cluster:
+        file_emb = file_emb[cfg.ENCODE_MODEL_NAME]
+        data = {
+            "emb_dict": file_emb["embedding"],
+            "cluster_line": 3,
+            "mer_cos_th": 0.7,
+            "cluster_type": "spectral",  # spectral or umap_hdbscan
+            "min_cluster_size": 1,
+        }
+        response = send_request(cfg.CLUSTER_URL, json=data)
+        logger.info(f"\t * -> Cluster result: {response}")
+        items, keys_with_max_value = find_items_with_highest_value(response['labels'])
+        max_score = response['scores'][keys_with_max_value]['max']
+        min_score = response['scores'][keys_with_max_value]['min']
+
+        if min_score < cfg.CLUSTER_MIN_SCORE_THRESHOLD:
+            logger.info(f"After cluster min_score  < {cfg.CLUSTER_MIN_SCORE_THRESHOLD}. spkid:{spkid}.response:{response['scores']}")
+            return {"code": 500, "message": "录音音频质量不佳"}
+        selected_files = sorted(items.keys(), key=lambda x: x.split("/")[-1].replace(".wav", "").split("_")[0])
+    else:
+        selected_files = response['file_url_list']
+
+    audio_data = np.concatenate([torchaudio.load(file.replace("local://", ""))[0] for file in selected_files], axis=-1)
+    _selected_path = os.path.join(tmp_folder, f"{spkid}_selected.wav")
+    torchaudio.save(_selected_path, torch.from_numpy(audio_data), sample_rate=16000)
+    selected_times = [d[_data.replace("local://", "")] for _data in selected_files]
+
+    return {
+        "code": 200,
+        "spkid": spkid,
+        "raw_file_path": filepath,
+        "selected_path": _selected_path,
+        "selected_times": selected_times,
+        "total_duration": valid_length,
+    }

@@ -18,11 +18,11 @@ from utils.oss import upload_files
 from utils.log import logger, err_logger
 app = Flask(__name__)
 
-inference_pipeline = pipeline(
-    task=Tasks.voice_activity_detection,
-    model='./models/speech_fsmn_vad_zh-cn-16k-common-pytorch',
-    model_revision=None,
-)
+# inference_pipeline = pipeline(
+#     task=Tasks.voice_activity_detection,
+#     model='./models/speech_fsmn_vad_zh-cn-16k-common-pytorch',
+#     model_revision=None,
+# )
 
 def energybase_vad(filepath, save_folder_path, smooth_threshold=0.5, min_duration=2, save_oss=False,split=False):
     os.makedirs(save_folder_path, exist_ok=True)

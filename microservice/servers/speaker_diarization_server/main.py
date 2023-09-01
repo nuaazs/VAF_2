@@ -34,6 +34,7 @@ def pipeline(tmp_folder, filepath, spkid):
     data = {"spkid": spkid, "length": 90}
     files = [('file', (filepath, open(filepath, 'rb')))]
     response = send_request(cfg.VAD_URL, files=files, data=data)
+    vad_times = str(response['timelist'])
 
     # step2 截取音频片段
     output_file_li = []
@@ -91,7 +92,7 @@ def pipeline(tmp_folder, filepath, spkid):
     selected_files = sorted(items.keys(), key=lambda x: x.split("/")[-1].replace(".wav", "").split("_")[0])
     audio_data = np.concatenate([torchaudio.load(file.replace("local://", ""))[0] for file in selected_files], axis=-1)
     file_selected_path = os.path.join(tmp_folder, f"{spkid}_selected.wav")
-    torchaudio.save(file_selected_path, torch.from_numpy(audio_data), sample_rate=8000)
+    torchaudio.save(file_selected_path, torch.from_numpy(audio_data), sample_rate=16000)
 
     selected_times = [d[_data.replace("local://", "")] for _data in selected_files]
 
@@ -121,7 +122,8 @@ def pipeline(tmp_folder, filepath, spkid):
         "selected_times": selected_times,
         # "nlp_result": nlp_result,
         "total_duration": total_duration,
-        "record_month": record_month
+        "record_month": record_month,
+        "vad_times": vad_times
     }
 
 
@@ -144,12 +146,29 @@ def perprocess(filepath):
             shutil.rmtree(tmp_folder)
 
 
+def get_last_id():
+    if not os.path.exists('output/last_id.txt'):
+        with open('output/last_id.txt', 'w') as f:
+            f.write('0')
+    with open('output/last_id.txt', 'r') as f:
+        last_id = f.read()
+    return last_id
+
+
+def update_last_id(last_id):
+    with open('output/last_id.txt', 'w') as f:
+        f.write(str(last_id))
+
+
 def main():
     wav_files = glob.glob("/datasets/changzhou/*.wav")
     # wav_files = glob.glob("./test_dataset/*.wav")
     logger.info(f"Total wav files: {len(wav_files)}")
     wav_files = sorted(wav_files)
     for i in tqdm(wav_files):
+        record_num = os.path.basename(i).split(".")[0]
+        if int(record_num) < int(last_id):
+            continue
         perprocess(i)
 
     with open(f"output/need_cluster_records.txt", "w+") as f:
@@ -157,11 +176,17 @@ def main():
 
     cluster_pipleline(need_cluster_records)
 
+    new_last_id = os.path.basename(wav_files[-1]).split(".")[0]
+    update_last_id(new_last_id)
+    logger.info(f"New last id is: {new_last_id}")
+
 
 if __name__ == "__main__":
     os.makedirs("output", exist_ok=True)
     need_cluster_records = []
+    last_id = get_last_id()
+    logger.info(f"Last id: {last_id}")
     currt_month = datetime.datetime.now().month
-    record_month= str(currt_month)
+    record_month = str(currt_month)
     record_month = "8"
     main()
