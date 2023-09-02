@@ -16,7 +16,8 @@ CKPT_PATH = {
 
 
 if __name__ == '__main__':
-    MODELs = ["resnet34_lm","resnet152_lm","resnet221_lm","resnet293_lm"] 
+    #MODELs = ["resnet34_lm","resnet152_lm","resnet221_lm","resnet293_lm"] 
+    MODELs = ["eres2net"]
     device = "cuda:0"
     # import model
     for MODEL in MODELs:
@@ -26,6 +27,6 @@ if __name__ == '__main__':
         model.to(device)
         # test inference
         with torch.no_grad():
-            output = model(torch.randn(1, 200,80).to(device))
+            output = model(torch.randn(1, 1440000,80).to(device))
         print(output.shape)
         print(output)

@@ -17,7 +17,7 @@ wav_len: 3.0 # duration(s) for each training sample.
 sample_rate: 16000
 aug_prob: 0.2
 speed_pertub: True
-lr: 0.0005
+lr: 0.005
 min_lr: !!float 5e-5
 
 # dataloader

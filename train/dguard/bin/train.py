@@ -318,50 +318,50 @@ def train(train_loader, model, criterion, optimizer, epoch, lr_scheduler, margin
 
     end = time.time()
     for i, (x, y) in enumerate(train_loader):
-        try:
-            # data loading time
-            train_stats.update('Data', time.time() - end)
+        # try:
+        # data loading time
+        train_stats.update('Data', time.time() - end)
 
-            # update
-            iter_num = (epoch-1)*len(train_loader) + i
-            lr_scheduler.step(iter_num)
-            margin_scheduler.step(iter_num)
+        # update
+        iter_num = (epoch-1)*len(train_loader) + i
+        lr_scheduler.step(iter_num)
+        margin_scheduler.step(iter_num)
 
-            x = x.cuda(non_blocking=True)
-            y = y.cuda(non_blocking=True)
+        x = x.cuda(non_blocking=True)
+        y = y.cuda(non_blocking=True)
 
-            # compute output
-            if pre_extractor:
-                x = pre_extractor(x)
-            # output = model(x)
-            outputs = model(x)
-            embeds = outputs[-1] if isinstance(outputs, tuple) else outputs
-            output = embeds.detach().cpu().numpy()
-            
-            loss = criterion(output, y)
-            acc1 = accuracy(output, y)
+        # compute output
+        if pre_extractor:
+            x = pre_extractor(x)
+        # output = model(x)
+        outputs = model(x)
+        embeds = outputs[-1] if isinstance(outputs, tuple) else outputs
+        output = embeds# .detach().cpu().numpy()
+        
+        loss = criterion(output, y)
+        acc1 = accuracy(output, y)
 
-            # compute gradient and do optimizer step
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+        # compute gradient and do optimizer step
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
-            # recording
-            train_stats.update('Loss', loss.item(), x.size(0))
-            train_stats.update('Acc@1', acc1.item(), x.size(0))
-            train_stats.update('Lr', optimizer.param_groups[0]["lr"])
-            train_stats.update('Margin', margin_scheduler.get_margin())
-            train_stats.update('Time', time.time() - end)
+        # recording
+        train_stats.update('Loss', loss.item(), x.size(0))
+        train_stats.update('Acc@1', acc1.item(), x.size(0))
+        train_stats.update('Lr', optimizer.param_groups[0]["lr"])
+        train_stats.update('Margin', margin_scheduler.get_margin())
+        train_stats.update('Time', time.time() - end)
 
-            if rank == 0 and i % config.log_batch_freq == 0:
-                logger.info(progress.display(i))
+        if rank == 0 and i % config.log_batch_freq == 0:
+            logger.info(progress.display(i))
 
-            end = time.time()
-        except Exception as e:
-            print(e)
-            print("Error in train")
-            # embed()
-            # raise e
+        end = time.time()
+        # except Exception as e:
+        #     print(e)
+        #     print("Error in train")
+        #     # embed()
+        #     # raise e
 
     key_stats={
         'Avg_loss': train_stats.avg('Loss'),
@@ -406,7 +406,7 @@ def train_fine_tune(train_loader, model, criterion, optimizer, epoch, lr_schedul
             x = pre_extractor(x)
         outputs = model(x)
         embeds = outputs[-1] if isinstance(outputs, tuple) else outputs
-        output = embeds.detach().cpu().numpy()
+        output = embeds#.detach().cpu().numpy()
         loss = criterion(output, y)
         acc1 = accuracy(output, y)
 
