@@ -49,9 +49,10 @@ from dguard.utils.fileio import load_wav_scp
 ###############################################################################################################
 from IPython import embed
 
-DEV=False
+DEV=True
+DEV_PLOT=True
 def dev_print(s):
-    if DEV:
+    if DEV and DEV_PLOT:
         print(s)
 test_config = {
     "trials":["/datasets/voxceleb1/trials/vox1_O_cleaned.trial"], # ,"/datasets/voxceleb1/trials/vox1_E_cleaned.trial","/datasets/voxceleb1/trials/vox1_H_cleaned.trial"
@@ -176,7 +177,7 @@ def main():
             print(f"DEV MODE: Now Testing Model, Epoch: {epoch}")
             embedding_dir = os.path.join(config.exp_dir, 'embeddings')
             os.makedirs(embedding_dir, exist_ok=True)
-            emb_ark,emb_scp = test(model, int(args.gpu[rank]),test_config, epoch, logger, rank,test_config["wav_scp"],embedding_dir=embedding_dir,feature_extractor=feature_extractor,pre_extractor=pre_extractor)
+            # emb_ark,emb_scp = test(model, int(args.gpu[rank]),test_config, epoch, logger, rank,test_config["wav_scp"],embedding_dir=embedding_dir,feature_extractor=feature_extractor,pre_extractor=pre_extractor)
         if args.fine_tune:
             train_stats = train_fine_tune(
                 train_dataloader,
@@ -292,20 +293,20 @@ def test(model, gpu,config, epoch, logger, rank, wav_scp,embedding_dir,feature_e
                 for k in local_k:
                     wav_path = data[k]
                     wav, fs = torchaudio.load(wav_path)
-                    dev_print(f"Test: WAV raw shape: {wav.shape}")
+                    # dev_print(f"Test: WAV raw shape: {wav.shape}")
                     if feature_extractor:
                         feat = feature_extractor(wav)
                     else:
                         feat = wav
-                    dev_print(f"Test: WAV feature shape: {feat.shape}")
+                    # dev_print(f"Test: WAV feature shape: {feat.shape}")
                     if pre_extractor:
                         feat = pre_extractor(feat)
-                    dev_print(f"Test: WAV pre_extractor shape: {feat.shape}")
+                    # dev_print(f"Test: WAV pre_extractor shape: {feat.shape}")
                     # feat = feat.unsqueeze(0)
                     if len(feat.shape) == 2:
                         feat = feat.unsqueeze(0)
                     feat = feat.to(gpu)
-                    dev_print(f"Test: WAV to gpu shape: {feat.shape}")
+                    # dev_print(f"Test: WAV to gpu shape: {feat.shape}")
                     outputs = model(feat)
                     dev_print(f"Test: model output shape: {outputs.shape}")
                     embeds = outputs[-1] if isinstance(outputs, tuple) else outputs

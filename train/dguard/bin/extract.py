@@ -52,7 +52,7 @@ def main():
     config.checkpointer['args']['checkpoints_dir'] = os.path.join(args.exp_dir, 'models')
     config.checkpointer['args']['recoverables'] = {'embedding_model':embedding_model}
     checkpointer = build('checkpointer', config)
-    checkpointer.recover_if_possible(epoch=config.num_epoch, device=device)
+    checkpointer.recover_if_possible(device=device) # epoch=config.num_epoch
 
     embedding_model.to(device)
     embedding_model.eval()

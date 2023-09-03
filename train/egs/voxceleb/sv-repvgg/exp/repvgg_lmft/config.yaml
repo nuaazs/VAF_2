@@ -5,7 +5,7 @@ augmentations:
     noise_file: <noise>
     reverb_file: <reverb>
   obj: dguard.process.processor.SpkVeriAug
-batch_size: 64
+batch_size: 512
 checkpointer:
   args:
     checkpoints_dir: <exp_dir>/models
@@ -31,20 +31,26 @@ dataloader:
 dataset:
   args:
     data_file: <data>
-    device: cpu
     preprocessor: <preprocessor>
   obj: dguard.dataset.dataset.WavSVDataset
 embedding_model:
   args:
     embed_dim: <embedding_size>
-    feat_dim: <wavlm_dim>
+    feat_dim: <fbank_dim>
   obj: dguard.models.repvgg.repvgg.RepVGG
 embedding_size: 512
 epoch_counter:
   args:
     limit: <num_epoch>
   obj: dguard.utils.epoch.EpochCounter
-exp_dir: exp/repvgg_wavlm
+exp_dir: exp/repvgg_lmft
+fbank_dim: 80
+feature_extractor:
+  args:
+    mean_nor: true
+    n_mels: <fbank_dim>
+    sample_rate: <sample_rate>
+  obj: dguard.process.processor.FBank
 label_encoder:
   args:
     data_file: <data>
@@ -53,10 +59,10 @@ log_batch_freq: 100
 loss:
   args:
     easy_margin: false
-    margin: 0.2
+    margin: 0.5
     scale: 32.0
   obj: dguard.loss.margin_loss.ArcMarginLoss
-lr: 0.0003
+lr: 5.0e-05
 lr_scheduler:
   args:
     fix_epoch: <num_epoch>
@@ -69,16 +75,16 @@ lr_scheduler:
 margin_scheduler:
   args:
     criterion: <loss>
-    final_margin: 0.2
+    final_margin: 0.5
     fix_epoch: 25
     increase_start_epoch: 15
-    initial_margin: 0.0
+    initial_margin: 0.5
     step_per_epoch: null
   obj: dguard.process.scheduler.MarginScheduler
-min_lr: 0.0001
+min_lr: 5.0e-05
 noise: data/musan/wav.scp
 num_classes: 5994
-num_epoch: 200
+num_epoch: 156
 num_workers: 32
 optimizer:
   args:
@@ -88,13 +94,9 @@ optimizer:
     params: null
     weight_decay: 0.0001
   obj: torch.optim.SGD
-pre_extractor:
-  args:
-    checkpoint: /VAF/train/pretrained_models/WavLM-Large.pt
-    device: cuda
-  obj: dguard.models.feature_extractor.wavlm.wavlm_extractor
 preprocessor:
   augmentations: <augmentations>
+  feature_extractor: <feature_extractor>
   label_encoder: <label_encoder>
   wav_reader: <wav_reader>
 reverb: data/rirs/wav.scp
@@ -108,4 +110,3 @@ wav_reader:
     sample_rate: <sample_rate>
     speed_pertub: <speed_pertub>
   obj: dguard.process.processor.WavReader
-wavlm_dim: 1024

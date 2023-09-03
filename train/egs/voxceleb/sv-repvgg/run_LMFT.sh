@@ -5,7 +5,7 @@
 set -e
 . ./path.sh || exit 1
 
-stage=2
+stage=3
 stop_stage=5
 
 data=data
@@ -38,18 +38,18 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
 fi
 
 
-if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
-  # Extract embeddings of test datasets.
-  echo "Stage4: Extracting speaker embeddings..."
-  nj=8
-  torchrun --nproc_per_node=$nj dguard/bin/extract.py --exp_dir $exp_dir \
-           --data $data/vox1/wav.scp --use_gpu --gpu $gpus
-fi
+# if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
+#  # Extract embeddings of test datasets.
+#  echo "Stage4: Extracting speaker embeddings..."
+#  nj=8
+#  torchrun --nproc_per_node=$nj dguard/bin/extract.py --exp_dir $exp_dir \
+#           --data $data/vox1/wav.scp --use_gpu --gpu $gpus
+# fi
 
-if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
-  # Output score metrics.
-  echo "Stage5: Computing score metrics..."
-  trials="$data/vox1/trials/vox1_O_cleaned.trial $data/vox1/trials/vox1_E_cleaned.trial $data/vox1/trials/vox1_H_cleaned.trial"
-  python dguard/bin/compute_score_metrics.py --enrol_data $exp_dir/embeddings --test_data $exp_dir/embeddings \
-                                                 --scores_dir $exp_dir/scores --trials $trials
-fi
+# if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
+#   # Output score metrics.
+#   echo "Stage5: Computing score metrics..."
+#   trials="$data/vox1/trials/vox1_O_cleaned.trial $data/vox1/trials/vox1_E_cleaned.trial $data/vox1/trials/vox1_H_cleaned.trial"
+#   python dguard/bin/compute_score_metrics.py --enrol_data $exp_dir/embeddings --test_data $exp_dir/embeddings \
+#                                                  --scores_dir $exp_dir/scores --trials $trials
+# fi
