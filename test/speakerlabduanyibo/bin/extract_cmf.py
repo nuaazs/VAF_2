@@ -5,6 +5,7 @@ import os
 import sys
 import argparse
 import torch
+import numpy as np
 import torchaudio
 import importlib
 from kaldiio import WriteHelper
@@ -53,7 +54,8 @@ def main():
     os.makedirs(embedding_dir, exist_ok=True)
     cmf_embedding_dir = os.path.join(args.exp_dir, 'cmf_embeddings')
     os.makedirs(cmf_embedding_dir, exist_ok=True)
-
+    cmf_nums_dir = os.path.join(args.exp_dir, 'cmf_num')
+    os.makedirs(cmf_nums_dir, exist_ok=True)
     logger = get_logger()
 
     if args.use_gpu:
@@ -95,19 +97,25 @@ def main():
     emb_scp = os.path.join(embedding_dir, 'xvector_%02d.scp'%rank)
     cmf_emb_ark = os.path.join(cmf_embedding_dir, 'xvector_%02d.ark'%rank)
     cmf_emb_scp = os.path.join(cmf_embedding_dir, 'xvector_%02d.scp'%rank)
+    cmf_num_ark = os.path.join(cmf_nums_dir, 'xvector_%02d.ark'%rank)
+    cmf_num_scp = os.path.join(cmf_nums_dir, 'xvector_%02d.scp'%rank)
+
     if rank == 0:
         logger.info('Start extracting embeddings.')
     with torch.no_grad():
-        with WriteHelper(f'ark,scp:{emb_ark},{emb_scp}') as writer ,WriteHelper(f'ark,scp:{cmf_emb_ark},{cmf_emb_scp}') as cmf_writer:
+        with WriteHelper(f'ark,scp:{emb_ark},{emb_scp}') as writer ,WriteHelper(f'ark,scp:{cmf_emb_ark},{cmf_emb_scp}') as cmf_writer,WriteHelper(f'ark,scp:{cmf_num_ark},{cmf_num_scp}') as num_writer:
             for k in tqdm(local_k):
                 wav_path = data[k]
                 result = infer.inference([wav_path], cmf=True, segment_length=8*16000,crops_num_limit=1)
                 # emb = mode(feat).detach().cpu().numpy()
                 emb = result[0][0].detach().cpu().numpy()
-                cmf_emb = result[0][1].detach().cpu().numpy()
+                cmf_emb = result[0][1]
+                cmf_num = result[0][2]
+                cmf_emb_np = np.array([cmf_emb,cmf_emb,cmf_emb], dtype=np.float32)
+                cmf_num_np = np.array([cmf_num,cmf_num,cmf_num], dtype=np.float32)
                 writer(k, emb)
-                cmf_writer(k,cmf_emb)
-                
+                cmf_writer(k,cmf_emb_np)
+                num_writer(k,cmf_num_np)
 
 if __name__ == "__main__":
     main()

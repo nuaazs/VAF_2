@@ -66,10 +66,10 @@ def main():
                 enrol_emb, test_emb = enrol_dict[pair[0]], test_dict[pair[1]]
                 cosine_score = cosine_similarity(enrol_emb.reshape(1, -1),
                                               test_emb.reshape(1, -1))[0][0]
-                cmf0,cmf1=cmf_enrol_dict[pair[0]], cmf_test_dict[pair[1]]
-                cmf0 = torch.tensor(cmf0, dtype=torch.float32)
-                cmf1 = torch.tensor(cmf1, dtype=torch.float32)
-                factor = torch.dot(cmf0.reshape(-1),cmf1.reshape(-1))
+                cmf0,cmf1=cmf_enrol_dict[pair[0]][0], cmf_test_dict[pair[1]][0]
+                print(cmf0,cmf1)
+                factor =cmf0*cmf1
+                # print(factor)
                 cmf_score = factor*cosine_score
                 # cmf_factor = infer.calculate_factor(cmf0,cmf1)
                 # write the score

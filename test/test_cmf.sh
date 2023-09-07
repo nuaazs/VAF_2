@@ -116,7 +116,7 @@ for model_id in $model_path; do
 
                 if [ "$trial_class" == 'cti2' ]; then
                         echo "cti2 dataset"
-                        if [ ! -d $result_path/$model_id/cti2/embeddings ]; then
+                        if [ ! -d $result_path/$model_id/cti2_result/embeddings ]; then
                                 torchrun --nproc_per_node=$nj --master_port=53688 speakerlabduanyibo/bin/extract_cmf.py --exp_dir $result_path/$model_id/cti2_result \
                                                                 --data $cti2_scp --use_gpu --gpu $gpus || wechat echo "cti2 torchrun error"
                                 mkdir -p $result_path/$model_id/cti2_result
