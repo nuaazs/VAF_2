@@ -56,15 +56,15 @@ def calculate_cmf(embeddings):
         tiny_data = tiny_data/_len
         data.append(tiny_data.reshape(1,-1))
     data = torch.cat(data, dim=0)
-    print(f"data: {data.shape}")
+    # print(f"data: {data.shape}")
     sum_embedding = torch.sum(data, dim=0).reshape(-1)
-    print(f"sum_embedding: {sum_embedding}")
+    # print(f"sum_embedding: {sum_embedding}")
     # _min = torch.min(sum_embedding)
     # _max = torch.max(sum_embedding)
     # sum_embedding = (sum_embedding - _min) / (_max - _min)
     length = (sum_embedding**2).sum().sqrt()#/(sum_embedding.shape[0]**0.5)
     length = float(length)/data.shape[0]
-    print(length)
+    # print(length)
     return length
 
 def cmf_score_calibration(embA, embB, CMFA, CMFB):
@@ -87,13 +87,20 @@ def cmf_score_calibration(embA, embB, CMFA, CMFB):
     result = torch.stack(result, dim=0)
     return result
 
-def random_choose_ten_crops(wav_data, segment_length,get_embedding_func):
+def random_choose_ten_crops(wav_data, segment_length,get_embedding_func,segment_length_limit=16000*2):
     # When segmenting audio to calculate CMF, there is an overlap
     # of half the segment length so that the segment embedding do
     # not diverge too much.
     # wav_data: [batch_size, T]
     batch_size, T = wav_data.shape
+    if segment_length<0:
+        number=int(abs(segment_length))
+        segment_length = int(int((T/16000) // number) * 16000)
     
+    print(f"segment_length: {segment_length}")
+    if segment_length<=segment_length_limit:
+        segment_length = segment_length_limit
+        print(f"Change segment_length to {segment_length}")
     # Calculate the number of segments
     num_segments = T // (segment_length // 2) - 1
     # print(f"num_segments: {num_segments}")
