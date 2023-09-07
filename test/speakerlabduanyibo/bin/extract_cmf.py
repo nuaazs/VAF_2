@@ -106,7 +106,7 @@ def main():
         with WriteHelper(f'ark,scp:{emb_ark},{emb_scp}') as writer ,WriteHelper(f'ark,scp:{cmf_emb_ark},{cmf_emb_scp}') as cmf_writer,WriteHelper(f'ark,scp:{cmf_num_ark},{cmf_num_scp}') as num_writer:
             for k in tqdm(local_k):
                 wav_path = data[k]
-                result = infer.inference([wav_path], cmf=True, segment_length=8*16000,crops_num_limit=1)
+                result = infer.inference([wav_path], cmf=True, segment_length=15*16000,crops_num_limit=1)
                 # emb = mode(feat).detach().cpu().numpy()
                 emb = result[0][0].detach().cpu().numpy()
                 cmf_emb = result[0][1]
