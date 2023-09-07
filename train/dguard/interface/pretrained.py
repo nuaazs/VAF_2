@@ -262,11 +262,20 @@ if DEV:
     infer = PretrainedModel('resnet293_lm',mode="compare")
     cos_score,factor = infer.inference(['/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav','/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00002.wav'],cmf=True,segment_length=3*16000)
     print(f"cos_score: {cos_score}, factor: {factor}")
-    print("="*50)
-    infer = PretrainedModel('resnet293_lm',mode="extract")
-    result = infer.inference(['/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav','/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00002.wav'],cmf=True,segment_length=3*16000)
-    print(f"result len: {len(result)}")
-    print(f"result[0][0] shape: {result[0][0].shape}")
-    print(f"result[1][0] shape: {result[1][0].shape}")
-    print(f"result[0][1] shape: {result[0][1].shape}")
-    print(f"result[1][1] shape: {result[1][1].shape}")
+    # print("="*50)
+    # infer = PretrainedModel('resnet293_lm',mode="extract")
+    # result = infer.inference(['/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav','/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00002.wav'],cmf=True,segment_length=3*16000)
+    # print(f"result len: {len(result)}")
+    # print(f"result[0] len: {len(result[0])}")
+    # print(f"result[0][0] shape: {result[0][0].shape}")
+    # print(f"result[1][0] shape: {result[1][0].shape}")
+    # print(f"result[0][1] shape: {result[0][1].shape}")
+    # print(f"result[1][1] shape: {result[1][1].shape}")
+    # emb0 = result[0][0]
+    # emb1 = result[1][0]
+    # cmf0 = result[0][1]
+    # cmf1 = result[1][1]
+    # cmf_factor = infer.calculate_factor(cmf0,cmf1)
+    # print(f"cmf_factor: {cmf_factor}")
+    # cos_score = infer.calculate_cosine_distance(emb0,emb1)
+    # print(f"cos_score: {cos_score}")
