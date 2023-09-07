@@ -251,6 +251,9 @@ class PretrainedModel:
         return torch.sum(x * y, dim=1)
 
     def calculate_factor(self,cmf1,cmf2):
+        # if cmf1 and cmf2 is constant, just multiply them
+        if isinstance(cmf1,float) and isinstance(cmf2,float):
+            return cmf1*cmf2
         cmf1 = torch.tensor(cmf1, dtype=torch.float32)
         cmf2 = torch.tensor(cmf2, dtype=torch.float32)
         factor = torch.dot(cmf1.reshape(-1),cmf2.reshape(-1))
