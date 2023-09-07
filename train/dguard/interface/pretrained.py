@@ -2,7 +2,7 @@
 # @Time    : 2023-08-02  09:00:45
 # @Author  : zhaosheng@nuaa.edu.cn
 # @Describe: Load pretrained model by name.
-DEV=False
+DEV=True
 import os
 import re
 import pathlib
@@ -15,7 +15,7 @@ if DEV:
 
 from dguard.utils.builder import build
 from dguard.utils.config import yaml_config_loader,Config
-
+from dguard.process.backend import random_choose_ten_crops,calculate_cmf,calculate_cosine_distance
 #TODO: upload to remote server
 model_info ={
     'dfresnet_233':{
@@ -138,12 +138,64 @@ def inference(model,feature_extractor,wav_path,sample_rate=16000):
         output = embeds.detach().cpu().numpy()
     return output
 
+# 推理
+
+def get_embedding(model,feature_extractor,wav_data):
+    model.eval()
+    wav = torch.tensor(wav_data, dtype=torch.float32)
+    feat = feature_extractor(wav)
+    feat = feat.unsqueeze(0)
+    feat = feat.to(next(model.parameters()).device)
+    with torch.no_grad():
+        outputs = model(feat)
+        # outputs = model(x)
+        embeds = outputs[-1] if isinstance(outputs, tuple) else outputs
+        output = embeds
+    return output
+
+def get_cmf(model,feature_extractor,wav_data,segment_length):
+    selected_crops,selected_crops_emb = random_choose_ten_crops(wav_data,segment_length,get_embedding_func=lambda x:get_embedding(model,feature_extractor,x))
+    cmf = calculate_cmf(selected_crops_emb)
+    return cmf
+
+def inference_list(model_name,wav_path_list,device='cpu',segment_length=3*16000,cmf=True,redundancy=1):
+    
+    model,feature_extractor,sample_rate = load_by_name(model_name,device=device)
+    model.eval()
+    if redundancy>1:
+        print(f"Load model {model_name} successfully. Embedding size: {model_info[model_name]['embedding_size']}")
+    result = []
+    for wav_path in wav_path_list:
+        wav, fs = torchaudio.load(wav_path) # wav shape: [1, T]
+        assert fs == sample_rate, f"The sample rate of wav is {fs} and inconsistent with that of the pretrained model."
+        # wav = wav.to(next(model.parameters()).device)
+        wav = torch.tensor(wav, dtype=torch.float32)
+        feat = feature_extractor(wav)
+        feat = feat.unsqueeze(0)
+        feat = feat.to(next(model.parameters()).device)
+        if cmf:
+            cmf_embedding = get_cmf(model,feature_extractor,wav,segment_length=segment_length)
+        else:
+            cmf_embedding = None
+        with torch.no_grad():
+            outputs = model(feat)
+            # outputs = model(x)
+            embeds = outputs[-1] if isinstance(outputs, tuple) else outputs
+            output = embeds
+            result.append([output,cmf_embedding])
+    return result
+
 # useage
 if DEV:
     from dguard.interface.pretrained import load_by_name,ALL_MODELS
     print(ALL_MODELS)
-    model,feature_extractor,sample_rate = load_by_name('resnet293_lm',strict=False)
-    output = inference(model,feature_extractor,'/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav')
-    print(output)
-    print(output.shape)
-    print(output)
+    result = inference_list('resnet293_lm',['/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav','/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00002.wav'])
+    print(result)
+    print(len(result))
+    print(result[0][0].shape)
+    print(result[0][1].shape)
+    cos_score = calculate_cosine_distance(result[0][0],result[1][0])
+    print(f"cos score: {cos_score}")
+    print(f"cmf shape: {result[0][1].shape}")
+    factor = torch.dot(result[0][1].reshape(-1),result[1][1].reshape(-1))
+    print(f"factor: {factor}")

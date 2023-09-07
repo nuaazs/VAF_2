@@ -7,28 +7,28 @@ import torch
 import torch.nn.functional as F
 import torchaudio
 
-import sys
-sys.path.append("/VAF/train")
-from dguard.interface.pretrained import load_by_name,ALL_MODELS
-print(ALL_MODELS)
-model,feature_extractor,sample_rate = load_by_name('repvgg',strict=False)
-model.eval()
+# import sys
+# sys.path.append("/VAF/train")
+# from dguard.interface.pretrained import load_by_name,ALL_MODELS
+# print(ALL_MODELS)
+# model,feature_extractor,sample_rate = load_by_name('repvgg',strict=False)
+# model.eval()
 
 
-def get_embedding(wav_data,embedding_size=256):
-    # wav_data: [batch_size, T]
-    # NOTE: just return fake embedding now. You should implement your own embedding extractor.
-    batch_size, T = wav_data.shape
-    wav = torch.tensor(wav_data, dtype=torch.float32)
-    feat = feature_extractor(wav)
-    feat = feat.unsqueeze(0)
-    feat = feat.to(next(model.parameters()).device)
-    with torch.no_grad():
-        outputs = model(feat)
-        # outputs = model(x)
-        embeds = outputs[-1] if isinstance(outputs, tuple) else outputs
-        output = embeds.detach()#.cpu().numpy()
-    return output
+# def get_embedding(wav_data,embedding_size=256):
+#     # wav_data: [batch_size, T]
+#     # NOTE: just return fake embedding now. You should implement your own embedding extractor.
+#     batch_size, T = wav_data.shape
+#     wav = torch.tensor(wav_data, dtype=torch.float32)
+#     feat = feature_extractor(wav)
+#     feat = feat.unsqueeze(0)
+#     feat = feat.to(next(model.parameters()).device)
+#     with torch.no_grad():
+#         outputs = model(feat)
+#         # outputs = model(x)
+#         embeds = outputs[-1] if isinstance(outputs, tuple) else outputs
+#         output = embeds.detach()#.cpu().numpy()
+#     return output
 
 def calculate_cosine_distance(x, y):
     """计算余弦距离"""
@@ -41,7 +41,8 @@ def calculate_cosine_distance(x, y):
 
 def calculate_cmf(embeddings):
     """计算 CMF"""
-    print(f"recieved embeddings shape: {embeddings.shape}")
+    # print(embeddings)
+    # print(f"recieved embeddings shape: {embeddings.shape}")
     # input embeddings: [N,batch_size,embedding_size]
     # output cmf : (batch_size,)
     
@@ -82,7 +83,7 @@ def random_choose_ten_crops(wav_data, segment_length,get_embedding_func):
     
     # Calculate the number of segments
     num_segments = T // (segment_length // 2) - 1
-    
+    # print(f"num_segments: {num_segments}")
     # Initialize a list to store the selected crops
     selected_crops = []
     selected_crops_emb = []
@@ -94,7 +95,9 @@ def random_choose_ten_crops(wav_data, segment_length,get_embedding_func):
         
         # Extract the segment from the waveform data
         segment = wav_data[:, start_idx:end_idx]
+        # print(f"segment shape: {segment.shape}")
         emb = get_embedding_func(segment)
+        # print(f"emb shape: {emb.shape}")
         # Append the segment to the selected crops
         selected_crops.append(segment)
         selected_crops_emb.append(emb)
@@ -105,6 +108,7 @@ def random_choose_ten_crops(wav_data, segment_length,get_embedding_func):
     # Stack the selected crops along the batch dimension
     selected_crops = torch.stack(selected_crops, dim=0)
     selected_crops_emb = torch.stack(selected_crops_emb, dim=0)
+    print(f"Get #({selected_crops.shape}) crops")
     return selected_crops,selected_crops_emb
 
 if __name__ == '__main__':
