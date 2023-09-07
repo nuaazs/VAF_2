@@ -5,9 +5,9 @@ set -e
 
 gpus="0 1 2 3 4 5 6 7" 
 #模型选择
-model_path="dfresnet_233" #resnet34_lm resnet152_lm resnet221_lm resnet293_lm dfresnet_233 mfa_conformer ecapatdnn_1024 repvgg CAMPP_EMB_512 ECAPA_TDNN_1024_EMB_192 ERES2NET_BASE_EMB_192 REPVGG_TINY_A0_EMB_512 DFRESNET56_EMB_512
+model_path="repvgg eres2net dfresnet_233" #resnet34_lm resnet152_lm resnet221_lm resnet293_lm dfresnet_233 mfa_conformer ecapatdnn_1024 repvgg CAMPP_EMB_512 ECAPA_TDNN_1024_EMB_192 ERES2NET_BASE_EMB_192 REPVGG_TINY_A0_EMB_512 DFRESNET56_EMB_512
 #测试集选择
-trials_class="voxceleb" # voxceleb cnceleb cti 3dspeaker male female cti2
+trials_class="voxceleb cti cti2" # voxceleb cnceleb cti 3dspeaker male female cti2
 # trials_class="voxceleb"
 
 #测试集数据scp文件地址
@@ -55,8 +55,8 @@ for model_id in $model_path; do
                                                                 --data $vox_scp --use_gpu --gpu $gpus || wechat echo "voxceleb torchrun error"
                                 mkdir -p $result_path/$model_id/voxceleb_result
                         fi
-                        python speakerlabduanyibo/bin/compute_score_metrics.py --enrol_data $result_path/$model_id/voxceleb_result/embeddings --test_data $result_path/$model_id/voxceleb_result/embeddings \
-                                                                        --scores_dir $result_path/$model_id/voxceleb_result/scores --trials $trials_vox || wechat echo "voxceleb compute_score_metrics error"
+                        python speakerlabduanyibo/bin/compute_score_metrics_fusion.py --enrol_data $result_path/repvgg/voxceleb_result/embeddings --test_data $result_path/repvgg/voxceleb_result/embeddings --enrol_data2 $result_path/eres2net/voxceleb_result/embeddings --test_data2 $result_path/eres2net/voxceleb_result/embeddings --enrol_data3 $result_path/dfresnet_233/voxceleb_result/embeddings --test_data3 $result_path/dfresnet_233/voxceleb_result/embeddings\
+                                                                        --scores_dir $result_path/$model_id/voxceleb_result/scores --trials $trials_vox || wechat echo "voxceleb compute_score_metrics_fusion error"
                 fi
 
                 if [ "$trial_class" == 'cnceleb' ]; then
@@ -66,8 +66,8 @@ for model_id in $model_path; do
                                                                 --data $cnceleb_scp --use_gpu --gpu $gpus || wechat echo "cnceleb torchrun error"
                                 mkdir -p $result_path/$model_id/cnceleb_result 
                         fi
-                        python speakerlabduanyibo/bin/compute_score_metrics.py --enrol_data $result_path/$model_id/cnceleb_result/embeddings --test_data $result_path/$model_id/cnceleb_result/embeddings \
-                                                                        --scores_dir $result_path/$model_id/cnceleb_result/scores --trials $trials_cnceleb || wechat echo "cnceleb compute_score_metrics error"
+                        python speakerlabduanyibo/bin/compute_score_metrics_fusion.py --enrol_data $result_path/$model_id/cnceleb_result/embeddings --test_data $result_path/$model_id/cnceleb_result/embeddings \
+                                                                        --scores_dir $result_path/$model_id/cnceleb_result/scores --trials $trials_cnceleb || wechat echo "cnceleb compute_score_metrics_fusion error"
                 fi
 
                 if [ "$trial_class" == 'cti' ]; then
@@ -77,8 +77,8 @@ for model_id in $model_path; do
                                                                 --data $cti_scp --use_gpu --gpu $gpus || wechat echo "cti torchrun error"
                                 mkdir -p $result_path/$model_id/cti_result
                         fi
-                        python speakerlabduanyibo/bin/compute_score_metrics.py --enrol_data $result_path/$model_id/cti_result/embeddings --test_data $result_path/$model_id/cti_result/embeddings \
-                                                                        --scores_dir $result_path/$model_id/cti_result/scores --trials $trials_cti || wechat echo "cti compute_score_metrics error"
+                        python speakerlabduanyibo/bin/compute_score_metrics_fusion.py --enrol_data $result_path/$model_id/cti_result/embeddings --test_data $result_path/$model_id/cti_result/embeddings \
+                                                                        --scores_dir $result_path/$model_id/cti_result/scores --trials $trials_cti || wechat echo "cti compute_score_metrics_fusion error"
                 fi
 
                 if [ "$trial_class" == '3dspeaker' ]; then
@@ -88,8 +88,8 @@ for model_id in $model_path; do
                                                                 --data $speaker_scp --use_gpu --gpu $gpus || wechat echo "3d torchrun error"
                                 mkdir -p $result_path/$model_id/3dspeaker_result
                         fi
-                        python speakerlabduanyibo/bin/compute_score_metrics.py --enrol_data $result_path/$model_id/3dspeaker_result/embeddings --test_data $result_path/$model_id/3dspeaker_result/embeddings \
-                                                                        --scores_dir $result_path/$model_id/3dspeaker_result/scores --trials $trials_3dspeaker || wechat echo "3d compute_score_metrics error"
+                        python speakerlabduanyibo/bin/compute_score_metrics_fusion.py --enrol_data $result_path/$model_id/3dspeaker_result/embeddings --test_data $result_path/$model_id/3dspeaker_result/embeddings \
+                                                                        --scores_dir $result_path/$model_id/3dspeaker_result/scores --trials $trials_3dspeaker || wechat echo "3d compute_score_metrics_fusion error"
                 fi
 
                 if [ "$trial_class" == 'male' ]; then
@@ -99,8 +99,8 @@ for model_id in $model_path; do
                                                                 --data $male_scp --use_gpu --gpu $gpus || wechat echo "cti_male torchrun error"
                                 mkdir -p $result_path/$model_id/male_result
                         fi
-                        python speakerlabduanyibo/bin/compute_score_metrics.py --enrol_data $result_path/$model_id/male_result/embeddings --test_data $result_path/$model_id/male_result/embeddings \
-                                                                        --scores_dir $result_path/$model_id/male_result/scores --trials $trials_male || wechat echo "cti_male compute_score_metrics error"
+                        python speakerlabduanyibo/bin/compute_score_metrics_fusion.py --enrol_data $result_path/$model_id/male_result/embeddings --test_data $result_path/$model_id/male_result/embeddings \
+                                                                        --scores_dir $result_path/$model_id/male_result/scores --trials $trials_male || wechat echo "cti_male compute_score_metrics_fusion error"
                 fi  
 
                 if [ "$trial_class" == 'female' ]; then
@@ -110,8 +110,8 @@ for model_id in $model_path; do
                                                                 --data $female_scp --use_gpu --gpu $gpus || wechat echo "cti_female torchrun error"
                                 mkdir -p $result_path/$model_id/female_result
                         fi
-                        python speakerlabduanyibo/bin/compute_score_metrics.py --enrol_data $result_path/$model_id/female_result/embeddings --test_data $result_path/$model_id/female_result/embeddings \
-                                                                        --scores_dir $result_path/$model_id/female_result/scores --trials $trials_female || wechat echo "female compute_score_metrics error"
+                        python speakerlabduanyibo/bin/compute_score_metrics_fusion.py --enrol_data $result_path/$model_id/female_result/embeddings --test_data $result_path/$model_id/female_result/embeddings \
+                                                                        --scores_dir $result_path/$model_id/female_result/scores --trials $trials_female || wechat echo "female compute_score_metrics_fusion error"
                 fi 
 
                 if [ "$trial_class" == 'cti2' ]; then
@@ -121,8 +121,8 @@ for model_id in $model_path; do
                                                                 --data $cti2_scp --use_gpu --gpu $gpus || wechat echo "cti2 torchrun error"
                                 mkdir -p $result_path/$model_id/cti2_result
                         fi
-                        python speakerlabduanyibo/bin/compute_score_metrics.py --enrol_data $result_path/$model_id/cti2_result/embeddings --test_data $result_path/$model_id/cti2_result/embeddings \
-                                                                        --scores_dir $result_path/$model_id/cti2_result/scores_male --trials $trials_cti2 || wechat echo "cti2 compute_score_metrics error"
+                        python speakerlabduanyibo/bin/compute_score_metrics_fusion.py --enrol_data $result_path/$model_id/cti2_result/embeddings --test_data $result_path/$model_id/cti2_result/embeddings \
+                                                                        --scores_dir $result_path/$model_id/cti2_result/scores_male --trials $trials_cti2 || wechat echo "cti2 compute_score_metrics_fusion error"
                 fi 
                 
                 if [ "$trial_class" == 'cti_20s' ]; then
@@ -132,8 +132,8 @@ for model_id in $model_path; do
                                                                 --data $cti2_scp_20s --use_gpu --gpu $gpus || wechat echo "cti_20s torchrun error"
                                 mkdir -p $result_path/$model_id/cti_20s_result
                         fi
-                        python speakerlabduanyibo/bin/compute_score_metrics.py --enrol_data $result_path/$model_id/cti_20s_result/embeddings --test_data $result_path/$model_id/cti_20s_result/embeddings \
-                                                                        --scores_dir $result_path/$model_id/cti_20s_result/scores_male --trials $trials_cti2_20s || wechat echo "cti_20s compute_score_metrics error"
+                        python speakerlabduanyibo/bin/compute_score_metrics_fusion.py --enrol_data $result_path/$model_id/cti_20s_result/embeddings --test_data $result_path/$model_id/cti_20s_result/embeddings \
+                                                                        --scores_dir $result_path/$model_id/cti_20s_result/scores_male --trials $trials_cti2_20s || wechat echo "cti_20s compute_score_metrics_fusion error"
                 fi 
         done
         wechat echo "$model_id done"
