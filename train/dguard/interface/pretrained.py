@@ -3,6 +3,13 @@
 # @Author  : zhaosheng@nuaa.edu.cn
 # @Describe: Load pretrained model by name.
 DEV=False
+import argparse
+parser = argparse.ArgumentParser(description='')
+parser.add_argument('--dev', action='store_true', help='dev mode')
+args= parser.parse_args()
+if args.dev:
+    DEV=True
+    
 import os
 import re
 import pathlib
@@ -19,6 +26,7 @@ from dguard.utils.config import yaml_config_loader,Config
 from dguard.process.backend import random_choose_ten_crops,calculate_cmf,calculate_cosine_distance
 import warnings
 warnings.filterwarnings("ignore")
+
 
 #TODO: upload to remote server
 model_info ={
