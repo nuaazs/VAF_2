@@ -79,6 +79,12 @@ model_info ={
         'embedding_size': '256',
         'sample_rate': '16000'
     },
+    'resnet101_lm':{
+        "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet101_LM.yaml",
+        "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet101_LM/voxceleb_resnet101_LM.pt',
+        'embedding_size': '256',
+        'sample_rate': '16000'
+    },
     'resnet221_lm':{
         "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet221_LM.yaml",
         "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet221_LM/voxceleb_resnet221_LM/voxceleb_resnet221_LM.pt',
@@ -304,7 +310,7 @@ if DEV:
     # cos_score,factor = infer.inference(['/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav','/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00002.wav'],cmf=True,segment_length=3*16000)
     # print(f"cos_score: {cos_score}, factor: {factor}")
     # print("="*50)
-    infer = PretrainedModel('resnet293_lm',mode="extract")
+    infer = PretrainedModel('resnet101_lm',mode="extract")
     segment_length=-5
     result =  infer.inference(['/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav','/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00002.wav'],cmf=True,segment_length=segment_length,segment_length_limit=2*16000)
     # result = infer.inference(["/datasets/cjsd_download_test_vad/male_8/s2023_08_02_18_39_10_e2023_08_02_18_40_06.wav","/datasets/cjsd_download_test_vad/male_8/s2023_07_31_18_48_15_e2023_07_31_18_49_06.wav"],cmf=True,segment_length=-1,segment_length_limit=10*16000)

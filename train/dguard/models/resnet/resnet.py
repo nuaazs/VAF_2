@@ -32,6 +32,7 @@ import torch.nn.functional as F
 import dguard.models.resnet.pooling_layers as pooling_layers
 
 
+
 class BasicBlock(nn.Module):
     expansion = 1
 
@@ -111,25 +112,25 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
     def __init__(self,
-                 block_type,
                  num_blocks,
+                 block_type,
                  m_channels=32,
                  feat_dim=40,
                  embed_dim=128,
                  pooling_func='TSTP',
                  two_emb_layer=True):
         super(ResNet, self).__init__()
+        self.in_planes = m_channels
+        self.feat_dim = feat_dim
+        self.embed_dim = embed_dim
+        self.stats_dim = int(feat_dim / 8) * m_channels * 8
+        self.two_emb_layer = two_emb_layer
         if block_type == 'BasicBlock':
             block = BasicBlock
         elif block_type == 'Bottleneck':
             block = Bottleneck
         else:
             raise ValueError(f"block_type {block_type} not supported !!!")
-        self.in_planes = m_channels
-        self.feat_dim = feat_dim
-        self.embed_dim = embed_dim
-        self.stats_dim = int(feat_dim / 8) * m_channels * 8
-        self.two_emb_layer = two_emb_layer
 
         self.conv1 = nn.Conv2d(1,
                                m_channels,
