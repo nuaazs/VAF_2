@@ -2,7 +2,7 @@
 # @Time    : 2023-08-02  09:00:45
 # @Author  : zhaosheng@nuaa.edu.cn
 # @Describe: Load pretrained model by name.
-DEV=True
+DEV=False
 import os
 import re
 import pathlib

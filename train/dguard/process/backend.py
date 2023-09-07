@@ -46,15 +46,15 @@ def calculate_cmf(embeddings):
     # 2. 计算sum_embedding
     # 3. 将sum_embedding归一化
     # 4. 计算归一化后的sum_embedding的长度
-    data = []
-    for tiny_data in embeddings:
-        tiny_data = tiny_data.reshape(-1)
-        _min = torch.min(tiny_data)
-        _max = torch.max(tiny_data)
-        tiny_data = (tiny_data - _min) / (_max - _min)
-        data.append(tiny_data.reshape(1,-1))
-    data = torch.cat(data, dim=0)
-    sum_embedding = torch.sum(data, dim=0)
+    # data = []
+    # for tiny_data in embeddings:
+    #     tiny_data = tiny_data.reshape(-1)
+    #     _min = torch.min(tiny_data)
+    #     _max = torch.max(tiny_data)
+    #     tiny_data = (tiny_data - _min) / (_max - _min)
+    #     data.append(tiny_data.reshape(1,-1))
+    # data = torch.cat(data, dim=0)
+    sum_embedding = torch.sum(embeddings, dim=0).reshape(-1)
     print(f"sum_embedding: {sum_embedding}")
     _min = torch.min(sum_embedding)
     _max = torch.max(sum_embedding)
