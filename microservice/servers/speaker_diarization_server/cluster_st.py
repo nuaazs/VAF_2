@@ -20,8 +20,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from loguru import logger
 
 name = os.path.basename(__file__).split(".")[0]
-logger.add("log/"+name+"_{time}.log", rotation="500 MB", encoding="utf-8",
-           enqueue=True, compression="zip", backtrace=True, diagnose=True)
+logger.add("log/"+name+"_{time}.log", rotation="500 MB", encoding="utf-8", enqueue=True, compression="zip", backtrace=True, diagnose=True)
 
 host = "http://192.168.3.169"
 encode_url = f"{host}:5001/encode"  # 提取特征
@@ -33,13 +32,11 @@ msg_db = cfg.MYSQL
 
 def send_request(url, method='POST', files=None, data=None, json=None, headers=None):
     try:
-        response = requests.request(
-            method, url, files=files, data=data, json=json, headers=headers)
+        response = requests.request(method, url, files=files, data=data, json=json, headers=headers)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        logger.error(
-            f"Request failed: spkid:{data['spkid']}. msg:{e}")
+        logger.error( f"Request failed: spkid:{data['spkid']}. msg:{e}")
         return None
 
 
@@ -58,7 +55,7 @@ def update_db(spkid):
         cursor.execute(sql, (spkid))
         conn.commit()
     except Exception as e:
-        logger.error(f"Insert to db failed. record_id:{spkid}. msg:{e}.")
+        logger.error(f"update db failed. record_id:{spkid}. msg:{e}.")
         conn.rollback()
     cursor.close()
     conn.close()
@@ -100,8 +97,7 @@ def cluster_handler(read_data, threshold):
                 filtered_results.append((i, j))
                 mask[i, j] = True
 
-    logger.info(
-        f"Found {len(filtered_results)} pairs above the threshold of {threshold}")
+    logger.info(f"Found {len(filtered_results)} pairs above the threshold of {threshold}")
 
     map_d = {}
     with open("emb_map.txt", "r") as f:
@@ -114,16 +110,15 @@ def cluster_handler(read_data, threshold):
     for i, j in filtered_results:
         if last_index == i:
             continue
-        logger.info(
-            f"{map_d[i]} and {map_d[j]} have cosine similarity of {cosine_similarities[i, j]}")
+        logger.info(f"{map_d[i]} and {map_d[j]} have cosine similarity of {cosine_similarities[i, j]}")
         result.append(map_d[i])
         last_index = i
     logger.info(f"len(result):{len(result)}")
     logger.info(f"result:{result}")
 
-    # for i in result:
-    #     logger.info(i)
-    #     update_db(str(i))
+    for i in result:
+        logger.info(i)
+        update_db(str(i))
 
 
 def encode_handler():
@@ -158,8 +153,7 @@ def encode_handler():
                     file_emb = response['file_emb'][use_model_type]["embedding"][key]
                     embeddings.append(file_emb)
             else:
-                logger.error(
-                    f"Encode failed. spkid:{spkid}.response:{response}")
+                logger.error(f"Encode failed. spkid:{spkid}.response:{response}")
         except Exception as e:
             logger.error(f"Encode failed. spkid:{spkid}.msg:{e}")
         finally:
@@ -177,15 +171,17 @@ def encode_handler():
 
 
 def pipleline():
-    # encode_handler()
+    encode_handler()
 
     read_data = np.fromfile("emb.bin", dtype=np.float32)
     logger.info(read_data.shape)
-    read_data = read_data.reshape(-1, 192)
+    read_data = read_data.reshape(-1, cfg.EMBEDDING_LEN[use_model_type])
     logger.info(read_data.shape)
-    for th in np.arange(0.8, 0.9, 0.01):
-        th = round(th, 2)
-        cluster_handler(read_data, th)
+    # for th in np.arange(0.8, 0.9, 0.01):
+    #     th = round(th, 2)
+    #     cluster_handler(read_data, th)
+    
+    cluster_handler(read_data, 0.85)
 
 
 if __name__ == "__main__":

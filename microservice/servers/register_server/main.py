@@ -26,8 +26,7 @@ sys.path.append("../")
 similarity = torch.nn.CosineSimilarity(dim=-1, eps=1e-6)
 
 name = os.path.basename(__file__).split(".")[0]
-logger.add("log/"+name+"_{time}.log", rotation="500 MB", encoding="utf-8",
-           enqueue=True, compression="zip", backtrace=True, diagnose=True)
+logger.add("log/"+name+"_{time}.log", rotation="500 MB", encoding="utf-8", enqueue=True, compression="zip", backtrace=True, diagnose=True)
 
 host = "http://192.168.3.169"
 encode_url = f"{host}:5001/encode"  # 提取特征
@@ -38,13 +37,11 @@ msg_db = cfg.MYSQL
 
 def send_request(url, method='POST', files=None, data=None, json=None, headers=None):
     try:
-        response = requests.request(
-            method, url, files=files, data=data, json=json, headers=headers)
+        response = requests.request(method, url, files=files, data=data, json=json, headers=headers)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        logger.error(
-            f"Request failed: spkid:{data['spkid']}. msg:{e}")
+        logger.error(f"Request failed: spkid:{data['spkid']}. msg:{e}")
         return None
 
 
@@ -113,9 +110,9 @@ def compare_handler(model_type=None, embedding=None, black_limit=0.78):
     emb_db = get_embeddings(use_model_type=model_type)
     embedding = torch.tensor(embedding).to('cpu')
     input_data = [(k, emb_db[k], embedding) for k in emb_db.keys()]
-    
-    t1= time.time()
-    results = process_map(cosine_similarity, input_data, max_workers=10, chunksize=1000,desc='Doing----')
+
+    t1 = time.time()
+    results = process_map(cosine_similarity, input_data, max_workers=10, chunksize=1000, desc='Doing----')
     if not results:
         return {'best_score': 0, 'inbase': 0}
     t2 = time.time()
@@ -148,7 +145,7 @@ def main():
     selected_urls = get_selected_url_from_db()
     logger.info(f"len(selected_urls):{len(selected_urls)}")
 
-    for file in tqdm(selected_urls[:1]):
+    for file in tqdm(selected_urls):
         try:
             save_path = tmp_folder
             i = file['selected_url']
@@ -162,7 +159,7 @@ def main():
             if response['code'] == 200:
                 for model_type in cfg.ENCODE_MODEL_LIST:
                     emb_new = list(response['file_emb'][model_type]["embedding"].values())[0]
-                    return_results = compare_handler(model_type=model_type, embedding=emb_new,black_limit=cfg.BLACK_TH[model_type])
+                    return_results = compare_handler(model_type=model_type, embedding=emb_new, black_limit=cfg.BLACK_TH[model_type])
                     compare_result[model_type] = return_results
             else:
                 logger.error(f"Encode failed. spkid:{spkid}.response:{response}")

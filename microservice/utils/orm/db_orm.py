@@ -63,10 +63,10 @@ def get_embeddings(use_model_type="ERES2NET_Base"):
         key = key.decode("utf-8")
         if "_" not in key:
             continue
-        embedding_type = str(key.split("_")[0])
+        embedding_type = key.replace(key.split('_')[-1],"").strip("_")
         if embedding_type != use_model_type:
             continue
-        spkid = key.split("_")[1]
+        spkid = key.split("_")[-1]
         embedding_1 = fromRedis(r, key)
         all_embedding[spkid] = embedding_1
     logger.info(f"Total : {len(all_embedding.keys())} embeddings in database.Use model type:{use_model_type}")

@@ -49,6 +49,11 @@ from dguard.utils.fileio import load_wav_scp
 ###############################################################################################################
 from IPython import embed
 
+DEV=True
+DEV_PLOT=True
+def dev_print(s):
+    if DEV and DEV_PLOT:
+        print(s)
 test_config = {
     "trials":["/datasets/voxceleb1/trials/vox1_O_cleaned.trial"], # ,"/datasets/voxceleb1/trials/vox1_E_cleaned.trial","/datasets/voxceleb1/trials/vox1_H_cleaned.trial"
     "test_epoch_freq":1,
@@ -168,6 +173,25 @@ def main():
         train_sampler.set_epoch(epoch)
 
         # train one epoch
+        if DEV:
+            
+            print(f"DEV MODE: Now Testing Model, Epoch: {epoch}")
+            embedding_dir = os.path.join(config.exp_dir, 'embeddings')
+            os.makedirs(embedding_dir, exist_ok=True)
+            emb_ark,emb_scp = test(embedding_model, int(args.gpu[rank]),test_config, epoch, logger, rank,test_config["wav_scp"],embedding_dir=embedding_dir,feature_extractor=feature_extractor,pre_extractor=pre_extractor)
+            
+            dist.barrier()
+            if rank == 0:
+                logger.info('Finish epoch %d.' % epoch)
+                logger.info('Compute eer')
+                # compute eer
+                # get emb_ark father dir 
+                endol_data_dir = os.path.join(config.exp_dir, 'embeddings')
+            
+                test_data_dir = endol_data_dir
+                scores_dir = os.path.join(config.exp_dir, 'scores')
+                eer,min_dcf,min_dcf_noc = get_eer(logger,endol_data_dir,test_data_dir,scores_dir,test_config["trials"])
+                print(eer,min_dcf,min_dcf_noc)
         if args.fine_tune:
             train_stats = train_fine_tune(
                 train_dataloader,
@@ -216,22 +240,22 @@ def main():
             # test voxceleb1-O voxceleb1-H voxceleb1-E
             if epoch % config.save_epoch_freq== 0:
 
-                embedding_dir = os.path.join(config.exp_dir, 'embeddings')
-                os.makedirs(embedding_dir, exist_ok=True)
-                # rm all ark and scp files in embedding_dir
+                # embedding_dir = os.path.join(config.exp_dir, 'embeddings')
+                # os.makedirs(embedding_dir, exist_ok=True)
+                # # rm all ark and scp files in embedding_dir
             
-                emb_ark,emb_scp = test(model, int(args.gpu[rank]),test_config, epoch, logger, rank,test_config["wav_scp"],embedding_dir=embedding_dir,feature_extractor=feature_extractor,pre_extractor=pre_extractor)
-            # torchrun 等待其他程序运行完成
-            dist.barrier()
-            if epoch % config.save_epoch_freq and rank == 0:
-                logger.info('Finish epoch %d.' % epoch)
-                logger.info('Compute eer')
-                # compute eer
-                # get emb_ark father dir 
-                endol_data_dir = os.path.join(config.exp_dir, 'embeddings')
-                test_data_dir = endol_data_dir
-                scores_dir = os.path.join(config.exp_dir, 'scores')
-                eer,min_dcf,min_dcf_noc = get_eer(logger,endol_data_dir,test_data_dir,scores_dir,test_config["trials"])
+                # emb_ark,emb_scp = test(model, int(args.gpu[rank]),test_config, epoch, logger, rank,test_config["wav_scp"],embedding_dir=embedding_dir,feature_extractor=feature_extractor,pre_extractor=pre_extractor)
+                
+                # # torchrun 等待其他程序运行完成
+                # dist.barrier()
+                # logger.info('Finish epoch %d.' % epoch)
+                # logger.info('Compute eer')
+                # # compute eer
+                # # get emb_ark father dir 
+                # endol_data_dir = os.path.join(config.exp_dir, 'embeddings')
+                # test_data_dir = endol_data_dir
+                # scores_dir = os.path.join(config.exp_dir, 'scores')
+                # eer,min_dcf,min_dcf_noc = get_eer(logger,endol_data_dir,test_data_dir,scores_dir,test_config["trials"])
                 # train_stats.add('eer_test', ':6.3f')
                 # train_stats.update('eer_test', eer)
                 # train_stats.add('min_dcf_test', ':6.3f')
@@ -283,17 +307,22 @@ def test(model, gpu,config, epoch, logger, rank, wav_scp,embedding_dir,feature_e
                 for k in local_k:
                     wav_path = data[k]
                     wav, fs = torchaudio.load(wav_path)
+                    # dev_print(f"Test: WAV raw shape: {wav.shape}")
                     if feature_extractor:
                         feat = feature_extractor(wav)
                     else:
                         feat = wav
-                    print(feat.shape)
+                    # dev_print(f"Test: WAV feature shape: {feat.shape}")
                     if pre_extractor:
                         feat = pre_extractor(feat)
-                    print(feat.shape)
-                    feat = feat.unsqueeze(0)
+                    # dev_print(f"Test: WAV pre_extractor shape: {feat.shape}")
+                    # feat = feat.unsqueeze(0)
+                    if len(feat.shape) == 2:
+                        feat = feat.unsqueeze(0)
                     feat = feat.to(gpu)
+                    # dev_print(f"Test: WAV to gpu shape: {feat.shape}")
                     outputs = model(feat)
+                    dev_print(f"Test: model output shape: {outputs.shape}")
                     embeds = outputs[-1] if isinstance(outputs, tuple) else outputs
                     emb = embeds.detach().cpu().numpy()
                     writer(k, emb)

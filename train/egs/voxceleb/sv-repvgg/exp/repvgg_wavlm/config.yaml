@@ -56,7 +56,11 @@ loss:
     margin: 0.2
     scale: 32.0
   obj: dguard.loss.margin_loss.ArcMarginLoss
+<<<<<<< HEAD
+lr: 0.0003
+=======
 lr: 0.005
+>>>>>>> f0512d0bae50e137166e1f06a29d42d193c683d1
 lr_scheduler:
   args:
     fix_epoch: <num_epoch>
@@ -75,10 +79,10 @@ margin_scheduler:
     initial_margin: 0.0
     step_per_epoch: null
   obj: dguard.process.scheduler.MarginScheduler
-min_lr: 5.0e-05
+min_lr: 0.0001
 noise: data/musan/wav.scp
 num_classes: 5994
-num_epoch: 150
+num_epoch: 200
 num_workers: 32
 optimizer:
   args:

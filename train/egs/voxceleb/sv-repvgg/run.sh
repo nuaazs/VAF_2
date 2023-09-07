@@ -5,12 +5,12 @@
 set -e
 . ./path.sh || exit 1
 
-stage=3
+stage=2
 stop_stage=5
 
 data=data
 exp=exp
-exp_name=repvgg_wavlm
+exp_name=repvgg_lmft
 gpus="0 1 2 3 4 5 6 7"
 
 . utils/parse_options.sh || exit 1
@@ -26,7 +26,7 @@ fi
 if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
   # In this stage we prepare the data index files for training.
   echo "Stage2: Preparing training data index files..."
-  python local/prepare_data_csv.py --data_dir $data/vox2_dev
+  python ./local/prepare_data_csv.py --data_dir $data/vox2_dev
 fi
 
 if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then

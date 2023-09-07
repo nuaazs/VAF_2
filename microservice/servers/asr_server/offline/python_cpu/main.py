@@ -29,9 +29,11 @@ from modelscope.utils.constant import Tasks
 
 param_dict = dict()
 param_dict['hotword'] = "./hotword.txt"
+param_dict['use_timestamp'] = False
 offline_inference_pipeline = pipeline(
     task=Tasks.auto_speech_recognition,
     model='models/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-pytorch',
+             #damo/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-pytorch
     # vad_model='models/speech_fsmn_vad_zh-cn-16k-common-pytorch',
     # vad_model_revision="v1.1.8",
     # punc_model='models/punc_ct-transformer_zh-cn-common-vocab272727-pytorch',
@@ -51,7 +53,9 @@ inference_pipline = pipeline(
     task=Tasks.punctuation,
     model=f'models/punc_ct-transformer_zh-cn-common-vocab272727-pytorch',
     model_revision="v1.1.7",
-    device=cfg.PUNC_PYTHON_DEVICE
+    device=cfg.PUNC_PYTHON_DEVICE,
+    audio_fs=16000)
+    
 )
 
 # def transcribe_audio(audio):
