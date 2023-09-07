@@ -94,7 +94,7 @@ def to_database(embedding, spkid, use_model_type, mode="register"):
     return True
 
 
-def delete_by_key(blackbase, spkid):
+def delete_by_key(spkid):
     r = redis.Redis(
         host=cfg.REDIS["host"],
         port=cfg.REDIS["port"],
