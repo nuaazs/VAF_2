@@ -50,7 +50,7 @@ def calculate_cmf(embeddings):
     embeddings_normalized = F.normalize(embeddings, p=2, dim=2)
     
     cmf = torch.mean(embeddings_normalized, dim=0)
-    print(f"cmf shape: {cmf.shape}")
+    # print(f"cmf shape: {cmf.shape}")
     return cmf
     
 
@@ -69,7 +69,7 @@ def cmf_score_calibration(embA, embB, CMFA, CMFB):
     for i in range(N):
         factor = torch.dot(CMFA[i],CMFB[i])
         score =  factor * cos_score[i]
-        print(f"score: {score}, factor: {factor}, cos_score: {cos_score[i]}")
+        # print(f"score: {score}, factor: {factor}, cos_score: {cos_score[i]}")
         result.append(score)
     result = torch.stack(result, dim=0)
     return result
@@ -108,32 +108,32 @@ def random_choose_ten_crops(wav_data, segment_length,get_embedding_func):
     # Stack the selected crops along the batch dimension
     selected_crops = torch.stack(selected_crops, dim=0)
     selected_crops_emb = torch.stack(selected_crops_emb, dim=0)
-    print(f"Get #({selected_crops.shape}) crops")
+    
     return selected_crops,selected_crops_emb
 
-if __name__ == '__main__':
-    # 示例调用
-    # 16000 * 20
-    wav_data_a,sr = torchaudio.load("/datasets/cjsd_download_test_vad/female_13/s2023_07_31_20_16_45_e2023_07_31_20_17_31.wav") # torch.randn(6, 320000)  # 音频数据，形状为 [batch_size, T]
-    wav_data_b,sr = torchaudio.load("/datasets/cjsd_download_test_vad/female_13/s2023_07_31_20_18_27_e2023_07_31_20_19_33.wav")   # 音频数据，形状为 [batch_size, T]
-    # 1/s2023_07_31_18_41_19_e2023_07_31_18_42_17.wav") #
-    segment_length = 3*16000  # 分段长度
+# if __name__ == '__main__':
+#     # 示例调用
+#     # 16000 * 20
+#     wav_data_a,sr = torchaudio.load("/datasets/cjsd_download_test_vad/female_13/s2023_07_31_20_16_45_e2023_07_31_20_17_31.wav") # torch.randn(6, 320000)  # 音频数据，形状为 [batch_size, T]
+#     wav_data_b,sr = torchaudio.load("/datasets/cjsd_download_test_vad/female_13/s2023_07_31_20_18_27_e2023_07_31_20_19_33.wav")   # 音频数据，形状为 [batch_size, T]
+#     # 1/s2023_07_31_18_41_19_e2023_07_31_18_42_17.wav") #
+#     segment_length = 3*16000  # 分段长度
 
-    selected_crops_a,embeddings_a = random_choose_ten_crops(wav_data_a, segment_length,get_embedding_func=get_embedding) # [N,batch_size,segment_length]
-    selected_crops_b,embeddings_b = random_choose_ten_crops(wav_data_b, segment_length,get_embedding_func=get_embedding) # [N,batch_size,segment_length]
-    print(f"split A -> #({selected_crops_a.shape})")  # 输出选取的十个分段的形状
-    print(f"embeddings_a: {embeddings_a.shape}")
-    print(f"embeddings_b: {embeddings_b.shape}")
+#     selected_crops_a,embeddings_a = random_choose_ten_crops(wav_data_a, segment_length,get_embedding_func=get_embedding) # [N,batch_size,segment_length]
+#     selected_crops_b,embeddings_b = random_choose_ten_crops(wav_data_b, segment_length,get_embedding_func=get_embedding) # [N,batch_size,segment_length]
+#     print(f"split A -> #({selected_crops_a.shape})")  # 输出选取的十个分段的形状
+#     print(f"embeddings_a: {embeddings_a.shape}")
+#     print(f"embeddings_b: {embeddings_b.shape}")
 
-    embedding_a = get_embedding(wav_data_a)  # 提取音频 A 的嵌入向量
-    print(f"embedding_a: {embedding_a.shape}")
-    embedding_b = get_embedding(wav_data_b)  # 提取音频 B 的嵌入向量
-    print(f"embedding_b: {embedding_b.shape}")
-    CMF_A = calculate_cmf(embeddings_a)  # 计算音频 A 的 CMF 值
-    print(f"CMF_A: {CMF_A}")
-    print(f"CMF_A shape: {CMF_A.shape}")
-    CMF_B = calculate_cmf(embeddings_b)  # 计算音频 B 的 CMF 值
-    print(f"CMF_B: {CMF_B}")
-    print(f"CMF_B shape: {CMF_B.shape}")
-    score_a_b = cmf_score_calibration(embedding_a, embedding_b, CMF_A, CMF_B)  # 根据 CMF 进行分数校准
-    print(f"score_a_b: {score_a_b}")
+#     embedding_a = get_embedding(wav_data_a)  # 提取音频 A 的嵌入向量
+#     print(f"embedding_a: {embedding_a.shape}")
+#     embedding_b = get_embedding(wav_data_b)  # 提取音频 B 的嵌入向量
+#     print(f"embedding_b: {embedding_b.shape}")
+#     CMF_A = calculate_cmf(embeddings_a)  # 计算音频 A 的 CMF 值
+#     print(f"CMF_A: {CMF_A}")
+#     print(f"CMF_A shape: {CMF_A.shape}")
+#     CMF_B = calculate_cmf(embeddings_b)  # 计算音频 B 的 CMF 值
+#     print(f"CMF_B: {CMF_B}")
+#     print(f"CMF_B shape: {CMF_B.shape}")
+#     score_a_b = cmf_score_calibration(embedding_a, embedding_b, CMF_A, CMF_B)  # 根据 CMF 进行分数校准
+#     print(f"score_a_b: {score_a_b}")

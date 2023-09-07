@@ -8,6 +8,7 @@ import re
 import pathlib
 import torch
 import torchaudio
+import torch.nn.functional as F
 import wget
 if DEV:
     import sys
@@ -16,6 +17,9 @@ if DEV:
 from dguard.utils.builder import build
 from dguard.utils.config import yaml_config_loader,Config
 from dguard.process.backend import random_choose_ten_crops,calculate_cmf,calculate_cosine_distance
+import warnings
+warnings.filterwarnings("ignore")
+
 #TODO: upload to remote server
 model_info ={
     'dfresnet_233':{
@@ -114,11 +118,11 @@ def load_by_name(model_name,device='cuda:0',strict=True):
         sample_rate = int(model_info[model_name]['sample_rate'])
         embedding_model.to(device)
         # feature_extractor.to(device)
-        print(f"Load model {model_name} successfully. Embedding size: {model_info[model_name]['embedding_size']}")
+        # print(f"\t*-> Load model {model_name} successfully. Embedding size: {model_info[model_name]['embedding_size']}")
         return embedding_model,feature_extractor,sample_rate
     else:
         all_models = list(model_info.keys())
-        print("All models: ", all_models)
+        print("\t*-> All models: ", all_models)
         raise NotImplementedError(f"Model {model_name} not implemented.")
 
 # 推理
@@ -159,11 +163,10 @@ def get_cmf(model,feature_extractor,wav_data,segment_length):
     return cmf
 
 def inference_list(model_name,wav_path_list,device='cpu',segment_length=3*16000,cmf=True,redundancy=1):
-    
     model,feature_extractor,sample_rate = load_by_name(model_name,device=device)
     model.eval()
     if redundancy>1:
-        print(f"Load model {model_name} successfully. Embedding size: {model_info[model_name]['embedding_size']}")
+        print(f"\t*-> Load model {model_name} successfully. Embedding size: {model_info[model_name]['embedding_size']}")
     result = []
     for wav_path in wav_path_list:
         wav, fs = torchaudio.load(wav_path) # wav shape: [1, T]
@@ -185,17 +188,85 @@ def inference_list(model_name,wav_path_list,device='cpu',segment_length=3*16000,
             result.append([output,cmf_embedding])
     return result
 
+
+class PretrainedModel:
+    def __init__(self,model_name,device='cpu',strict=True,mode="extract"):
+        # mode: compare or extract
+        self.model_name = model_name
+        self.device = device
+        self.strict = strict
+        self.mode = mode
+        self.model, self.feature_extractor, self.sample_rate = load_by_name(model_name,device=device,strict=strict)
+        self.model.eval()
+        print(f"*-> Load model {model_name} successfully. Embedding size: {model_info[model_name]['embedding_size']}")
+
+    def inference(self,wav_path_list,cmf=True,segment_length=3*16000,crops_num_limit=1):
+        result = []
+        for wav_path in wav_path_list:
+            wav, fs = torchaudio.load(wav_path)
+            print(f"* {wav_path}")
+            print(f"\t*-> Raw wav time length: {wav.shape[1]/fs} seconds.")
+            assert fs == self.sample_rate, f"The sample rate of wav is {fs} and inconsistent with that of the pretrained model."
+            # wav = wav.to(next(model.parameters()).device)
+            wav = torch.tensor(wav, dtype=torch.float32)
+            feat = self.feature_extractor(wav)
+            feat = feat.unsqueeze(0)
+            feat = feat.to(next(self.model.parameters()).device)
+            if cmf:
+                cmf_embedding,crops_num = self.get_cmf(wav,segment_length=segment_length)
+            else:
+                cmf_embedding = None
+                crops_num = 1
+            with torch.no_grad():
+                outputs = self.model(feat)
+                # outputs = model(x)
+                embeds = outputs[-1] if isinstance(outputs, tuple) else outputs
+                output = embeds
+                result.append([output,cmf_embedding,crops_num])
+                # print(f"output shape: {output.shape}")
+                # print(f"cmf_embedding shape: {cmf_embedding.shape}")
+        if self.mode=="compare":
+            assert len(result)==2, "Compare model should have two inputs."
+            cos_score = self.calculate_cosine_distance(result[0][0],result[1][0])
+            factor = self.calculate_factor(result[0][1],result[1][1])
+            return cos_score,factor
+        else:
+            return result
+
+    def get_cmf(self,wav_data,segment_length):
+        selected_crops,selected_crops_emb = random_choose_ten_crops(wav_data,segment_length,get_embedding_func=lambda x:get_embedding(self.model,self.feature_extractor,x))
+        crops_num = selected_crops.shape[0]
+        print(f"\t*-> Get #{selected_crops.shape[0]} crops")
+        cmf = calculate_cmf(selected_crops_emb)
+        return cmf,crops_num
+
+    def calculate_cosine_distance(self,x, y):
+        # print(f"x shape: {x.shape}")
+        # print(f"y shape: {y.shape}")
+        """计算余弦距离"""
+        # x: [batch_size, embedding_size]
+        # y: [batch_size, embedding_size]
+        # output: [batch_size]
+        x = F.normalize(x, p=2, dim=1)
+        y = F.normalize(y, p=2, dim=1)
+        return torch.sum(x * y, dim=1)
+
+    def calculate_factor(self,cmf1,cmf2):
+        cmf1 = torch.tensor(cmf1, dtype=torch.float32)
+        cmf2 = torch.tensor(cmf2, dtype=torch.float32)
+        factor = torch.dot(cmf1.reshape(-1),cmf2.reshape(-1))
+        return factor
+
 # useage
 if DEV:
-    from dguard.interface.pretrained import load_by_name,ALL_MODELS
-    print(ALL_MODELS)
-    result = inference_list('resnet293_lm',['/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav','/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00002.wav'])
-    print(result)
-    print(len(result))
-    print(result[0][0].shape)
-    print(result[0][1].shape)
-    cos_score = calculate_cosine_distance(result[0][0],result[1][0])
-    print(f"cos score: {cos_score}")
-    print(f"cmf shape: {result[0][1].shape}")
-    factor = torch.dot(result[0][1].reshape(-1),result[1][1].reshape(-1))
-    print(f"factor: {factor}")
+    infer = PretrainedModel('resnet293_lm',mode="compare")
+    cos_score,factor = infer.inference(['/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav','/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00002.wav'],cmf=True,segment_length=3*16000)
+    print(f"cos_score: {cos_score}, factor: {factor}")
+    print("="*50)
+    infer = PretrainedModel('resnet293_lm',mode="extract")
+    result = infer.inference(['/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav','/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00002.wav'],cmf=True,segment_length=3*16000)
+    print(f"result len: {len(result)}")
+    print(f"result[0][0] shape: {result[0][0].shape}")
+    print(f"result[1][0] shape: {result[1][0].shape}")
+    print(f"result[0][1] shape: {result[0][1].shape}")
+    print(f"result[1][1] shape: {result[1][1].shape}")
