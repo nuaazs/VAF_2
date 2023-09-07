@@ -4,12 +4,13 @@
 # @Describe: Load pretrained model by name.
 DEV=False
 import argparse
-parser = argparse.ArgumentParser(description='')
-parser.add_argument('--dev', action='store_true', help='dev mode')
-args= parser.parse_args()
-if args.dev:
-    DEV=True
-    
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('--dev', action='store_true', help='dev mode')
+    args= parser.parse_args()
+    if args.dev:
+        DEV=True
+
 import os
 import re
 import pathlib
@@ -90,8 +91,37 @@ model_info ={
         'embedding_size': '256',
         'sample_rate': '16000'
     },
+    'campp_lm':{
+        "config": "/VAF/train/pretrained_models/wespeaker/voxceleb_CAM++_LM/voxceleb_CAM++_LM/config.yaml",
+        "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_CAM++_LM/voxceleb_CAM++_LM/avg_model.pt',
+        'embedding_size': '256',
+        'sample_rate': '16000'
+    },
 
-
+    # 'resnet34':{
+    #     "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet34.yaml",
+    #     "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet34/voxceleb_resnet34.pt',
+    #     'embedding_size': '256',
+    #     'sample_rate': '16000'
+    # },
+    # 'resnet152':{
+    #     "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet152.yaml",
+    #     "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet152/voxceleb_resnet152.pt',
+    #     'embedding_size': '256',
+    #     'sample_rate': '16000'
+    # },
+    # 'resnet221':{
+    #     "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet221.yaml",
+    #     "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet221/voxceleb_resnet221/voxceleb_resnet221.pt',
+    #     'embedding_size': '256',
+    #     'sample_rate': '16000'
+    # },
+    # 'resnet293':{
+    #     "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet293.yaml",
+    #     "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet293/voxceleb_resnet293/voxceleb_resnet293.pt',
+    #     'embedding_size': '256',
+    #     'sample_rate': '16000'
+    # },
 }
 
 ALL_MODELS = list(model_info.keys())
@@ -207,7 +237,7 @@ class PretrainedModel:
         self.model.eval()
         print(f"*-> Load model {model_name} successfully. Embedding size: {model_info[model_name]['embedding_size']}")
 
-    def inference(self,wav_path_list,cmf=True,segment_length=3*16000,crops_num_limit=1):
+    def inference(self,wav_path_list,cmf=True,segment_length=3*16000,crops_num_limit=1,segment_length_limit=2*16000):
         result = []
         for wav_path in wav_path_list:
             wav, fs = torchaudio.load(wav_path)
@@ -220,7 +250,7 @@ class PretrainedModel:
             feat = feat.unsqueeze(0)
             feat = feat.to(next(self.model.parameters()).device)
             if cmf:
-                cmf_embedding,crops_num = self.get_cmf(wav,segment_length=segment_length)
+                cmf_embedding,crops_num = self.get_cmf(wav,segment_length=segment_length,segment_length_limit=segment_length_limit)
             else:
                 cmf_embedding = None
                 crops_num = 1
@@ -240,8 +270,8 @@ class PretrainedModel:
         else:
             return result
 
-    def get_cmf(self,wav_data,segment_length):
-        selected_crops,selected_crops_emb = random_choose_ten_crops(wav_data,segment_length,get_embedding_func=lambda x:get_embedding(self.model,self.feature_extractor,x))
+    def get_cmf(self,wav_data,segment_length,segment_length_limit):
+        selected_crops,selected_crops_emb = random_choose_ten_crops(wav_data,segment_length,get_embedding_func=lambda x:get_embedding(self.model,self.feature_extractor,x),segment_length_limit=segment_length_limit)
         crops_num = selected_crops.shape[0]
         print(f"\t*-> Get #{selected_crops.shape[0]} crops")
         cmf = calculate_cmf(selected_crops_emb)
@@ -275,17 +305,29 @@ if DEV:
     # print(f"cos_score: {cos_score}, factor: {factor}")
     # print("="*50)
     infer = PretrainedModel('resnet293_lm',mode="extract")
-    result = infer.inference(['/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav','/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00002.wav'],cmf=True,segment_length=3*16000)
+    segment_length=-5
+    result =  infer.inference(['/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav','/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00002.wav'],cmf=True,segment_length=segment_length,segment_length_limit=2*16000)
+    # result = infer.inference(["/datasets/cjsd_download_test_vad/male_8/s2023_08_02_18_39_10_e2023_08_02_18_40_06.wav","/datasets/cjsd_download_test_vad/male_8/s2023_07_31_18_48_15_e2023_07_31_18_49_06.wav"],cmf=True,segment_length=-1,segment_length_limit=10*16000)
     print(f"result len: {len(result)}")
     print(f"result[0] len: {len(result[0])}")
     print(f"result[0][0] shape: {result[0][0].shape}")
     print(f"result[1][0] shape: {result[1][0].shape}")
-    print(f"result[0][1] shape: {result[0][1].shape}")
-    print(f"result[1][1] shape: {result[1][1].shape}")
+
+    # print(f"result[0][1] shape: {result[0][1].shape}")
+    # print(f"result[1][1] shape: {result[1][1].shape}")
     emb0 = result[0][0]
     emb1 = result[1][0]
+    num0 = result[0][2]
+    num1 = result[1][2]
     cmf0 = result[0][1]
     cmf1 = result[1][1]
+    
+    max_crop_num = int(abs(segment_length))+(int(abs(segment_length))-1)
+    print(max_crop_num)
+    print(f"num0: {num0}, factor: {1-((max_crop_num-num0)/max_crop_num)*0.3}")
+    print(f"num1: {num1}, factor: {1-((max_crop_num-num1)/max_crop_num)*0.3}")
+    print(f"cmf_0: {cmf0}")
+    print(f"cmf_1: {cmf1}")
     # cmf_factor = infer.calculate_factor(cmf0,cmf1)
     # print(f"cmf_factor: {cmf_factor}")
     # cos_score = infer.calculate_cosine_distance(emb0,emb1)
