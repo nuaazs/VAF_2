@@ -41,18 +41,28 @@ def calculate_cosine_distance(x, y):
 
 def calculate_cmf(embeddings):
     """计算 CMF"""
-    # print(embeddings)
-    # print(f"recieved embeddings shape: {embeddings.shape}")
-    # input embeddings: [N,batch_size,embedding_size]
-    # output cmf : (batch_size,)
-    
-    # Normalize the embeddings along the embedding_size dimension (dim=2)
-    embeddings_normalized = F.normalize(embeddings, p=2, dim=2)
-    
-    cmf = torch.mean(embeddings_normalized, dim=0)
-    # print(f"cmf shape: {cmf.shape}")
-    return cmf
-    
+    # TODO: 不支持批量计算
+    # 1. 将每个embedding归一化
+    # 2. 计算sum_embedding
+    # 3. 将sum_embedding归一化
+    # 4. 计算归一化后的sum_embedding的长度
+    data = []
+    for tiny_data in embeddings:
+        tiny_data = tiny_data.reshape(-1)
+        _min = torch.min(tiny_data)
+        _max = torch.max(tiny_data)
+        tiny_data = (tiny_data - _min) / (_max - _min)
+        data.append(tiny_data.reshape(1,-1))
+    data = torch.cat(data, dim=0)
+    sum_embedding = torch.sum(data, dim=0)
+    print(f"sum_embedding: {sum_embedding}")
+    _min = torch.min(sum_embedding)
+    _max = torch.max(sum_embedding)
+    sum_embedding = (sum_embedding - _min) / (_max - _min)
+    length = (sum_embedding**2).sum().sqrt()/(sum_embedding.shape[0]**0.5)
+    length = float(length)
+    print(length)
+    return length
 
 def cmf_score_calibration(embA, embB, CMFA, CMFB):
     """CMF 分数校准"""
