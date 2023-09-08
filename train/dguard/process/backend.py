@@ -58,12 +58,17 @@ def calculate_cmf(embeddings):
     data = torch.cat(data, dim=0)
     # print(f"data: {data.shape}")
     sum_embedding = torch.sum(data, dim=0).reshape(-1)
+    return sum_embedding
+
+
     # print(f"sum_embedding: {sum_embedding}")
     # _min = torch.min(sum_embedding)
     # _max = torch.max(sum_embedding)
     # sum_embedding = (sum_embedding - _min) / (_max - _min)
+
     length = (sum_embedding**2).sum().sqrt()#/(sum_embedding.shape[0]**0.5)
     length = float(length)/data.shape[0]
+
     # print(length)
     return length
 
