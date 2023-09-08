@@ -90,6 +90,7 @@ def main():
         # write the metrics
         logger.info("Results of {} is:".format(trial_name))
         logger.info("EER = {0:.4f}".format(100 * eer))
+        logger.info("thres = {0:.4f}".format(thres))
         logger.info("minDCF (p_target:{} c_miss:{} c_fa:{}) = {:.4f}".format(
             args.p_target, args.c_miss, args.c_fa, min_dcf))
         logger.info("minDCF_noc (p_target:{} c_miss:{} c_fa:{}) = {:.4f}".format(

@@ -106,16 +106,20 @@ def main():
         with WriteHelper(f'ark,scp:{emb_ark},{emb_scp}') as writer ,WriteHelper(f'ark,scp:{cmf_emb_ark},{cmf_emb_scp}') as cmf_writer,WriteHelper(f'ark,scp:{cmf_num_ark},{cmf_num_scp}') as num_writer:
             for k in tqdm(local_k):
                 wav_path = data[k]
-                result = infer.inference([wav_path], cmf=True, segment_length=15*16000,crops_num_limit=1)
+                result = infer.inference([wav_path], cmf=True, segment_length=-5,crops_num_limit=1,segment_length_limit=2*16000)
                 # emb = mode(feat).detach().cpu().numpy()
                 emb = result[0][0].detach().cpu().numpy()
                 cmf_emb = result[0][1]
                 cmf_num = result[0][2]
+                # cmf_emb = (1-((9-cmf_num)/9)*0.3)*cmf_emb
+                
                 cmf_emb_np = np.array([cmf_emb,cmf_emb,cmf_emb], dtype=np.float32)
                 cmf_num_np = np.array([cmf_num,cmf_num,cmf_num], dtype=np.float32)
+                
                 writer(k, emb)
                 cmf_writer(k,cmf_emb_np)
                 num_writer(k,cmf_num_np)
+                torch.cuda.empty_cache()
 
 if __name__ == "__main__":
     main()

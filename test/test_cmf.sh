@@ -7,7 +7,7 @@ gpus="0 1 2 3 4 5 6 7"
 #模型选择
 model_path="resnet152_lm" #resnet34_lm resnet152_lm resnet221_lm resnet293_lm dfresnet_233 mfa_conformer ecapatdnn_1024 repvgg CAMPP_EMB_512 ECAPA_TDNN_1024_EMB_192 ERES2NET_BASE_EMB_192 REPVGG_TINY_A0_EMB_512 DFRESNET56_EMB_512
 #测试集选择
-trials_class="cti2" # voxceleb cnceleb cti 3dspeaker male female cti2
+trials_class="voxceleb" # voxceleb cnceleb cti 3dspeaker male female cti2
 # trials_class="voxceleb"
 
 #测试集数据scp文件地址
@@ -32,7 +32,7 @@ trials_cti2="/datasets/Phone/cti2.trial" #/datasets/Phone/cti2_male.trial /datas
 trials_cti2_20s=/datasets/cjsd_split_time/trial_path/cti_20s.trial
 
 #并发数（跟GPU有关，最好为GPU的整数倍）
-nj=8
+nj=48
 
 . utils/parse_options.sh || exit 1
 #保存结果的地址

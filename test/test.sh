@@ -5,9 +5,9 @@ set -e
 
 gpus="0 1 2 3 4 5 6 7" 
 #模型选择
-model_path="dfresnet_233" #resnet34_lm resnet152_lm resnet221_lm resnet293_lm dfresnet_233 mfa_conformer ecapatdnn_1024 repvgg CAMPP_EMB_512 ECAPA_TDNN_1024_EMB_192 ERES2NET_BASE_EMB_192 REPVGG_TINY_A0_EMB_512 DFRESNET56_EMB_512
+model_path="resnet152_lm" #resnet34_lm resnet152_lm resnet221_lm resnet293_lm dfresnet_233 mfa_conformer ecapatdnn_1024 repvgg CAMPP_EMB_512 ECAPA_TDNN_1024_EMB_192 ERES2NET_BASE_EMB_192 REPVGG_TINY_A0_EMB_512 DFRESNET56_EMB_512
 #测试集选择
-trials_class="voxceleb" # voxceleb cnceleb cti 3dspeaker male female cti2
+trials_class="cti_20s" # voxceleb cnceleb cti 3dspeaker male female cti2
 # trials_class="voxceleb"
 
 #测试集数据scp文件地址
@@ -24,7 +24,7 @@ cti2_scp_20s=/datasets/cjsd_split_time/scp_path/cti_20s.scp
 #测试对地址
 trials_vox="/home/duanyibo/vaf/test/dataset/voxceleb1/trials/vox1_O_cleaned.trial /home/duanyibo/vaf/test/dataset/voxceleb1/trials/vox1_E_cleaned.trial /home/duanyibo/vaf/test/dataset/voxceleb1/trials/vox1_H_cleaned.trial"
 trials_cnceleb=/home/duanyibo/dyb/test_model/cnceleb_files/eval/trials/CNC-Eval-Avg.lst
-trials_cti=/home/duanyibo/dyb/test_model/cti_test/cti.trials
+trials_cti=/home/duanyibo/dyb/test_model/dataset/cti_test/cti.trials
 trials_3dspeaker="/home/duanyibo/dyb/test_model/3D-speaker/files/trials/trials_cross_device /home/duanyibo/dyb/test_model/3D-speaker/files/trials/trials_cross_distance /home/duanyibo/dyb/test_model/3D-speaker/files/trials/trials_cross_dialect"
 trials_male=/datasets/test/testdata_1c_vad_16k/test_trials/male.trials
 trials_female=/datasets/test/testdata_1c_vad_16k/test_trials/female.trials
@@ -32,7 +32,7 @@ trials_cti2="/datasets/Phone/cti2.trial" #/datasets/Phone/cti2_male.trial /datas
 trials_cti2_20s=/datasets/cjsd_split_time/trial_path/cti_20s.trial
 
 #并发数（跟GPU有关，最好为GPU的整数倍）
-nj=32
+nj=16
 
 . utils/parse_options.sh || exit 1
 #保存结果的地址
