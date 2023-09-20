@@ -48,7 +48,7 @@ def get_embedding(spkid):
     return embedding
 
 
-def get_embeddings(use_model_type="ERES2NET_Base"):
+def get_embeddings(use_model_type="eres2net"):
     """
     获取黑库中所有指定模型的emb
     """

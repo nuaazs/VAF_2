@@ -1,14 +1,10 @@
 from flask import Flask, request, jsonify
-import os
 import cfg
 import torch
-from utils.files import get_sub_wav
 from utils.cmd import run_cmd, remove_father_path
 from utils.preprocess import save_file, save_url
-from utils.oss import upload_files
 from utils.log import logger, err_logger
 
-import importlib
 import torchaudio
 import numpy as np
 from dguard.interface.pretrained import load_by_name, ALL_MODELS
@@ -92,4 +88,4 @@ def main():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=7701)
+    app.run(host='0.0.0.0', port=5001)

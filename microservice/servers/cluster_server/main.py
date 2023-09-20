@@ -5,7 +5,6 @@
 
 import numpy as np
 import scipy
-import sklearn
 from sklearn.cluster._kmeans import k_means
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -299,13 +298,4 @@ def cluster():
     return jsonify(return_data)
 
 if __name__ == '__main__':
-
-    # cluster_spectral =  CommonClustering("spectral", cluster_line=cluster_line, mer_cos=mer_cos_th, min_cluster_size=min_cluster_size)
-    # cluster_umap_hdbscan =  CommonClustering("umap_hdbscan", cluster_line=cluster_line, mer_cos=mer_cos_th, min_cluster_size=min_cluster_size)
     app.run(host='0.0.0.0', port=5011)
-
-# if __name__ == "__main__":
-#     # test
-#     cluster =  CommonClustering('spectral', cluster_line=20,mer_cos=None,min_cluster_size=4)
-#     emb_dict = {"filename1":np.random.rand(192).tolist(),"filename2":np.random.rand(192).tolist(),"filename3":np.random.rand(192).tolist()}
-#     print(process_recive_data(emb_dict))

@@ -58,6 +58,8 @@ def pipeline(tmp_folder, filepath, spkid):
         return None
 
     # step4 提取特征
+    if not mandarin_wavs:
+        return None
     data = {"spkid": spkid, "filelist": ",".join(mandarin_wavs)}
     response = send_request(cfg.ENCODE_URL, data=data)
     if response['code'] == 200:
@@ -81,7 +83,7 @@ def pipeline(tmp_folder, filepath, spkid):
     min_score = response['scores'][keys_with_max_value]['min']
 
     if min_score < cfg.CLUSTER_MIN_SCORE_THRESHOLD:
-        logger.info(f"After cluster min_score  < {cfg.CLUSTER_MIN_SCORE_THRESHOLD}. spkid:{spkid}.response:{response['scores']}")
+        logger.info(f"After cluster {min_score}  < {cfg.CLUSTER_MIN_SCORE_THRESHOLD}. spkid:{spkid}.response:{response['scores']}")
         return None
     total_duration = 0
     for i in items.keys():
@@ -89,8 +91,17 @@ def pipeline(tmp_folder, filepath, spkid):
     if total_duration < cfg.MIN_LENGTH_REGISTER:
         logger.info(f"After cluster total_duration:{total_duration} < {cfg.MIN_LENGTH_REGISTER}s. spkid:{spkid}.response:{response}")
         return None
+
+    # Resample 16k
     selected_files = sorted(items.keys(), key=lambda x: x.split("/")[-1].replace(".wav", "").split("_")[0])
-    audio_data = np.concatenate([torchaudio.load(file.replace("local://", ""))[0] for file in selected_files], axis=-1)
+    resampled_waveform_li = []
+    for file in selected_files:
+        waveform, sample_rate = torchaudio.load(file.replace("local://", ""))
+        if sample_rate == 8000:
+            resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
+            resampled_waveform = resampler(waveform)
+            resampled_waveform_li.append(resampled_waveform)
+    audio_data = np.concatenate(resampled_waveform_li, axis=-1)
     file_selected_path = os.path.join(tmp_folder, f"{spkid}_selected.wav")
     torchaudio.save(file_selected_path, torch.from_numpy(audio_data), sample_rate=16000)
 
@@ -98,13 +109,13 @@ def pipeline(tmp_folder, filepath, spkid):
 
     # step6 ASR
     text = ""
-    data = {"spkid": spkid, "postprocess": "1"}
-    files = [('wav_file', (filepath, open(filepath, 'rb')))]
-    response = send_request(cfg.ASR_URL, files=files, data=data)
-    if response.get('transcription') and response.get('transcription').get('text'):
-        text = response['transcription']["text"]
-    else:
-        logger.error(f"ASR failed. spkid:{spkid}.message:{response['message']}")
+    # data = {"spkid": spkid, "postprocess": "1"}
+    # files = [('wav_file', (filepath, open(filepath, 'rb')))]
+    # response = send_request(cfg.ASR_URL, files=files, data=data)
+    # if response.get('transcription') and response.get('transcription').get('text'):
+    #     text = response['transcription']["text"]
+    # else:
+    #     logger.error(f"ASR failed. spkid:{spkid}.message:{response['message']}")
 
     # step7 NLP
     # nlp_result = classify_text(text)
@@ -138,7 +149,9 @@ def perprocess(filepath):
         os.makedirs(tmp_folder, exist_ok=True)
         pipeline_result = pipeline(tmp_folder, filepath, spkid)
         if pipeline_result:
-            need_cluster_records.append(pipeline_result)
+            with open(f"{need_cluster_records_path}", "a+") as f:
+                f.write(str(pipeline_result)+'\n')
+            logger.info(f"need_cluster_records:{pipeline_result}")
     except Exception as e:
         logger.error(f"Pipeline failed. spkid:{spkid}. msg:{e}.")
     finally:
@@ -166,15 +179,21 @@ def main():
     logger.info(f"Total wav files: {len(wav_files)}")
     wav_files = sorted(wav_files)
     for i in tqdm(wav_files):
-        record_num = os.path.basename(i).split(".")[0]
+        record_num = os.path.basename(i).split("-")[-1].split('.')[0]  # 本地音频文件名
+        # record_num = os.path.basename(i).split(".")[0]
         if int(record_num) < int(last_id):
             continue
         perprocess(i)
 
-    with open(f"output/need_cluster_records.txt", "w+") as f:
-        f.write(str(need_cluster_records))
+    with open(f"{need_cluster_records_path}", "r+") as f:
+        need_cluster_records = f.readlines()
 
-    cluster_pipleline(need_cluster_records)
+    need_cluster_records_li = []
+    for i in need_cluster_records:
+        i = eval(i)
+        need_cluster_records_li.append(i)
+
+    cluster_pipleline(need_cluster_records_li)
 
     new_last_id = os.path.basename(wav_files[-1]).split(".")[0]
     update_last_id(new_last_id)
@@ -183,6 +202,12 @@ def main():
 
 if __name__ == "__main__":
     os.makedirs("output", exist_ok=True)
+
+    # 存储pipeline后需要聚类的音频信息文件
+    need_cluster_records_path = "output/need_cluster_records.txt"
+    if os.path.exists(need_cluster_records_path):
+        os.remove(need_cluster_records_path)
+
     need_cluster_records = []
     last_id = get_last_id()
     logger.info(f"Last id: {last_id}")

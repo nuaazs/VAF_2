@@ -19,11 +19,7 @@ import wget
 from sklearn.metrics.pairwise import cosine_similarity
 from loguru import logger
 from tools import send_request
-
-
-def check_text(text):
-    # TODO: 话术过滤
-    return random.choice(["命中", "命中"]), "命中的话术"
+from get_output_from_hit.rrr_filter_plus import check_text
 
 
 def insert_to_db(data):
@@ -47,7 +43,7 @@ def insert_to_db(data):
         vad_times = str(data['vad_times'])
 
         sql = "INSERT INTO check_for_speaker_diraization (`record_id`, `file_url`, `selected_url`, `asr_text`, `wav_duration`,`create_time`,`selected_times`, `record_month`,`vad_times`) VALUES (%s, %s, %s, %s, %s,now(), %s, %s, %s);"
-        cursor.execute(sql, (spkid, raw_file_path, selected_url, asr_text, total_duration, selected_times, record_month,vad_times))
+        cursor.execute(sql, (spkid, raw_file_path, selected_url, asr_text, total_duration, selected_times, record_month, vad_times))
         conn.commit()
     except Exception as e:
         logger.error(f"Insert to db failed. spkid:{data['spkid']}. msg:{e}.")
@@ -88,8 +84,7 @@ def cluster_handler(read_data, threshold):
         logger.info(f"{map_d[i]} and {map_d[j]} have cosine similarity of {cosine_similarities[i, j]}")
         result.append(map_d[i])
         last_index = i
-    logger.info(f"len(result):{len(result)}")
-    logger.info(f"duplicate result:{result}")
+    logger.info(f"Need to delete {len(result)} records.")
 
     return result
 
@@ -97,10 +92,9 @@ def cluster_handler(read_data, threshold):
 def encode_handler(need_cluster_records):
     """
     get embeddings from records and save to emb.bin
+    返回emb和spkid
     """
     records_lis = need_cluster_records
-    logger.info(f"len(records_lis):{len(records_lis)}")
-
     tmp_folder = "/tmp/cluster_diraization"
     os.makedirs(tmp_folder, exist_ok=True)
     embeddings = []
@@ -111,13 +105,6 @@ def encode_handler(need_cluster_records):
             selected_url = i['selected_url']
             save_path = tmp_folder
             file_name = os.path.join(save_path, os.path.basename(selected_url))
-
-            asr_text = i['asr_text']
-            a, b = check_text(asr_text)
-            if a == "未命中":
-                with open("output/new_text.txt", "a+") as f:
-                    f.write(f"{spkid}\t{asr_text}\n")
-                continue
             wget.download(selected_url, file_name)
 
             # step4 提取特征
@@ -146,60 +133,100 @@ def encode_handler(need_cluster_records):
     embeddings = embeddings.astype(np.float32)
     embeddings.tofile('output/emb.bin')
     logger.info("Save embeddings to emb.bin")
+    return embeddings, black_id_all
+
+
+def check_text_handler(need_cluster_records):
+    """
+    话术过滤
+    return: after_check_text_records 话术过滤后的records
+    """
+    logger.info(f"Befor check_text_handler len:{len(need_cluster_records)}")
+    after_check_text_records = []
+    for i in tqdm(need_cluster_records):
+        spkid = i['spkid']
+        asr_text = i['asr_text']
+        a, b = check_text(asr_text)
+        logger.info(f"Record ID:{spkid} check text result:{a},{b}")
+        if b == "未命中":
+            with open("output/new_text.txt", "a+") as f:
+                f.write(f"{spkid}\t{asr_text}\n")
+        else:
+            after_check_text_records.append(i)
+    logger.info(f"After check_text_handler len:{len(after_check_text_records)}")
+    return after_check_text_records
 
 
 def cluster_pipleline(need_cluster_records):
     """
     话术过滤+特征提取+聚类
     """
-    encode_handler(need_cluster_records)
-
-    logger.info("Read embeddings from emb.bin")
-    read_data = np.fromfile("output/emb.bin", dtype=np.float32)
-    logger.info(read_data.shape)
-    read_data = read_data.reshape(-1, cfg.EMBEDDING_LEN[cfg.USE_MODEL_TYPE])
-    logger.info(read_data.shape)
-
-    cluster_result = cluster_handler(read_data, 0.81)
+    # 话术过滤
+    # need_cluster_records = check_text_handler(need_cluster_records)
+    # 编码
+    read_data, after_check_text_records = encode_handler(need_cluster_records)
+    # 聚类
+    need_del_records = cluster_handler(read_data, 0.82)
+    # 剔除重复数据
+    result_records = [x for x in need_cluster_records if x not in need_del_records]
+    logger.info(f"Need check len:{len(result_records)}")
 
     date = datetime.datetime.now().strftime("%Y-%m-%d")
     csv_file = f"output/check_result_{date}.csv"
     with open(csv_file, 'w+', newline='') as csvfile:
-        for i in need_cluster_records:
-            if i['spkid'] not in cluster_result:
-                insert_to_db(i)  # backup to db
-                fieldnames = i.keys()
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                if csvfile.tell() == 0:
-                    writer.writeheader()
-                writer.writerow(i)
+        for i in result_records:
+            insert_to_db(i)  # backup to db
+            fieldnames = i.keys()
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            if csvfile.tell() == 0:
+                writer.writeheader()
+            writer.writerow(i)
 
 
 def local_test():
     """
     直接读取本地的emb.bin文件测试
     """
-    with open("output/need_cluster_records.txt", "r") as f:
-        need_cluster_records = eval(f.read())
+    with open(f"output/need_cluster_records.txt", "r+") as f:
+        result = f.readlines()
+    need_cluster_records = []
+    for i in result:
+        i = eval(i)
+        need_cluster_records.append(i)
+
+    # 话术过滤
+    # need_cluster_records = check_text_handler(need_cluster_records)
+    # #编码
+    # read_data, after_check_text_records = encode_handler(need_cluster_records)
+
+    with open("output/emb_map.txt", "r") as f:
+        after_check_text_records = f.readlines()
+        after_check_text_records = [i.strip() for i in after_check_text_records]
+    logger.info(f"Read after_check_text_records len:{len(after_check_text_records)}")
+
     logger.info("Read embeddings from emb.bin")
     read_data = np.fromfile("output/emb.bin", dtype=np.float32)
     logger.info(read_data.shape)
     read_data = read_data.reshape(-1, cfg.EMBEDDING_LEN[cfg.USE_MODEL_TYPE])
     logger.info(read_data.shape)
 
-    cluster_result = cluster_handler(read_data, 0.81)
+    # 聚类
+    need_del_records = cluster_handler(read_data, 0.82)
+
+    # 剔除重复数据
+    result_records = [x for x in need_cluster_records if x not in need_del_records]
+    logger.info(f"Need check len:{len(result_records)}")
 
     date = datetime.datetime.now().strftime("%Y-%m-%d")
     csv_file = f"output/check_result_{date}.csv"
     with open(csv_file, 'w+', newline='') as csvfile:
-        for i in need_cluster_records:
-            if i['spkid'] not in cluster_result:
-                insert_to_db(i)  # backup to db
-                fieldnames = i.keys()
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                if csvfile.tell() == 0:
-                    writer.writeheader()
-                writer.writerow(i)
+        for i in result_records:
+            insert_to_db(i)  # backup to db
+            fieldnames = i.keys()
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            if csvfile.tell() == 0:
+                writer.writeheader()
+            writer.writerow(i)
 
 
 if __name__ == "__main__":

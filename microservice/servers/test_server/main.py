@@ -95,7 +95,7 @@ def add_hit(spkid):
     conn.close()
 
 
-def get_similarities_result(emb_type,emb_db, emb_new):
+def get_similarities_result(emb_type, emb_db, emb_new):
     """
     获取相似度最高的spkid
     """
@@ -215,9 +215,9 @@ def main(filetype):
         channel = request.form.get('channel', 0)
         if filetype == "file":
             filedata = request.files.get('wav_file')
-            filepath, raw_url = save_file(filedata, spkid,sr=8000, channel=channel, server_name="test")
+            filepath, raw_url = save_file(filedata, spkid, channel=channel, server_name="test")
         else:
-            filepath, raw_url = save_url(request.form.get('url'), spkid,sr=8000, channel=channel, server_name="test")
+            filepath, raw_url = save_url(request.form.get('url'), spkid, channel=channel, server_name="test")
 
         tmp_folder = f"/tmp/test/{spkid}"
         os.makedirs(tmp_folder, exist_ok=True)
@@ -235,12 +235,12 @@ def main(filetype):
             # 撞库
             compare_result = {}
             for i in cfg.ENCODE_MODEL_LIST:
-                hit_spkid, score = get_similarities_result(i,np.array(list(emb_db_dic[i].values())),  
+                hit_spkid, score = get_similarities_result(i, np.array(list(emb_db_dic[i].values())),
                                                            np.array(list(file_emb[i]['embedding'].values())[0]).reshape(1, -1))
                 logger.info(f"hit_spkid:{hit_spkid}, score:{score}")
                 if score < cfg.BLACK_TH[i]:
                     logger.info(f"spkid:{spkid} is not in black list. score:{score}")
-                    return jsonify({"code": 200, "message": "{} is not in black list. hit_spkid:{}, score:{}.".format(spkid,hit_spkid, score)})
+                    return jsonify({"code": 200, "message": "{} is not in black list. hit_spkid:{}, score:{}.".format(spkid, hit_spkid, score)})
                 compare_result[i] = {"is_hit": True, "hit_spkid": hit_spkid, "score": score}
             # ASR
 
@@ -248,13 +248,13 @@ def main(filetype):
 
             # OSS
             raw_url = upload_file("test", filepath, f"{spkid}/raw_{spkid}.wav")
-            selected_url = upload_file("test",pipeline_result['selected_path'], f"{spkid}/{spkid}_selected.wav")
-            pipeline_result['raw_url']=raw_url
-            pipeline_result['selected_url']=selected_url
+            selected_url = upload_file("test", pipeline_result['selected_path'], f"{spkid}/{spkid}_selected.wav")
+            pipeline_result['raw_url'] = raw_url
+            pipeline_result['selected_url'] = selected_url
 
-            #TODO: add hit
+            # TODO: add hit
             # add_hit(pipeline_result)
-            return jsonify({"code": 200, "message": "success", "file_url":raw_url, "compare_result": compare_result})
+            return jsonify({"code": 200, "message": "success", "file_url": raw_url, "compare_result": compare_result})
         else:
             return jsonify(pipeline_result)
     except Exception as e:
