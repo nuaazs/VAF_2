@@ -48,7 +48,7 @@ def get_embedding(spkid):
     return embedding
 
 
-def get_embeddings(use_model_type="ERES2NET_Base"):
+def get_embeddings(use_model_type="eres2net"):
     """
     获取黑库中所有指定模型的emb
     """
@@ -94,7 +94,7 @@ def to_database(embedding, spkid, use_model_type, mode="register"):
     return True
 
 
-def delete_by_key(blackbase, spkid):
+def delete_by_key(spkid):
     r = redis.Redis(
         host=cfg.REDIS["host"],
         port=cfg.REDIS["port"],
