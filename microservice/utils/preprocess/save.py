@@ -10,7 +10,7 @@ import wget
 import shutil
 
 import cfg
-from utils.log import logger
+from loguru import logger
 from utils.oss import upload_file
 from utils.cmd import run_cmd
 

@@ -14,7 +14,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from speakerlabduanyibo.utils.utils import get_logger
 from speakerlabduanyibo.utils.score_metrics import (compute_pmiss_pfa_rbst, compute_eer, compute_c_norm)
 import matplotlib.pyplot as plt
-
+from dguard.interface.pretrained import PretrainedModel
 
 parser = argparse.ArgumentParser(description='Compute score and metrics')
 parser.add_argument('--enrol_data', default='', type=str, help='Enroll data dir')
@@ -25,6 +25,14 @@ parser.add_argument('--p_target', default=0.01, type=float, help='p_target in DC
 parser.add_argument('--c_miss', default=1, type=float, help='c_miss in DCF')
 parser.add_argument('--c_fa', default=1, type=float, help='c_fa in DCF')
 
+import torch.nn.functional as F
+def calculate_cosine_distance(x, y):
+    x = x.reshape(1,-1)
+    y = y.reshape(1,-1)
+    cos_sim = F.cosine_similarity(torch.from_numpy(x), torch.from_numpy(y), dim=-1)
+    # print(cos_sim)
+    return cos_sim
+    
 def main():
     args = parser.parse_args(sys.argv[1:])
     os.makedirs(args.scores_dir, exist_ok=True)
@@ -50,6 +58,10 @@ def main():
     test_dict = collect(args.test_data)
     cmf_enrol_dict = collect(os.path.join(args.enrol_data.split("/embeddings")[0],"cmf_embeddings"))
     cmf_test_dict = collect(os.path.join(args.test_data.split("/embeddings")[0],"cmf_embeddings"))
+    alpha_enrol_dict = collect(os.path.join(args.enrol_data.split("/embeddings")[0],"alpha"))
+    alpha_test_dict = collect(os.path.join(args.test_data.split("/embeddings")[0],"alpha"))
+    nums_enrol_dict = collect(os.path.join(args.enrol_data.split("/embeddings")[0],"cmf_num"))
+    nums_test_dict = collect(os.path.join(args.test_data.split("/embeddings")[0],"cmf_num"))
     # trail_list = args.trials.split(",")
     for trial in args.trials:
         scores = []
@@ -66,11 +78,35 @@ def main():
                 enrol_emb, test_emb = enrol_dict[pair[0]], test_dict[pair[1]]
                 cosine_score = cosine_similarity(enrol_emb.reshape(1, -1),
                                               test_emb.reshape(1, -1))[0][0]
-                cmf0,cmf1=cmf_enrol_dict[pair[0]][0], cmf_test_dict[pair[1]][0]
-                print(cmf0,cmf1)
-                factor =cmf0*cmf1
+                cmf0,cmf1=cmf_enrol_dict[pair[0]], cmf_test_dict[pair[1]]
+                nums0,nums1=nums_enrol_dict[pair[0]][0],nums_enrol_dict[pair[1]][0]
+                if nums0>=9:
+                    nums0=9
+                if nums1>=9:
+                    nums1=9
+                
+                alpha0,alpha1=alpha_enrol_dict[pair[0]][0],alpha_test_dict[pair[1]][0]
+                print(alpha0,alpha1)
+                factor = calculate_cosine_distance(cmf0,cmf1)
+                alpha = alpha0*alpha1
+                #TODO
                 # print(factor)
-                cmf_score = factor*cosine_score
+                # w_score = cosine_score+alpha*(factor-cosine_score)
+                
+                f = (nums0+nums1)/18
+                cmf_score = cosine_score*(1-f)+factor*f
+
+                th = 0.6039
+                if cosine_score<=(th-0.1) or cosine_score>=(th+0.1):
+                    cmf_score = cosine_score
+                else:
+                    pass
+                    # if cosine_score<=th:
+                    #     cmf_score = max(cmf_score,cosine_score)
+                    # else:
+                    #     cmf_score = min(cmf_score,cosine_score)
+
+                # cmf_score = factor*cosine_score
                 # cmf_factor = infer.calculate_factor(cmf0,cmf1)
                 # write the score
                 score_f.write(' '.join(pair)+' %.5f\n'%cosine_score)
@@ -125,6 +161,7 @@ def main():
         # write the metrics
         logger.info("CMF_Results of {} is:".format(trial_name))
         logger.info("EER = {0:.4f}".format(100 * cmf_eer))
+        logger.info("cmf_thres = {0:.4f}".format(float(cmf_thres)))
         logger.info("CMF_minDCF (p_target:{} c_miss:{} c_fa:{}) = {:.4f}".format(
             args.p_target, args.c_miss, args.c_fa, cmf_min_dcf))
         logger.info("CMF_NminDCF_noc (p_target:{} c_miss:{} c_fa:{}) = {:.4f}".format(

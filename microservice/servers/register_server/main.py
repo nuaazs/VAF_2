@@ -5,7 +5,7 @@
 @Time    :   2023/07/24 10:46:54
 @Author  :   Carry
 @Version :   1.0
-@Desc    :   音频注册
+@Desc    :   省厅音频注册
 '''
 import multiprocessing
 import sys
@@ -21,6 +21,8 @@ from tqdm.contrib.concurrent import process_map
 import wget
 from utils.orm.db_orm import get_embeddings, to_database
 from loguru import logger
+
+from utils.oss.upload import upload_file
 sys.path.append("../")
 
 similarity = torch.nn.CosineSimilarity(dim=-1, eps=1e-6)
@@ -33,6 +35,7 @@ encode_url = f"{host}:5001/encode"  # 提取特征
 cluster_url = f"{host}:5011/cluster"  # cluster
 asr_url = f"{host}:5000/transcribe/file"  # ASR
 msg_db = cfg.MYSQL
+BUCKET_NAME = "black"
 
 
 def send_request(url, method='POST', files=None, data=None, json=None, headers=None):
@@ -59,19 +62,22 @@ def add_speaker(spkid):
     )
     cursor = conn.cursor()
     try:
-        query_sql = f"insert into speaker (phone, valid_length,file_url,preprocessed_file_url,register_time) \
-                    select record_id, wav_duration, file_url, selected_url, now() \
+        query_sql = f"insert into black_speaker_info (record_id, valid_length,file_url,preprocessed_file_url,record_month,register_time) \
+                    select record_id, wav_duration, file_url, selected_url,record_month, now() \
                     from check_for_speaker_diraization where record_id = %s;"
         cursor.execute(query_sql, (spkid))
         conn.commit()
+        return True
     except Exception as e:
         logger.error(f"Insert to db failed. record_id:{spkid}. msg:{e}.")
         conn.rollback()
-    cursor.close()
-    conn.close()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
 
 
-def get_selected_url_from_db():
+def get_register_records_from_db(record_month):
     """
     获取需要注册的音频url
     """
@@ -85,12 +91,12 @@ def get_selected_url_from_db():
     )
     cursor = conn.cursor()
     try:
-        sql = "select record_id,selected_url from check_for_speaker_diraization"
+        sql = f"select record_id,file_url,selected_url from check_for_speaker_diraization where is_duplicate = 0 and record_month = {record_month};"
         cursor.execute(sql)
         result = cursor.fetchall()
         conn.commit()
     except Exception as e:
-        logger.error(f"Get selected_url from db failed. msg:{e}.")
+        logger.error(f"Get register records failed. msg:{e}.")
         conn.rollback()
     cursor.close()
     conn.close()
@@ -103,7 +109,7 @@ def cosine_similarity(input_data):
     return [similarity(base_embedding, embedding).numpy(), base_item]
 
 
-def compare_handler(model_type=None, embedding=None, black_limit=0.78):
+def compare_handler(model_type=None, embedding=None, black_limit=0.78, top_num=10):
     """
     是否在黑库中 并返回top1-top10
     """
@@ -112,7 +118,7 @@ def compare_handler(model_type=None, embedding=None, black_limit=0.78):
     input_data = [(k, emb_db[k], embedding) for k in emb_db.keys()]
 
     t1 = time.time()
-    results = process_map(cosine_similarity, input_data, max_workers=10, chunksize=1000, desc='Doing----')
+    results = process_map(cosine_similarity, input_data, max_workers=4, chunksize=1000, desc='Doing----')
     if not results:
         return {'best_score': 0, 'inbase': 0}
     t2 = time.time()
@@ -136,23 +142,43 @@ def compare_handler(model_type=None, embedding=None, black_limit=0.78):
     return return_results
 
 
+def get_register_records_from_file():
+    """
+    从人工审核的文件中获取需要注册的音频record_id
+    """
+    with open("register_records.csv", "r") as f:
+        lines = f.readlines()
+    register_records = []
+    for i in lines:
+        i = i.strip().split(",")
+        if i[4] in [1, 2] and i[5] == "":
+            register_records.append(i[0])
+    return register_records
+
+
 def main():
     """
     register
     """
     tmp_folder = "/tmp/register"
     os.makedirs(tmp_folder, exist_ok=True)
-    selected_urls = get_selected_url_from_db()
-    logger.info(f"len(selected_urls):{len(selected_urls)}")
+    # register_records = get_register_records_from_db(record_month)
+    register_records = get_register_records_from_file()
 
-    for file in tqdm(selected_urls):
+    logger.info(f"len(register_records):{len(register_records)}")
+
+    for file in tqdm(register_records):
         try:
             save_path = tmp_folder
-            i = file['selected_url']
-            file_name = os.path.join(save_path, os.path.basename(i))
-            wget.download(i, file_name)
-            spkid = os.path.basename(i).split(".")[0].split('_')[0]
-            data = {"spkid": spkid, "filelist": ["local://"+file_name]}
+            file_url = file['file_url']
+            spkid = file['record_id']
+            selected_url = file['selected_url']
+            file_path = os.path.join(save_path, os.path.basename(file_url))
+            selected_file_path = os.path.join(save_path, os.path.basename(selected_url))
+            wget.download(file_url, file_path)
+            wget.download(selected_url, selected_file_path)
+
+            data = {"spkid": spkid, "filelist": ["local://"+selected_file_path]}
             response = send_request(encode_url, data=data)
 
             compare_result = {}
@@ -168,19 +194,30 @@ def main():
             need_register = [True for k, v in compare_result.items() if v['inbase'] == 0 and v['best_score'] < cfg.BLACK_TH[k]]
             if need_register and all(need_register):
                 logger.info(f"Need register. spkid:{spkid}. compare_result:{compare_result}")
-                add_success = to_database(embedding=torch.tensor(emb_new), spkid=spkid, use_model_type=model_type)
-                if add_success:
+                # upload to oss
+                raw_url = upload_file(BUCKET_NAME, file_path, f"{spkid}/raw_{spkid}.wav")
+                selected_url = upload_file(BUCKET_NAME, selected_file_path, f"{spkid}/{spkid}_selected.wav")
+                db_info = {}
+                db_info['spkid'] = spkid
+                db_info['valid_length'] = valid_length
+                db_info['raw_url'] = raw_url
+                db_info['selected_url'] = selected_url
+                db_info['record_month'] = record_month
+                db_info['asr_text'] = text
+                db_info['record_type'] = record_type
+                if add_speaker(spkid):
+                    to_database(embedding=torch.tensor(emb_new), spkid=spkid, use_model_type=model_type)
                     logger.info(f"Add speaker success. spkid:{spkid}")
-                    add_speaker(spkid)
             else:
                 logger.info(f"Speaker already exists. spkid:{spkid}. Compare result:{compare_result}")
 
         except Exception as e:
             logger.error(f"Register failed. spkid:{spkid}.msg:{e}")
         finally:
-            if os.path.exists(file_name):
-                os.remove(file_name)
+            if os.path.exists(selected_file_path):
+                os.remove(selected_file_path)
 
 
 if __name__ == "__main__":
+    record_month = 7
     main()

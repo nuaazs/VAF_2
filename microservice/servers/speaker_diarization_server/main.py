@@ -1,72 +1,40 @@
 
-from collections import Counter
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+@File    :   main.py
+@Time    :   2023/08/16 15:59:25
+@Author  :   Carry
+@Version :   1.0
+@Desc    :   对下载的当月音频进行话者分离及聚类操作，筛选出有效音频
+'''
+
+
+import datetime
 import glob
 import shutil
-import subprocess
 import numpy as np
-import pymysql
 import torchaudio
 from tqdm import tqdm
 import cfg
-from pydub import AudioSegment
 import os
 import torch
 from utils.oss.upload import upload_file
-import requests
 from tqdm.contrib.concurrent import process_map
-
-
 from loguru import logger
+from cluster_st import cluster_pipleline
+from tools import send_request, extract_audio_segment, find_items_with_highest_value
 
 name = os.path.basename(__file__).split(".")[0]
 logger.add("log/"+name+"_{time}.log", rotation="500 MB", encoding="utf-8", enqueue=True, compression="zip", backtrace=True, diagnose=True)
-
-host = "http://192.168.3.169"
-vad_url = f"{host}:5005/energy_vad/file"  # VAD
-lang_url = f"{host}:5002/lang_classify"  # 语种识别
-encode_url = f"{host}:5001/encode"  # 提取特征
-cluster_url = f"{host}:5011/cluster"  # cluster
-asr_url = f"{host}:5000/transcribe/file"  # ASR
-
-use_model_type = "ERES2NET_Base"
-msg_db = cfg.MYSQL
-
-
-def send_request(url, method='POST', files=None, data=None, json=None, headers=None):
-    try:
-        response = requests.request(method, url, files=files, data=data, json=json, headers=headers)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Request failed: spkid:{data['spkid']}. msg:{e}")
-        return None
-
-
-def extract_audio_segment(input_file, output_file, start_time, end_time):
-    audio = AudioSegment.from_file(input_file)
-    start_ms = start_time * 1000
-    end_ms = end_time * 1000
-    extracted_segment = audio[start_ms:end_ms]
-    extracted_segment.export(output_file, format="wav")
-
-
-def find_items_with_highest_value(dictionary):
-    value_counts = Counter(dictionary.values())
-    max_count = max(value_counts.values())
-    for key, value in dictionary.items():
-        if value_counts[value] == max_count:
-            keys_with_max_value = value
-    items_with_highest_value = {key: value for key, value in dictionary.items() if value_counts[value] == max_count}
-    return items_with_highest_value, keys_with_max_value
 
 
 def pipeline(tmp_folder, filepath, spkid):
     # step1 VAD
     data = {"spkid": spkid, "length": 90}
     files = [('file', (filepath, open(filepath, 'rb')))]
-    response = send_request(vad_url, files=files, data=data)
-    if not response:
-        return None
+    response = send_request(cfg.VAD_URL, files=files, data=data)
+    vad_times = str(response['timelist'])
 
     # step2 截取音频片段
     output_file_li = []
@@ -80,7 +48,7 @@ def pipeline(tmp_folder, filepath, spkid):
     # step3 普通话过滤
     wav_files = ["local://"+i for i in output_file_li]
     data = {"spkid": spkid, "filelist": ",".join(wav_files)}
-    response = send_request(lang_url, data=data)
+    response = send_request(cfg.LANG_URL, data=data)
     if response['code'] == 200:
         pass_list = response['pass_list']
         url_list = response['file_url_list']
@@ -90,8 +58,10 @@ def pipeline(tmp_folder, filepath, spkid):
         return None
 
     # step4 提取特征
+    if not mandarin_wavs:
+        return None
     data = {"spkid": spkid, "filelist": ",".join(mandarin_wavs)}
-    response = send_request(encode_url, data=data)
+    response = send_request(cfg.ENCODE_URL, data=data)
     if response['code'] == 200:
         file_emb = response['file_emb']
     else:
@@ -99,7 +69,7 @@ def pipeline(tmp_folder, filepath, spkid):
         return None
 
     # step5 聚类
-    file_emb = file_emb[use_model_type]
+    file_emb = file_emb[cfg.USE_MODEL_TYPE]
     data = {
         "emb_dict": file_emb["embedding"],
         "cluster_line": 3,
@@ -107,14 +77,13 @@ def pipeline(tmp_folder, filepath, spkid):
         "cluster_type": "spectral",  # spectral or umap_hdbscan
         "min_cluster_size": 1,
     }
-    response = send_request(cluster_url, json=data)
-    logger.info(f"\t * -> Cluster result: {response}")
+    response = send_request(cfg.CLUSTER_URL, json=data)
     items, keys_with_max_value = find_items_with_highest_value(response['labels'])
     max_score = response['scores'][keys_with_max_value]['max']
     min_score = response['scores'][keys_with_max_value]['min']
 
-    if min_score < 0.8:
-        logger.info(f"After cluster min_score  < 0.8. spkid:{spkid}.response:{response['scores']}")
+    if min_score < cfg.CLUSTER_MIN_SCORE_THRESHOLD:
+        logger.info(f"After cluster {min_score}  < {cfg.CLUSTER_MIN_SCORE_THRESHOLD}. spkid:{spkid}.response:{response['scores']}")
         return None
     total_duration = 0
     for i in items.keys():
@@ -122,77 +91,67 @@ def pipeline(tmp_folder, filepath, spkid):
     if total_duration < cfg.MIN_LENGTH_REGISTER:
         logger.info(f"After cluster total_duration:{total_duration} < {cfg.MIN_LENGTH_REGISTER}s. spkid:{spkid}.response:{response}")
         return None
+
+    # Resample 16k
     selected_files = sorted(items.keys(), key=lambda x: x.split("/")[-1].replace(".wav", "").split("_")[0])
-    audio_data = np.concatenate([torchaudio.load(file.replace("local://", ""))[0] for file in selected_files], axis=-1)
-    torchaudio.save(os.path.join(tmp_folder, f"{spkid}_selected.wav"), torch.from_numpy(audio_data), sample_rate=8000)
+    resampled_waveform_li = []
+    for file in selected_files:
+        waveform, sample_rate = torchaudio.load(file.replace("local://", ""))
+        if sample_rate == 8000:
+            resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
+            resampled_waveform = resampler(waveform)
+            resampled_waveform_li.append(resampled_waveform)
+    audio_data = np.concatenate(resampled_waveform_li, axis=-1)
+    file_selected_path = os.path.join(tmp_folder, f"{spkid}_selected.wav")
+    torchaudio.save(file_selected_path, torch.from_numpy(audio_data), sample_rate=16000)
 
     selected_times = [d[_data.replace("local://", "")] for _data in selected_files]
 
     # step6 ASR
     text = ""
-    data = {"spkid": spkid, "postprocess": "1"}
-    files = [('wav_file', (filepath, open(filepath, 'rb')))]
-    response = send_request(asr_url, files=files, data=data)
-    if response.get('transcription') and response.get('transcription').get('text'):
-        text = response['transcription']["text"]
-    else:
-        logger.error(f"ASR failed. spkid:{spkid}.message:{response['message']}")
+    # data = {"spkid": spkid, "postprocess": "1"}
+    # files = [('wav_file', (filepath, open(filepath, 'rb')))]
+    # response = send_request(cfg.ASR_URL, files=files, data=data)
+    # if response.get('transcription') and response.get('transcription').get('text'):
+    #     text = response['transcription']["text"]
+    # else:
+    #     logger.error(f"ASR failed. spkid:{spkid}.message:{response['message']}")
 
     # step7 NLP
     # nlp_result = classify_text(text)
     # logger.info(f"\t * -> 文本分类结果: {nlp_result}")
 
-    # step7 话术过滤
-    # a, b = check_text(text)
-    # if a == "正常":
-    #     # todo 查找新话术逻辑
-    #     return None
-
     # step8 上传OSS
-    raw_url = upload_file("raw", filepath, f"{spkid}/raw_{spkid}.wav")
-    selected_url = upload_file("raw", os.path.join(tmp_folder, f"{spkid}_selected.wav"), f"{spkid}/{spkid}_selected.wav")
+    raw_url = upload_file(cfg.BUCKET_NAME, filepath, f"{spkid}/raw_{spkid}.wav")
+    selected_url = upload_file(cfg.BUCKET_NAME, file_selected_path, f"{spkid}/{spkid}_selected.wav")
 
     return {
         "spkid": spkid,
         "raw_file_path": raw_url,
         "selected_url": selected_url,
-        "asr_result": text,
+        "asr_text": text,
         "selected_times": selected_times,
         # "nlp_result": nlp_result,
         "total_duration": total_duration,
+        "record_month": record_month,
+        "vad_times": vad_times
     }
 
 
-def insert_to_db(data):
-    conn = pymysql.connect(
-        host=msg_db.get("host"),
-        port=msg_db.get("port"),
-        db=msg_db.get("db"),
-        user=msg_db.get("username"),
-        passwd=msg_db.get("passwd"),
-        cursorclass=pymysql.cursors.DictCursor,
-    )
-    cursor = conn.cursor()
+def perprocess(filepath):
+    """
+    对单个音频进行处理
+    通过筛选后的音频后续进行聚类
+    """
     try:
-        sql = "INSERT INTO check_for_speaker_diraization (`record_id`, `file_url`, `selected_url`, `asr_text`, `wav_duration`,`create_time`,`selected_times`) VALUES (%s, %s, %s, %s, %s,now(), %s);"
-        cursor.execute(sql, (data['spkid'], data['raw_file_path'], data['selected_url'], data['asr_result'], data['total_duration'], str(data['selected_times'])))
-        conn.commit()
-    except Exception as e:
-        logger.error(f"Insert to db failed. spkid:{data['spkid']}. msg:{e}.")
-        conn.rollback()
-    cursor.close()
-    conn.close()
-
-
-def main(i):
-    try:
-        spkid = os.path.basename(i).split(".")[0].split('-')[-1]
+        spkid = os.path.basename(filepath).split(".")[0].split('-')[-1]
         tmp_folder = f"/tmp/speaker_diarization/{spkid}"
         os.makedirs(tmp_folder, exist_ok=True)
-        pipeline_result = pipeline(tmp_folder, i, spkid)
-        logger.info(pipeline_result)
+        pipeline_result = pipeline(tmp_folder, filepath, spkid)
         if pipeline_result:
-            insert_to_db(pipeline_result)
+            with open(f"{need_cluster_records_path}", "a+") as f:
+                f.write(str(pipeline_result)+'\n')
+            logger.info(f"need_cluster_records:{pipeline_result}")
     except Exception as e:
         logger.error(f"Pipeline failed. spkid:{spkid}. msg:{e}.")
     finally:
@@ -200,9 +159,59 @@ def main(i):
             shutil.rmtree(tmp_folder)
 
 
-if __name__ == "__main__":
-    # wav_files = glob.glob("/datasets/changzhou/*.wav")
-    wav_files = glob.glob("./*.wav")
+def get_last_id():
+    if not os.path.exists('output/last_id.txt'):
+        with open('output/last_id.txt', 'w') as f:
+            f.write('0')
+    with open('output/last_id.txt', 'r') as f:
+        last_id = f.read()
+    return last_id
+
+
+def update_last_id(last_id):
+    with open('output/last_id.txt', 'w') as f:
+        f.write(str(last_id))
+
+
+def main():
+    wav_files = glob.glob("/datasets/changzhou/*.wav")
+    # wav_files = glob.glob("./test_dataset/*.wav")
     logger.info(f"Total wav files: {len(wav_files)}")
     wav_files = sorted(wav_files)
-    process_map(main, wav_files, max_workers=1, desc='TQDMING---:')
+    for i in tqdm(wav_files):
+        record_num = os.path.basename(i).split("-")[-1].split('.')[0]  # 本地音频文件名
+        # record_num = os.path.basename(i).split(".")[0]
+        if int(record_num) < int(last_id):
+            continue
+        perprocess(i)
+
+    with open(f"{need_cluster_records_path}", "r+") as f:
+        need_cluster_records = f.readlines()
+
+    need_cluster_records_li = []
+    for i in need_cluster_records:
+        i = eval(i)
+        need_cluster_records_li.append(i)
+
+    cluster_pipleline(need_cluster_records_li)
+
+    new_last_id = os.path.basename(wav_files[-1]).split(".")[0]
+    update_last_id(new_last_id)
+    logger.info(f"New last id is: {new_last_id}")
+
+
+if __name__ == "__main__":
+    os.makedirs("output", exist_ok=True)
+
+    # 存储pipeline后需要聚类的音频信息文件
+    need_cluster_records_path = "output/need_cluster_records.txt"
+    if os.path.exists(need_cluster_records_path):
+        os.remove(need_cluster_records_path)
+
+    need_cluster_records = []
+    last_id = get_last_id()
+    logger.info(f"Last id: {last_id}")
+    currt_month = datetime.datetime.now().month
+    record_month = str(currt_month)
+    record_month = "8"
+    main()

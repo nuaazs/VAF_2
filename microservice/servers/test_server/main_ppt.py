@@ -5,12 +5,11 @@
 @Time    :   2023/07/24 10:46:54
 @Author  :   Carry
 @Version :   1.0
-@Desc    :   音频推理，检测是否再黑库中
+@Desc    :   音频推理，演示用
 '''
+from collections import Counter
 import sys
-
 from utils.oss.upload import upload_file
-from speaker_diarization_server.main import find_items_with_highest_value
 from sklearn.metrics.pairwise import cosine_similarity
 from pydub import AudioSegment
 from loguru import logger
@@ -45,7 +44,9 @@ asr_url = f"{host}:5000/transcribe/file"  # ASR
 vad_url = f"{host}:5005/energy_vad/file"  # VAD
 lang_url = f"{host}:5002/lang_classify"  # 语种识别
 msg_db = cfg.MYSQL
+
 use_model_type = "ERES2NET_Base"
+ENCODE_MODEL_LIST = ["ERES2NET_Base"]
 
 
 def send_request(url, method='POST', files=None, data=None, json=None, headers=None):
@@ -56,6 +57,16 @@ def send_request(url, method='POST', files=None, data=None, json=None, headers=N
     except requests.exceptions.RequestException as e:
         logger.error(f"Request failed: spkid:{data['spkid']}. msg:{e}")
         return None
+
+
+def find_items_with_highest_value(dictionary):
+    value_counts = Counter(dictionary.values())
+    max_count = max(value_counts.values())
+    for key, value in dictionary.items():
+        if value_counts[value] == max_count:
+            keys_with_max_value = value
+    items_with_highest_value = {key: value for key, value in dictionary.items() if value_counts[value] == max_count}
+    return items_with_highest_value, keys_with_max_value
 
 
 def extract_audio_segment(input_file, output_file, start_time, end_time):
@@ -69,7 +80,7 @@ def extract_audio_segment(input_file, output_file, start_time, end_time):
     extracted_segment.export(output_file, format="wav")
 
 
-def add_hit(spkid):
+def add_hit(pipeline_result):
     """
     录入hit
     """
@@ -83,13 +94,13 @@ def add_hit(spkid):
     )
     cursor = conn.cursor()
     try:
-        query_sql = f"insert into hit (phone, valid_length,file_url,preprocessed_file_url,register_time) \
-                    select record_id, wav_duration, file_url, selected_url, now() \
-                    from check_for_speaker_diraization where record_id = %s;"
-        cursor.execute(query_sql, (spkid))
+        query_sql = f"insert into hit (phone, valid_length,file_url,preprocessed_file_url,message,hit_time) \
+                    values(%s,%s,%s,%s,%s,now());"
+        cursor.execute(query_sql, (pipeline_result["spkid"], pipeline_result["total_duration"],
+                       pipeline_result["raw_url"], pipeline_result["selected_url"], str(pipeline_result["compare_result"])))
         conn.commit()
     except Exception as e:
-        logger.error(f"Insert to db failed. record_id:{spkid}. msg:{e}.")
+        logger.error(f"Insert to db failed. record_id:{pipeline_result['spkid']}. msg:{e}.")
         conn.rollback()
     cursor.close()
     conn.close()
@@ -215,9 +226,9 @@ def main(filetype):
         channel = request.form.get('channel', 0)
         if filetype == "file":
             filedata = request.files.get('wav_file')
-            filepath, raw_url = save_file(filedata, spkid, channel=channel, server_name="test")
+            filepath, raw_url = save_file(filedata, spkid, sr=8000, channel=channel, server_name="test")
         else:
-            filepath, raw_url = save_url(request.form.get('url'), spkid, channel=channel, server_name="test")
+            filepath, raw_url = save_url(request.form.get('url'), spkid, sr=8000, channel=channel, server_name="test")
 
         tmp_folder = f"/tmp/test/{spkid}"
         os.makedirs(tmp_folder, exist_ok=True)
@@ -251,9 +262,9 @@ def main(filetype):
             selected_url = upload_file("test", pipeline_result['selected_path'], f"{spkid}/{spkid}_selected.wav")
             pipeline_result['raw_url'] = raw_url
             pipeline_result['selected_url'] = selected_url
-
+            pipeline_result['compare_result'] = compare_result
             # TODO: add hit
-            # add_hit(pipeline_result)
+            add_hit(pipeline_result)
             return jsonify({"code": 200, "message": "success", "file_url": raw_url, "compare_result": compare_result})
         else:
             return jsonify(pipeline_result)
@@ -266,7 +277,7 @@ def main(filetype):
 
 
 emb_db_dic = {}
-for i in cfg.ENCODE_MODEL_LIST:
+for i in ENCODE_MODEL_LIST:
     emb_db_dic[i] = get_embeddings(use_model_type=i)
 
 if __name__ == "__main__":
