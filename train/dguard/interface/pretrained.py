@@ -253,9 +253,10 @@ class PretrainedModel:
     def inference(self,wav_path_list,cmf=True,segment_length=3*16000,crops_num_limit=1,segment_length_limit=2*16000):
         result = []
         for wav_path in wav_path_list:
+            print(f"* {wav_path}")
             wav, fs = torchaudio.load(wav_path)
-            # print(f"* {wav_path}")
-            # print(f"\t*-> Raw wav time length: {wav.shape[1]/fs} seconds.")
+            
+            print(f"\t*-> Raw wav time length: {wav.shape[1]/fs} seconds.")
             assert fs == self.sample_rate, f"The sample rate of wav is {fs} and inconsistent with that of the pretrained model."
             # wav = wav.to(next(model.parameters()).device)
             wav = torch.tensor(wav, dtype=torch.float32)
@@ -347,18 +348,8 @@ if DEV:
     infer = PretrainedModel('resnet152_lm',mode="extract")
     segment_length=-5
     # data_two=['id10284/RNYNkXzY5Hk/00008.wav','id10284/YN4cTBWM-QE/00005.wav']
-    data_two=['id10278/Pp-rAswo4Xg/00011.wav','id10300/pVKJjm4sKdI/00002.wav']
-    data_two=['id10272/olePnztkm6U/00002.wav','id10272/ho_r24dlPTQ/00005.wav']
+    data_twos=[["/VAF/train/dguard/interface/lol_to_xieyukai_2_result_2610_16k.wav","/VAF/train/dguard/interface/20230907_172246-24.64-40.715_16k.wav"]] # "/VAF/train/dguard/interface/zhaosheng_to_xieyukai_2_result_2610_16k.wav"]]
     
-    data_twos = [['id10285/FUqAFZmZJ80/00020.wav','id10285/9HcPA8lluoY/00005.wav'],
-    ['id10272/ho_r24dlPTQ/00005.wav','id10272/olePnztkm6U/00003.wav'],
-    ['id10285/FUqAFZmZJ80/00009.wav','id10285/9HcPA8lluoY/00005.wav'],
-    ['id10306/cc5WSHcgkl8/00004.wav','id10306/m9fohvC12S0/00001.wav'],
-    ['id10284/YN4cTBWM-QE/00005.wav','id10284/RNYNkXzY5Hk/00008.wav'],
-    ['id10277/znxUWA2QAGs/00013.wav','id10277/0rpfN7wThsg/00002.wav'],
-    ['id10278/shA_TsV-PFs/00009.wav','id10278/QiMd9_dc-M4/00003.wav'],
-    ['id10302/YQCymlcowOg/00001.wav','id10302/2Er-cV85fc4/00022.wav'],
-    ['id10302/ekqJava7sdE/00001.wav','id10302/33L7c-DPCJQ/00002.wav']]
 
 
     # data_twos = [['id10278/Pp-rAswo4Xg/00011.wav','id10300/pVKJjm4sKdI/00002.wav'],
@@ -425,7 +416,7 @@ if DEV:
     #     ['id10307/f8Ms66atECE/00010.wav','id10307/f8Ms66atECE/00007.wav']]
 
     for data_two in data_twos:
-        data_two=[os.path.join("/VAF/train/data/raw_data/voxceleb1/test/wav",_data) for _data in data_two]
+        # data_two=[os.path.join("/VAF/train/data/raw_data/voxceleb1/test/wav",_data) for _data in data_two]
         result = infer.inference(data_two,cmf=True,segment_length=segment_length,segment_length_limit=2*16000)
         # result =  infer.inference(['/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav','/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00002.wav'],cmf=True,segment_length=segment_length,segment_length_limit=2*16000)
         # result = infer.inference(["/datasets/cjsd_download_test_vad/male_8/s2023_08_02_18_39_10_e2023_08_02_18_40_06.wav","/datasets/cjsd_download_test_vad/male_8/s2023_07_31_18_48_15_e2023_07_31_18_49_06.wav"],cmf=True,segment_length=-1,segment_length_limit=10*16000)
