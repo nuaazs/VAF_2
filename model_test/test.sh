@@ -34,7 +34,7 @@ cp $0 result/$exp_name/run_shell_$timestr.sh
 exp_name="0925_cjsdv2pro_test"
 
 # split by space
-models="dfresnet_233" #"resnet101_cjsd_lm resnet101_cjsd_lm_and_resnet152_lm resnet152_lm repvgg resnet101_cjsd_lm_and_repvgg dfresnet233" # resnet101_cjsd_lm_and_resnet152_lm
+models="dfresnet_233" #
 
 # split by space
 datasets="cjsdv2pro cjsd300" # 
