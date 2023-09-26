@@ -59,8 +59,9 @@ def compute_pmiss_pfa_rbst(scores, labels, weights=None):
     given trial socres and their labels. A weights option is also provided to
     equalize the counts over score partitions (if there is such partitioning).
     """
-
+    # print(scores)
     sorted_ndx = np.argsort(scores)
+    # print(sorted_ndx)
     labels = labels[sorted_ndx]
     if weights is not None:
         weights = weights[sorted_ndx]
@@ -73,6 +74,16 @@ def compute_pmiss_pfa_rbst(scores, labels, weights=None):
     fnr = np.cumsum(tgt_wghts) / np.sum(tgt_wghts)
     fpr = 1 - np.cumsum(imp_wghts) / np.sum(imp_wghts)
     return fnr, fpr
+
+def compute_tn_fn_tp_fp(scores, labels, th_start=0.05,th_end=1.0,th_step=0.05):
+    result = []
+    for th in np.arange(th_start,th_end,th_step):
+        tp = np.sum((scores>=th) & (labels==1))
+        fp = np.sum((scores>=th) & (labels==0))
+        tn = np.sum((scores<th) & (labels==0))
+        fn = np.sum((scores<th) & (labels==1))
+        result.append([th,tp,fp,tn,fn])
+    return result
 
 
 def compute_eer(fnr, fpr, scores=None):

@@ -86,12 +86,12 @@ model_info ={
         'embedding_size': '256',
         'sample_rate': '16000'
     },
-    # 'resnet101':{
-    #     "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet101.yaml",
-    #     "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet101/voxceleb_resnet101.pt',
-    #     'embedding_size': '256',
-    #     'sample_rate': '16000'
-    # },
+    'resnet101_cjsd_lm':{
+        "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet101_cjsd_LM.yaml",
+        "ckpt": '/home/zhaosheng/wespeaker/examples/changjiang/v1/exp/ResNet101-TSTP-emb256-fbank80-num_frms200-aug0.6-spTrue-saFalse-ArcMargin-SGD-epoch200-LM/models/avg_model.pt',
+        'embedding_size': '256',
+        'sample_rate': '16000'
+    },
     'resnet221_lm':{
         "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet221_LM.yaml",
         "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet221_LM/voxceleb_resnet221_LM/voxceleb_resnet221_LM.pt',
@@ -345,7 +345,7 @@ if DEV:
     # cos_score,factor,alpha = infer.inference(['/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav','/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00002.wav'],cmf=True,segment_length=3*16000)
     # print(f"cos_score: {cos_score}, factor: {factor}")
     # print("="*50)
-    infer = PretrainedModel('resnet152_lm',mode="extract")
+    infer = PretrainedModel('resnet101_cjsd_lm',mode="extract")
     segment_length=-5
     # data_two=['id10284/RNYNkXzY5Hk/00008.wav','id10284/YN4cTBWM-QE/00005.wav']
     data_twos=[["/VAF/train/dguard/interface/lol_to_xieyukai_2_result_2610_16k.wav","/VAF/train/dguard/interface/20230907_172246-24.64-40.715_16k.wav"]] # "/VAF/train/dguard/interface/zhaosheng_to_xieyukai_2_result_2610_16k.wav"]]

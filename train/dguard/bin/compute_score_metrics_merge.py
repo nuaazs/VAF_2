@@ -25,6 +25,10 @@ parser.add_argument('--p_target', default=0.01, type=float, help='p_target in DC
 parser.add_argument('--c_miss', default=1, type=float, help='c_miss in DCF')
 parser.add_argument('--c_fa', default=1, type=float, help='c_fa in DCF')
 
+parser.add_argument('--total', default=1, type=float, help='total')
+parser.add_argument('--rank', default=0, type=float, help='rank')
+parser.add_argument('--tiny_save_dir', default='', type=str, help='')
+
 def main():
     args = parser.parse_args(sys.argv[1:])
     os.makedirs(args.scores_dir, exist_ok=True)
@@ -54,30 +58,29 @@ def main():
         labels = []
 
         trial_name = os.path.basename(trial)
-        score_path = os.path.join(args.scores_dir, f'{trial_name}.score')
-        with open(trial, 'r') as trial_f, open(score_path, 'w') as score_f:
-            lines = trial_f.readlines()
-            for line in tqdm(lines, desc=f'scoring trial {trial_name}'):
-                pair = line.strip().split()
-                enrol_emb, test_emb = enrol_dict[pair[0]], test_dict[pair[1]]
-                cosine_score = cosine_similarity(enrol_emb.reshape(1, -1),
-                                              test_emb.reshape(1, -1))[0][0]
-                # write the score
-                score_f.write(' '.join(pair)+' %.5f\n'%cosine_score)
-                scores.append(cosine_score)
-                if pair[2] == '1' or pair[2] == 'target':
-                    labels.append(1)
-                elif pair[2] == '0' or pair[2] == 'nontarget':
-                    labels.append(0)
-                else:
-                    raise Exception(f'Unrecognized label in {line}.')
 
-        # compute metrics
-        scores = np.array(scores)
-        print(f"Socre shape is {scores.shape}")
-        labels = np.array(labels)
-        print(f"Label shape is {labels.shape}")
-        
+
+        # find all score_*.npy in tiny_save_dir/trial_name
+        tiny_save_dir = args.tiny_save_dir
+        score_files = sorted([os.path.join(tiny_save_dir,trial_name,i) for i in os.listdir(os.path.join(tiny_save_dir,trial_name)) if i.startswith('score_')])
+        label_files = sorted([os.path.join(tiny_save_dir,trial_name,i) for i in os.listdir(os.path.join(tiny_save_dir,trial_name)) if i.startswith('label_')])
+        # load scores and merge them
+        for score_file in score_files:
+            score = np.load(score_file)
+            scores.append(score)
+        scores = np.concatenate(scores,axis=0)
+        scores=scores.reshape(-1)
+        # tolist
+        # scores = scores.tolist()
+        print(f"Shape of scores is {scores.shape}")
+        # load labels and merge them
+        for label_file in label_files:
+            label = np.load(label_file)
+            labels.append(label)
+        labels = np.concatenate(labels,axis=0)
+        labels=labels.reshape(-1)
+        print(f"Shape of labels is {labels.shape}")
+
 
         fnr, fpr = compute_pmiss_pfa_rbst(scores, labels)
         eer, thres = compute_eer(fnr, fpr, scores)
@@ -94,7 +97,15 @@ def main():
         logger.info("\t\tminDCF (p_target:{} c_miss:{} c_fa:{}) = {:.4f}".format(
             args.p_target, args.c_miss, args.c_fa, min_dcf))
         for _info in th_matrix_result:
-            logger.info("\t\tTH:{0:.2f}\tTP:{1:.4f}\tFP:{2:.4f}\tTN:{3:.4f}\tFN:{4:.4f}".format(*_info))
+            th,tp,fp,tn,fn = _info
+            try:
+                precision = (tp/(tp+fp)) *100
+                recall = (tp/(tp+fn)) *100
+                acc = ((tp+tn)/(tp+fn+tn+fp)) *100
+            except:
+                precision = " - "
+                recall = " - "
+            logger.info(f"\t\tTH:{th:.2f}\tTP:{tp:.4f}\tFP:{fp:.4f}\tTN:{tn:.4f}\tFN:{fn:.4f}\tP:{precision:.2f}\tR:{recall:.2f}\tACC:{acc:.2f}")
         # logger_all.info(f"{args.exp_id},{100 * eer:.4f},{min_dcf:.4f}")
         # append to args.scores_all
         # if args.scores_all not exist, create it
