@@ -92,6 +92,12 @@ model_info ={
         'embedding_size': '256',
         'sample_rate': '16000'
     },
+    'resnet221_cjsd_lm':{
+        "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet221_cjsd_LM.yaml",
+        "ckpt": "/home/zhaosheng/wespeaker/examples/changjiang/v1/exp/ResNet221-TSTP-emb256-fbank80-num_frms200-aug0.6-spTrue-saFalse-ArcMargin-SGD-epoch300-LM/models/avg_model.pt",
+        'embedding_size': '256',
+        'sample_rate': '16000'
+    },
     'resnet221_lm':{
         "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet221_LM.yaml",
         "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet221_LM/voxceleb_resnet221_LM/voxceleb_resnet221_LM.pt',

@@ -86,7 +86,7 @@ embedding_model:
   obj: dguard.models.resnet.resnet.ResNet
   args:
     block_type: Bottleneck
-    num_blocks: [3,4,23,3]
+    num_blocks: [6,16,48,3]
     feat_dim: <fbank_dim>
     embed_dim: <embedding_size>
     pooling_func: 'TSTP'
