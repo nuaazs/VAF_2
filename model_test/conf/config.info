@@ -1,6 +1,6 @@
 #!/bin/bash
-exp_name="0925_male_female"
-models="resnet221_cjsd_lm"
+exp_name="1004_male_female"
+models="resnet221_cjsd_lm resnet293_cjsd_lm"
 datasets="male female"
 overwrite=true
 gpus="7" # 1 2 3 4 5 6 7

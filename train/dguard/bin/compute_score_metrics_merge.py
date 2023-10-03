@@ -96,24 +96,39 @@ def main():
         logger.info("\t\tEER = {0:.4f}".format(100 * eer))
         logger.info("\t\tminDCF (p_target:{} c_miss:{} c_fa:{}) = {:.4f}".format(
             args.p_target, args.c_miss, args.c_fa, min_dcf))
+        min_recall_precision_diff = 100
+        best_precision = 0
+        best_recall = 0
+        best_acc = 0
+        best_th = 0
         for _info in th_matrix_result:
             th,tp,fp,tn,fn = _info
             try:
-                precision = (tp/(tp+fp)) *100
-                recall = (tp/(tp+fn)) *100
-                acc = ((tp+tn)/(tp+fn+tn+fp)) *100
+                precision = float((tp/(tp+fp)) *100.0)
+                recall = float((tp/(tp+fn)) *100.0)
+                acc = float(((tp+tn)/(tp+fn+tn+fp)) *100.0)
             except:
                 precision = " - "
                 recall = " - "
             logger.info(f"\t\tTH:{th:.2f}\tTP:{tp:.4f}\tFP:{fp:.4f}\tTN:{tn:.4f}\tFN:{fn:.4f}\tP:{precision:.2f}\tR:{recall:.2f}\tACC:{acc:.2f}")
+            # if recall and precision is float
+            if isinstance(recall,float) and isinstance(precision,float):
+                if abs(recall-precision) < min_recall_precision_diff and (recall!=0) and (precision!=0):
+                    print(f"recall:{recall},precision:{precision}")
+                    print(f"best_recall:{best_recall},best_precision:{best_precision}")
+                    min_recall_precision_diff = abs(recall-precision)
+                    best_precision = precision
+                    best_recall = recall
+                    best_acc = acc
+                    best_th = th
         # logger_all.info(f"{args.exp_id},{100 * eer:.4f},{min_dcf:.4f}")
         # append to args.scores_all
         # if args.scores_all not exist, create it
         if not os.path.exists(args.scores_all):
             with open(args.scores_all, 'w') as f:
-                f.write("model,trails,time,trial_name,EER,minDCF\n")
+                f.write("model,trails,time,trial_name,EER,minDCF,Recall,Precision,Acc,TH\n")
         with open(args.scores_all, 'a') as f:
-            f.write(f"{args.exp_id},{trial_name},{100 * eer:.4f},{min_dcf:.4f}\n")
+            f.write(f"{args.exp_id},{trial_name},{100 * eer:.4f},{min_dcf:.4f},{best_recall:.2f},{best_precision:.2f},{best_acc:.2f},{best_th:.2f}\n")
 
 
 

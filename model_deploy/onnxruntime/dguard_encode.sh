@@ -23,6 +23,11 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    --embedding_size)
+      embedding_size="$2"
+      shift
+      shift
+      ;;
     *)
       echo "未知的参数: $1"
       exit 1
@@ -46,28 +51,18 @@ if [[ -z $output_txt ]]; then
   exit 1
 fi
 
-# 设置模型路径和 embedding_size
-case $model_name in
-  dfresnet233)
-    onnx_dir="/VAF/train/pretrained_models/onnx/dfresnet233_epoch76.onnx"
-    embedding_size=512
-    ;;
-  repvgg)
-    onnx_dir="/VAF/train/pretrained_models/onnx/repvgg_epoch142.onnx"
-    embedding_size=512
-    ;;
-  eres2net)
-    onnx_dir="/VAF/train/pretrained_models/onnx/eres2net.onnx"
-    embedding_size=256
-    ;;
-  *)
-    echo "不支持的模型名称: $model_name，请使用 dfresnet233、repvgg 或 eres2net。"
-    exit 1
-    ;;
-esac
+if [[ -z $embedding_size ]]; then
+  echo "未指定 embedding_size，请使用 --embedding_size 参数指定地址。"
+  exit 1
+fi
+
+# model name
+# onnx_dir=f"../dguard/files/onnx/{model_name}.onnx"
+onnx_dir="${DGUARD_ROOT}/files/onnx/${model_name}.onnx"
+
 
 # 执行命令
-/VAF/model_deploy/onnxruntime/build/bin/extract_emb_main \
+${DGUARD_DEPLOY_ROOT}/onnxruntime/build/bin/extract_emb_main \
   --wav_list "$wav_scp" \
   --result "$output_txt" \
   --speaker_model_path "$onnx_dir" \

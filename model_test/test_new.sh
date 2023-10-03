@@ -45,6 +45,7 @@ fi
 timestr=$(date "+%Y%m%d_%H%M%S")
 mkdir -p result/$exp_name
 cp $0 result/$exp_name/run_shell_$timestr.sh
+cp $config_file result/$exp_name/config.sh
 
 
 ######################################################################################
@@ -82,11 +83,11 @@ extract_embeddings() {
     mkdir -p $tiny_save_dir
     for now_index in $(seq 0 $[$cpu_nj-1]); do
         # echo "Now index: $now_index"
-        python dguard/bin/compute_score_metrics_multi.py --total=$cpu_nj --tiny_save_dir=$tiny_save_dir --rank=$now_index --enrol_data result/$exp_name/$model/$dataset/$length/embeddings --test_data result/$exp_name/$model/$dataset/$length/embeddings \
+        python ${DGUARD_ROOT}/bin/compute_score_metrics_multi.py --total=$cpu_nj --tiny_save_dir=$tiny_save_dir --rank=$now_index --enrol_data result/$exp_name/$model/$dataset/$length/embeddings --test_data result/$exp_name/$model/$dataset/$length/embeddings \
             --scores_all="result/$exp_name/seed_${seed}.csv" --exp_id="${model},${dataset},${length}" --scores_dir result/$exp_name/$model/$dataset/$length/scores --trials $trial_path || echo echo "Model:$model Trials:$dataset compute_score_metrics error" &
     done
     wait
-    python dguard/bin/compute_score_metrics_merge.py --total=1 --tiny_save_dir=$tiny_save_dir --rank=0 --enrol_data result/$exp_name/$model/$dataset/$length/embeddings --test_data result/$exp_name/$model/$dataset/$length/embeddings \
+    python ${DGUARD_ROOT}/bin/compute_score_metrics_merge.py --total=1 --tiny_save_dir=$tiny_save_dir --rank=0 --enrol_data result/$exp_name/$model/$dataset/$length/embeddings --test_data result/$exp_name/$model/$dataset/$length/embeddings \
         --scores_all="result/$exp_name/seed_${seed}.csv" --exp_id="${model},${dataset},${length}" --scores_dir result/$exp_name/$model/$dataset/$length/scores --trials $trial_path || echo echo "Model:$model Trials:$dataset compute_score_metrics error" &
 
     echo echo "Model:$model Trials:$trial Lenght:$length done!!"
