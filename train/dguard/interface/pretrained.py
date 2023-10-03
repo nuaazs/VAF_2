@@ -33,114 +33,69 @@ warnings.filterwarnings("ignore")
 #TODO: upload to remote server
 model_info ={
     'dfresnet_233':{
-        "config": "/VAF/train/egs/voxceleb/sv-dfresnet/conf/dfresnet233.yaml",
-        "ckpt": '/VAF/train/egs/voxceleb/sv-dfresnet/exp/dfresnet233/models/CKPT-EPOCH-76-00/embedding_model.ckpt',
         'embedding_size': '512',
         'sample_rate': '16000'
     },
     'eres2net':{
-        "config": "/VAF/train/egs/voxceleb/sv-eres2net/conf/eres2net.yaml",
-        "ckpt": '/VAF/train/egs/voxceleb/sv-eres2net/exp/eres2net/models/eres2net_voxceleb.ckpt',
         'embedding_size': '192',
         'sample_rate': '16000'
     },
     'campp':{
-        "config": "/VAF/train/egs/voxceleb/sv-cam++/conf/cam++.yaml",
-        "ckpt": '/VAF/train/egs/voxceleb/sv-cam++/exp/campp/models/campp_voxceleb.bin',
         'embedding_size': '512',
         'sample_rate': '16000'
     },
     'ecapatdnn_1024':{
-        "config": "/VAF/train/egs/voxceleb/sv-ecapatdnn/conf/ecapatdnn1024.yaml",
-        "ckpt": '/VAF/train/egs/voxceleb/sv-ecapatdnn/exp/models/ecapatdnn_voxceleb.bin',
         'embedding_size': '192',
         'sample_rate': '16000'
     },
     'mfa_conformer':{
-        "config": "/VAF/train/egs/voxceleb/sv-conformer/conf/conformer.yaml",
-        "ckpt": '/VAF/train/egs/voxceleb/sv-conformer/exp/conformer/models/CKPT-EPOCH-157-00/embedding_model.ckpt',
         'embedding_size': '512',
         'sample_rate': '16000'
     },
     'repvgg':{
-        "config": "/VAF/train/egs/voxceleb/sv-repvgg/conf/repvgg.yaml",
-        "ckpt": '/VAF/train/egs/voxceleb/sv-repvgg/exp/repvgg/models/CKPT-EPOCH-142-00/embedding_model.ckpt',
         'embedding_size': '512',
         'sample_rate': '16000'
     },
     'resnet34_lm':{
-        "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet34_LM.yaml",
-        "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet34_LM/voxceleb_resnet34_LM.pt',
         'embedding_size': '256',
         'sample_rate': '16000'
     },
     'resnet152_lm':{
-        "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet152_LM.yaml",
-        "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet152_LM/voxceleb_resnet152_LM.pt',
         'embedding_size': '256',
         'sample_rate': '16000'
     },
     'resnet101_lm':{
-        "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet101_LM.yaml",
-        "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet101_LM/voxceleb_resnet101_LM.pt',
         'embedding_size': '256',
         'sample_rate': '16000'
     },
-    'resnet101_cjsd_lm':{
-        "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet101_cjsd_LM.yaml",
-        "ckpt": '/home/zhaosheng/wespeaker/examples/changjiang/v1/exp/ResNet101-TSTP-emb256-fbank80-num_frms200-aug0.6-spTrue-saFalse-ArcMargin-SGD-epoch200-LM/models/avg_model.pt',
+    'resnet101_cjsd':{
         'embedding_size': '256',
         'sample_rate': '16000'
     },
     'resnet221_cjsd_lm':{
-        "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet221_cjsd_LM.yaml",
-        "ckpt": "/home/zhaosheng/wespeaker/examples/changjiang/v1/exp/ResNet221-TSTP-emb256-fbank80-num_frms200-aug0.6-spTrue-saFalse-ArcMargin-SGD-epoch300-LM/models/avg_model.pt",
         'embedding_size': '256',
         'sample_rate': '16000'
     },
     'resnet221_lm':{
-        "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet221_LM.yaml",
-        "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet221_LM/voxceleb_resnet221_LM/voxceleb_resnet221_LM.pt',
+        'embedding_size': '256',
+        'sample_rate': '16000'
+    },
+    'resnet293_cjsd':{
+        'embedding_size': '256',
+        'sample_rate': '16000'
+    },
+    'resnet293_cjsd_lm':{
         'embedding_size': '256',
         'sample_rate': '16000'
     },
     'resnet293_lm':{
-        "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet293_LM.yaml",
-        "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet293_LM/voxceleb_resnet293_LM/voxceleb_resnet293_LM.pt',
         'embedding_size': '256',
         'sample_rate': '16000'
     },
     'campp_lm':{
-        "config": "/VAF/train/pretrained_models/wespeaker/voxceleb_CAM++_LM/voxceleb_CAM++_LM/config.yaml",
-        "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_CAM++_LM/voxceleb_CAM++_LM/avg_model.pt',
         'embedding_size': '256',
         'sample_rate': '16000'
     },
-
-    # 'resnet34':{
-    #     "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet34.yaml",
-    #     "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet34/voxceleb_resnet34.pt',
-    #     'embedding_size': '256',
-    #     'sample_rate': '16000'
-    # },
-    # 'resnet152':{
-    #     "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet152.yaml",
-    #     "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet152/voxceleb_resnet152.pt',
-    #     'embedding_size': '256',
-    #     'sample_rate': '16000'
-    # },
-    # 'resnet221':{
-    #     "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet221.yaml",
-    #     "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet221/voxceleb_resnet221/voxceleb_resnet221.pt',
-    #     'embedding_size': '256',
-    #     'sample_rate': '16000'
-    # },
-    # 'resnet293':{
-    #     "config": "/VAF/train/egs/voxceleb/sv-resnet/conf/resnet293.yaml",
-    #     "ckpt": '/VAF/train/pretrained_models/wespeaker/voxceleb_resnet293/voxceleb_resnet293/voxceleb_resnet293.pt',
-    #     'embedding_size': '256',
-    #     'sample_rate': '16000'
-    # },
 }
 
 ALL_MODELS = list(model_info.keys())
@@ -163,11 +118,21 @@ def download_or_load(url):
 
 def load_by_name(model_name,device='cuda:0',strict=True):
     if model_name in model_info:
-        if "_lm" in model_name:
+        if "lm" in model_name or "cjsd" in model_name:
             strict=False
-        ckpt = download_or_load(model_info[model_name]['ckpt'])
-        config = yaml_config_loader(download_or_load(model_info[model_name]['config']))
-        config = Config(config)
+        root_path=model_info.get("root_path","dguard/files")
+        pt_url=model_info.get("pt_url",None)
+        yaml_url=model_info.get("yaml_url",None)
+        if pt_url:
+            ckpt = download_or_load(pt_url)
+        else:
+            ckpt = os.path.join(root_path,"pt",model_name+".pt")
+        if yaml_url:
+            config = yaml_config_loader(yaml_url)
+        else:
+            config = os.path.join(root_path,"yaml",model_name+".yaml")
+        config = config.replace("_lm.yaml",".yaml")
+        config = Config(yaml_config_loader(config))
         embedding_model = build('embedding_model', config)
         embedding_model.load_state_dict(torch.load(ckpt, map_location='cpu'), strict=strict)
         embedding_model.eval()
@@ -347,6 +312,21 @@ class PretrainedModel:
 
 # useage
 if DEV:
+    for model_name in ALL_MODELS:
+        print(f"Model name: {model_name}")
+        infer = PretrainedModel(model_name,mode="extract")
+        result = infer.inference(['/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav','/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00002.wav'],cmf=False,segment_length=3*16000)
+        print(f"result len: {len(result)}")
+        print(f"result[0] len: {len(result[0])}")
+        print(f"result[0][0] shape: {result[0][0].shape}")
+        print(f"result[1][0] shape: {result[1][0].shape}")
+        emb0 = result[0][0]
+        emb1 = result[1][0]
+        print(f"="*50)
+        cos_score = infer.calculate_cosine_distance(emb0,emb1)
+        print(f"cos_score: {cos_score}")
+        print(f"="*50)
+    """
     # infer = PretrainedModel('resnet293_lm',mode="compare")
     # cos_score,factor,alpha = infer.inference(['/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav','/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00002.wav'],cmf=True,segment_length=3*16000)
     # print(f"cos_score: {cos_score}, factor: {factor}")
@@ -455,3 +435,4 @@ if DEV:
         final_score = cos_score+alpha*(cmf_factor-cos_score)
         print(f"final_score: {final_score}")
         print(f"="*50)
+    """
