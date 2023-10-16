@@ -75,7 +75,7 @@ def compute_pmiss_pfa_rbst(scores, labels, weights=None):
     fpr = 1 - np.cumsum(imp_wghts) / np.sum(imp_wghts)
     return fnr, fpr
 
-def compute_tn_fn_tp_fp(scores, labels, th_start=0.05,th_end=1.0,th_step=0.05):
+def compute_tn_fn_tp_fp(scores, labels, th_start=0.05,th_end=1.0,th_step=0.01,min_recall=-1,min_precision=-1):
     result = []
     for th in np.arange(th_start,th_end,th_step):
         tp = np.sum((scores>=th) & (labels==1))

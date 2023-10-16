@@ -1,10 +1,10 @@
 #!/bin/bash
-exp_name="1004_male_female"
-models="resnet221_cjsd_lm resnet293_cjsd_lm"
-datasets="male female"
+exp_name="tmp_test"
+models="resnet101_cjsd"
+datasets="cti_v1"
 overwrite=true
-gpus="7" # 1 2 3 4 5 6 7
-nj=1
+gpus="0 1 2 3 4 5 6 7" #
+nj=8
 master_port=45688
 seeds="123 456 789"
 lengths="3 4 5 6"
@@ -12,3 +12,6 @@ start_from=0
 cpu_nj=64
 stage=0
 stop_stage=3
+# min precision and min_recall is used to choose the best threshold for different models in different datasets
+min_precision=90
+min_recall=-1

@@ -93,7 +93,23 @@ model_info ={
         'sample_rate': '16000'
     },
     'campp_lm':{
-        'embedding_size': '256',
+        'embedding_size': '512',
+        'sample_rate': '16000'
+    },
+    'campp_cjsd':{
+        'embedding_size': '512',
+        'sample_rate': '16000'
+    },
+    'campp_cjsd_lm':{
+        'embedding_size': '512',
+        'sample_rate': '16000'
+    },
+    'campp_200k':{
+        'embedding_size': '192',
+        'sample_rate': '16000'
+    },
+    'eres2net_200k':{
+        'embedding_size': '192',
         'sample_rate': '16000'
     },
 }
@@ -211,7 +227,7 @@ def inference_list(model_name,wav_path_list,device='cpu',segment_length=3*16000,
     return result
 
 class PretrainedModel:
-    def __init__(self,model_name,device='cpu',strict=True,mode="extract"):
+    def __init__(self,model_name,device='cpu',strict=False,mode="extract"):
         # mode: compare or extract
         self.model_name = model_name
         self.device = device
@@ -312,7 +328,7 @@ class PretrainedModel:
 
 # useage
 if DEV:
-    for model_name in ALL_MODELS:
+    for model_name in ["eres2net"]: # ALL_MODELS: # ["campp","campp_cjsd","campp_200k"]:
         print(f"Model name: {model_name}")
         infer = PretrainedModel(model_name,mode="extract")
         result = infer.inference(['/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00001.wav','/VAF/train/data/raw_data/voxceleb1/test/wav/id10270/5sJomL_D0_g/00002.wav'],cmf=False,segment_length=3*16000)

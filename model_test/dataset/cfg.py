@@ -1,0 +1,1 @@
+train_wav_scp="./train_wav.scp"

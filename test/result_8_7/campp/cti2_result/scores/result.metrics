@@ -1,4 +1,0 @@
-Results of cti2.trial is:
-EER = 10.4667
-minDCF (p_target:0.01 c_miss:1 c_fa:1) = 0.5133
-minDCF_noc (p_target:5e-06 c_miss:1 c_fa:5) = 0.5400

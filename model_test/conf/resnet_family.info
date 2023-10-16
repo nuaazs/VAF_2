@@ -1,0 +1,14 @@
+#!/bin/bash
+exp_name="test_fusion"
+models="resnet152_lm_and_campp_cjsd resnet152_lm"
+datasets="cjsdv2pro cjsd300 cti_v1"
+overwrite=true
+gpus="0 1 2 3 4 5 6 7" # 1 2 3 4 5 6 7
+nj=8
+master_port=45688
+seeds="123 456 789"
+lengths="3 4 5 6 7 8"
+start_from=0
+cpu_nj=64
+stage=0
+stop_stage=3
