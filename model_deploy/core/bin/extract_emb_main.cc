@@ -2,6 +2,9 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <ctime>
+#include <chrono>
+#include <cstdio>
 
 #include "frontend/wav.h"
 #include "utils/utils.h"
@@ -20,6 +23,77 @@ DEFINE_int32(SamplesPerChunk, 32000, "samples of one chunk");
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   google::InitGoogleLogging(argv[0]);
+
+  // mac地址核验
+
+  FILE* fp;
+  char buf[100];
+
+  // 调用系统指令获取 MAC 地址
+  fp = popen("ifconfig", "r");
+
+  // 读取系统返回的信息，查找 MAC 地址字段
+  while (fgets(buf, sizeof(buf), fp)) {
+      if (strstr(buf, "ether") != NULL) {
+          // 提取 MAC 地址
+          char* mac = strtok(buf, " ");
+          mac = strtok(NULL, " ");
+          // std::cout << "MAC 地址为：" << mac << std::endl;
+
+          // 比较 MAC 地址是否匹配
+          if (strcmp(mac, "02:42:e1:fc:9e:e5") == 0) {
+              std::cout << "授权信息验证成功！" << std::endl;
+          } else {
+              std::cout << "授权信息验证失败！" << std::endl;
+              return 0;
+          }
+
+          break;
+      }
+  }
+
+  pclose(fp);
+
+
+
+  // 获取当前系统时间
+  std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+  std::tm* currentTime = std::localtime(&now);
+
+  // 获取当前年、月、日
+  int year = currentTime->tm_year + 1900;
+  int month = currentTime->tm_mon + 1;
+  int day = currentTime->tm_mday;
+
+  // 指定起始和结束日期范围
+  int startYear = 2023;
+  int startMonth = 10;
+  int startDay = 1;
+  int endYear = 2023;
+  int endMonth = 10;
+  int endDay = 30;
+
+  // 检查当前时间是否在指定的日期范围内
+  if (year > startYear || (year == startYear && month > startMonth) ||
+      (year == startYear && month == startMonth && day >= startDay)) {
+      if (year < endYear || (year == endYear && month < endMonth) ||
+          (year == endYear && month == endMonth && day <= endDay)) {
+          // 在指定日期范围内，执行程序逻辑
+          std::cout << "当前时间在有效日期范围内，剩余有效时间: " << endYear - year << "年"
+                    << endMonth - month << "月" << endDay - day << "日" << std::endl;
+      } else {
+          // 不在指定日期范围内
+          std::cout << "当前时间不在有效日期范围内。" << std::endl;
+          // 退出程序
+          return 0;
+      }
+  } else {
+      // 不在指定日期范围内
+      std::cout << "当前时间不在有效日期范围内。" << std::endl;
+      // 退出程序
+      return 0;
+  }
+
 
   // init model
   LOG(INFO) << "Init model ...";

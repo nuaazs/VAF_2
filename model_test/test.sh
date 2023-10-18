@@ -11,12 +11,14 @@ set -e
 . ./path.sh || exit 1
 . utils/parse_options.sh || exit 1
 
-# if exp_name is not set, use gum to get a name
-if [ -z "$exp_name" ]; then
-    todaystr=$(date "+%Y%m%d")
-    timestr=$(date "+%H%M%S")
-    exp_name=$(gum input --placeholder "plz input the EXP name" --value "$todaystr_timestr")
-fi
+overwrite=false
+master_port=45688
+seeds="123 456 789"
+start_from=0
+cpu_nj=64
+stage=0
+stop_stage=3
+
 
 # Parse arguments from command line
 while getopts ":c:" opt; do
@@ -35,12 +37,56 @@ fi
 # Load all parameters in <config_file>
 source $config_file
 
+# if exp_name is not set, use gum to get a name
+if [ -z "$exp_name" ]; then
+    todaystr=$(date "+%Y%m%d")
+    timestr=$(date "+%H%M%S")
+    exp_name=$(gum input --placeholder "plz input the EXP name" --value "$todaystr_timestr")
+fi
+
+# if models is not set, use gum to get models
+if [ -z "$models" ]; then
+    models=$(cat ./dguard/interface/model.list | gum choose --height 15 --limit 5 | sed ':label;N;s/\n/ /g' | sed ':label;N;s/\n/ /g')
+    # change models to list
+    # models=$(echo $models | tr -d '\r\t\n')
+    echo "Models: $models"
+fi
+
+# if datasets is not set, use gum to get models
+if [ -z "$datasets" ]; then
+    datasets=$(cat ./scp/testset.list | gum choose --height 15 --limit 5 | sed ':label;N;s/\n/ /g' | sed ':label;N;s/\n/ /g')
+    # change datasets to list
+    # datasets=$(echo $datasets | tr -d '\r\t\n')
+    echo "Datasets: $datasets"
+fi
+
+if [ -z "$lengths" ]; then
+    lengths=$(gum choose --height 15 --limit 5 {3..12} | sed ':label;N;s/\n/ /g' | sed ':label;N;s/\n/ /g')
+    # change datasets to list
+    # datasets=$(echo $datasets | tr -d '\r\t\n')
+    echo "Lengths: $lengths"
+fi
+
+if [ -z "$gpus" ]; then
+    # GET available gpus
+    all_gpu_num=$(nvidia-smi -L | wc -l)
+    
+    echo "All GPU num: $all_gpu_num"
+    gpus=$(gum choose --height 15 --limit 5 $(seq 0 $[$all_gpu_num-1]) | sed ':label;N;s/\n/ /g' | sed ':label;N;s/\n/ /g')
+    # nj = len(gpus)
+    nj=$(echo $gpus | wc -w)
+    echo "GPUs: $gpus"
+    echo "NJ: $nj"
+fi
+
 echo "Read config file $config_file"
 echo "EXP Name: $exp_name"
 
 # if result/$exp_name already exists, ask if continue,input y/n/Y/N/yes/no/YES/NO
 if [ -d result/$exp_name ]; then
-    read -p "result/$exp_name already exists, do you want to continue? [y/n/r]" ynr
+    # read -p "result/$exp_name already exists, do you want to continue? [y/n/r]" ynr
+    echo "result/$exp_name already exists, do you want to continue? [y/n/r]"
+    ynr=$(gum choose "Yes" "No" "Remove")
     case $ynr in
         [Yy]* ) echo "continue";;
         [Rr]* ) echo "Remove old folder" && gum confirm "Remove result/$exp_name ?" && rm -rf result/$exp_name/*;;
