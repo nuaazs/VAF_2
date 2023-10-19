@@ -174,16 +174,16 @@ def update_last_id(last_id):
 
 
 def main():
-    wav_files = glob.glob("/datasets/changzhou/*.wav")
-    # wav_files = glob.glob("./test_dataset/*.wav")
-    logger.info(f"Total wav files: {len(wav_files)}")
-    wav_files = sorted(wav_files)
-    for i in tqdm(wav_files):
-        record_num = os.path.basename(i).split("-")[-1].split('.')[0]  # 本地音频文件名
-        # record_num = os.path.basename(i).split(".")[0]
-        if int(record_num) < int(last_id):
-            continue
-        perprocess(i)
+    # wav_files = glob.glob("/datasets/changzhou/*.wav")
+    # # wav_files = glob.glob("./test_dataset/*.wav")
+    # logger.info(f"Total wav files: {len(wav_files)}")
+    # wav_files = sorted(wav_files)
+    # for i in tqdm(wav_files):
+    #     record_num = os.path.basename(i).split("-")[-1].split('.')[0]  # 本地音频文件名
+    #     # record_num = os.path.basename(i).split(".")[0]
+    #     if int(record_num) < int(last_id):
+    #         continue
+    #     perprocess(i)
 
     with open(f"{need_cluster_records_path}", "r+") as f:
         need_cluster_records = f.readlines()
@@ -195,9 +195,9 @@ def main():
 
     cluster_pipleline(need_cluster_records_li)
 
-    new_last_id = os.path.basename(wav_files[-1]).split(".")[0]
-    update_last_id(new_last_id)
-    logger.info(f"New last id is: {new_last_id}")
+    # new_last_id = os.path.basename(wav_files[-1]).split(".")[0]
+    # update_last_id(new_last_id)
+    # logger.info(f"New last id is: {new_last_id}")
 
 
 if __name__ == "__main__":
@@ -205,8 +205,8 @@ if __name__ == "__main__":
 
     # 存储pipeline后需要聚类的音频信息文件
     need_cluster_records_path = "output/need_cluster_records.txt"
-    if os.path.exists(need_cluster_records_path):
-        os.remove(need_cluster_records_path)
+    # if os.path.exists(need_cluster_records_path):
+    #     os.remove(need_cluster_records_path)
 
     need_cluster_records = []
     last_id = get_last_id()

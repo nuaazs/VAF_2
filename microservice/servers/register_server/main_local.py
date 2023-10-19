@@ -48,7 +48,7 @@ def send_request(url, method='POST', files=None, data=None, json=None, headers=N
         return None
 
 
-def add_speaker(spkid):
+def add_speaker(db_info):
     """
     录入黑库表
     """
@@ -62,10 +62,15 @@ def add_speaker(spkid):
     )
     cursor = conn.cursor()
     try:
-        query_sql = f"insert into black_speaker_info (record_id, valid_length,file_url,preprocessed_file_url,record_month,register_time) \
-                    select record_id, wav_duration, file_url, selected_url,record_month, now() \
-                    from check_for_speaker_diraization where record_id = %s;"
-        cursor.execute(query_sql, (spkid))
+        spkid = db_info.get("spkid")
+        valid_length = db_info.get("valid_length")
+        raw_url = db_info.get("raw_url")
+        selected_url = db_info.get("selected_url")
+        asr_text = db_info.get("asr_text")
+
+        query_sql = f"insert into black_speaker_info (record_id, valid_length,file_url,preprocessed_file_url,record_month,asr_text,register_time) VALUES (%s, %s, %s,%s,%s,%s,now())"
+        cursor.execute(query_sql, (spkid, valid_length, raw_url, selected_url, record_month, asr_text))
+
         conn.commit()
         return True
     except Exception as e:
@@ -144,15 +149,25 @@ def compare_handler(model_type=None, embedding=None, black_limit=0.78, top_num=1
 
 def get_register_records_from_file():
     """
-    从人工审核的文件中获取需要注册的音频record_id
+    从人工审核后的文件中读取需要注册的record id
+    :return:
     """
-    with open("register_records.csv", "r") as f:
-        lines = f.readlines()
+    after_check_file = "after_check_text_result_6040.csv" # 人工审核后的文件
     register_records = []
-    for i in lines:
-        i = i.strip().split(",")
-        if i[4] in [1, 2] and i[5] == "":
-            register_records.append(i[0])
+    with open(after_check_file, "r", encoding="GBK") as f:
+        spkids = f.readlines()
+    for i in spkids[1:]:
+        i = i.split(",")
+        if i[-3] == '1':
+            info = {}
+            info['record_id'] = i[1]
+            info['valid_length'] = i[2]
+            info['file_url'] = i[3]
+            info['selected_url'] = i[4]
+            info['asr_text'] = i[-7]
+            register_records.append(info)
+    # print(register_records)
+    print(len(register_records))
     return register_records
 
 
@@ -173,6 +188,9 @@ def main():
             file_url = file['file_url']
             spkid = file['record_id']
             selected_url = file['selected_url']
+            valid_length = file['valid_length']
+            asr_text = file['asr_text']
+
             file_path = os.path.join(save_path, os.path.basename(file_url))
             selected_file_path = os.path.join(save_path, os.path.basename(selected_url))
             wget.download(file_url, file_path)
@@ -203,9 +221,9 @@ def main():
                 db_info['raw_url'] = raw_url
                 db_info['selected_url'] = selected_url
                 db_info['record_month'] = record_month
-                db_info['asr_text'] = text
-                db_info['record_type'] = record_type
-                if add_speaker(spkid):
+                db_info['asr_text'] = asr_text
+                # db_info['record_type'] = record_type
+                if add_speaker(db_info):
                     to_database(embedding=torch.tensor(emb_new), spkid=spkid, use_model_type=model_type)
                     logger.info(f"Add speaker success. spkid:{spkid}")
             else:

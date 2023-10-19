@@ -11,40 +11,39 @@ from dguard.interface.pretrained import load_by_name, ALL_MODELS
 
 app = Flask(__name__)
 
-ENCODE_MODEL_LIST = ["eres2net"]
-model_name = "eres2net"
-device = 'cuda:0'
-model, feature_extractor, sample_rate = load_by_name(model_name, device)
-model.eval()
-model.to(device)
+model_list = {}
+for model_type in cfg.ENCODE_MODEL_LIST:
+    model_name = model_type
+    device = cfg.DEVICE
+    model, feature_extractor, sample_rate = load_by_name(model_name, device)
+    model.eval()
+    model.to(device)
+    model_list[model_type] = model
 
 
-def encode_files(wav_files, raw_file_list, start, end):
+def encode_files(wav_files, raw_file_list, start=0, end=999, need_list=False):
     file_emb = {}
-    message = ""
-    for model_type in ENCODE_MODEL_LIST:
+    for model_type in cfg.ENCODE_MODEL_LIST:
+        model = model_list[model_type]
         file_emb[model_type] = {}
         file_emb[model_type]["embedding"] = {}
-        file_emb[model_type]["length"] = {}
 
-        i = 0
         for _index, wav_file in enumerate(wav_files):
             _data, sr = torchaudio.load(wav_file)
             assert sr == sample_rate, f"File {wav_file} <{raw_file_list[_index]}>  sr is {sr}, not {sample_rate}."
             _data = _data.reshape(1, -1)
-            _data = _data[:, start*sr:end*sr]
-            if _data.shape[1] < sample_rate * 0.1:
-                message += f"File {wav_file} <{raw_file_list[_index]}> is too short, only {_data.shape[1]}.\n"
+            _data = _data[:, int(start*sr):int(end*sr)]
             feat = feature_extractor(_data)
             feat = feat.unsqueeze(0)
             feat = feat.to(device)
             with torch.no_grad():
                 embeddings = model(feat)[-1].detach().cpu().numpy()
-            embeddings = embeddings.astype(np.float32).reshape(-1).tolist()
-            file_emb[model_type]["embedding"][raw_file_list[_index]] = embeddings
-            file_emb[model_type]["length"][raw_file_list[_index]] = _data.shape[1] / sample_rate
-            i += 1
-    return file_emb, message
+            embeddings = embeddings.astype(np.float32).reshape(-1)
+            if need_list:
+                file_emb[model_type]["embedding"][raw_file_list[_index]] = embeddings.tolist()
+            else:
+                file_emb[model_type]["embedding"][raw_file_list[_index]] = embeddings
+    return file_emb
 
 
 @app.route('/encode', methods=['POST'])
@@ -88,4 +87,4 @@ def main():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5001)
+    app.run(host='0.0.0.0', port=7001)

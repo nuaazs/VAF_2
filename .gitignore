@@ -17,7 +17,7 @@ microservice/**/*.ckpt
 microservice/**/*.wav
 
 **/**/*.scp
-
+*.pt
 src/nn/*
 src/.model.pt
 deploy/*

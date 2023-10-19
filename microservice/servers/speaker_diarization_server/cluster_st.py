@@ -162,20 +162,20 @@ def cluster_pipleline(need_cluster_records):
     话术过滤+特征提取+聚类
     """
     # 话术过滤
-    # need_cluster_records = check_text_handler(need_cluster_records)
+    need_cluster_records = check_text_handler(need_cluster_records)
     # 编码
     read_data, after_check_text_records = encode_handler(need_cluster_records)
     # 聚类
     need_del_records = cluster_handler(read_data, 0.82)
     # 剔除重复数据
-    result_records = [x for x in need_cluster_records if x not in need_del_records]
+    result_records = [x for x in need_cluster_records if x['spkid'] not in need_del_records]
     logger.info(f"Need check len:{len(result_records)}")
 
     date = datetime.datetime.now().strftime("%Y-%m-%d")
     csv_file = f"output/check_result_{date}.csv"
     with open(csv_file, 'w+', newline='') as csvfile:
         for i in result_records:
-            insert_to_db(i)  # backup to db
+            # insert_to_db(i)  # backup to db
             fieldnames = i.keys()
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             if csvfile.tell() == 0:
@@ -195,7 +195,7 @@ def local_test():
         need_cluster_records.append(i)
 
     # 话术过滤
-    # need_cluster_records = check_text_handler(need_cluster_records)
+    need_cluster_records = check_text_handler(need_cluster_records)
     # #编码
     # read_data, after_check_text_records = encode_handler(need_cluster_records)
 
@@ -221,7 +221,7 @@ def local_test():
     csv_file = f"output/check_result_{date}.csv"
     with open(csv_file, 'w+', newline='') as csvfile:
         for i in result_records:
-            insert_to_db(i)  # backup to db
+            # insert_to_db(i)  # backup to db 
             fieldnames = i.keys()
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             if csvfile.tell() == 0:

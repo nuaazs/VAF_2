@@ -129,7 +129,7 @@ def get_black_info(page_no, page_size):
     result = None
     try:
         page_no = (page_no - 1) * page_size
-        query_sql = f"select * from black_speaker_info_ppt where status=1 order by register_time desc limit {page_no},{page_size} ;"
+        query_sql = f"select * from black_speaker_info_ppt order by register_time desc limit {page_no},{page_size} ;"
         cursor.execute(query_sql)
         result = cursor.fetchall()
         query_sql = f"select count(*) from black_speaker_info_ppt;"
