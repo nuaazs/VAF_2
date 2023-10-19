@@ -88,8 +88,7 @@ def search_pipeline(request, filetype):
 
      # step2 do lang classify
     if NEED_LANG_CHECK:
-        # TODO: to do test
-        data = {"spkid": spkid, "filelist": file_path}
+        data = {"spkid": spkid, "filelist": "local://"+ file_path}
         response = send_request(cfg.LANG_URL, data=data)
         if response and response['code'] == 200:
             pass_list = response['pass_list']
@@ -113,19 +112,18 @@ def search_pipeline(request, filetype):
             shutil.rmtree(spkid_folder)
         return {"code": 200, "spkid": spkid, "message": "VAD length is less than {}s. vad_length:{}".format(cfg.VAD_MIN_LENGTH, vad_length)}
     # cut 10s
-    extract_audio_segment(vad_file_path, vad_file_path, 0, 10)
+    extract_audio_segment(vad_file_path, vad_file_path, 0, cfg.VAD_MIN_LENGTH)
 
     # step4 do cluster
     if NEED_CLUSTER:
-        # TODO: to do test
         # 截取音频片段
         output_file_li = []
         d = {}
         for idx, i in enumerate(time_list):
             output_file = f"{spkid_folder}/{spkid}_{idx}.wav"  # 截取后的音频片段保存路径
-            extract_audio_segment(file_path, output_file, start_time=i[0]/1000, end_time=i[1]/1000)
+            extract_audio_segment(file_path, output_file, start_time=i[0], end_time=i[1])
             output_file_li.append(output_file)
-            d[output_file] = (i[0]/1000, i[1]/1000)
+            d[output_file] = (i[0], i[1])
 
         wav_files = ["local://"+i for i in output_file_li]
         data = {"spkid": spkid, "filelist": ",".join(wav_files)}
@@ -133,7 +131,7 @@ def search_pipeline(request, filetype):
         if response and response['code'] == 200:
             pass_list = response['pass_list']
             url_list = response['file_url_list']
-            mandarin_wavs = [i for i in url_list if pass_list[url_list.index(i)] == 1]
+            mandarin_wavs = [i.replace("local://","") for i in url_list if pass_list[url_list.index(i)] == 1]
         else:
             logger.error(f"Lang_classify failed. spkid:{spkid}.response:{response}")
             if os.path.exists(spkid_folder):
@@ -141,10 +139,10 @@ def search_pipeline(request, filetype):
             return {"code": 500, "spkid": spkid, "message": "Cluster Lang_classify failed. response:{}".format(response)}
 
         # 提取特征
-        file_emb = encode_files(spkid, mandarin_wavs, need_list=True)
+        file_emb = encode_files(spkid, mandarin_wavs)
 
         # 聚类
-        file_emb = file_emb[cfg.USE_MODEL_TYPE]
+        file_emb = file_emb[cfg.USE_MODEL_TYPE.replace("_", "")]
         data = {
             "emb_dict": file_emb["embedding"],
             "cluster_line": 3,
@@ -152,20 +150,24 @@ def search_pipeline(request, filetype):
             "cluster_type": "spectral",  # spectral or umap_hdbscan
             "min_cluster_size": 1,
         }
-        response = send_request(cfg.CLUSTER_URL, json=data)
+        try:
+            response = send_request(cfg.CLUSTER_URL, json=data)
+        except Exception as e:
+            logger.error(f"Cluster failed. spkid:{spkid}.response:{e}")
+            return {"code": 500, "spkid": spkid, "message": "Cluster failed. response:{}".format(e)}
         items, keys_with_max_value = find_items_with_highest_value(response['labels'])
         max_score = response['scores'][keys_with_max_value]['max']
         min_score = response['scores'][keys_with_max_value]['min']
 
         if min_score < cfg.CLUSTER_MIN_SCORE_THRESHOLD:
-            logger.info(f"After cluster {min_score}  < {cfg.CLUSTER_MIN_SCORE_THRESHOLD}. spkid:{spkid}.response:{response['scores']}")
-            return None
+            logger.info(f"After cluster min_score:{min_score} < {cfg.CLUSTER_MIN_SCORE_THRESHOLD}. spkid:{spkid}.response:{response}")
+            return {"code": 200, "spkid": spkid, "message": f"After cluster min_score:{min_score} < {cfg.CLUSTER_MIN_SCORE_THRESHOLD}. spkid:{spkid}.response:{response}"}
         total_duration = 0
         for i in items.keys():
             total_duration += file_emb['length'][i]
-        if total_duration < cfg.MIN_LENGTH_REGISTER:
-            logger.info(f"After cluster total_duration:{total_duration} < {cfg.MIN_LENGTH_REGISTER}s. spkid:{spkid}.response:{response}")
-            return None
+        if total_duration < cfg.VAD_MIN_LENGTH:
+            logger.info(f"After cluster total_duration:{total_duration} < {cfg.VAD_MIN_LENGTH}s. spkid:{spkid}.response:{response}")
+            return {"code": 200, "spkid": spkid, "message": f"After cluster total_duration:{total_duration} < {cfg.VAD_MIN_LENGTH}s. spkid:{spkid}.response:{response}"}
 
         # Resample 16k
         selected_files = sorted(items.keys(), key=lambda x: x.split("/")[-1].replace(".wav", "").split("_")[0])
@@ -174,27 +176,24 @@ def search_pipeline(request, filetype):
             waveform, sample_rate = torchaudio.load(file.replace("local://", ""))
             if sample_rate == 8000:
                 resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
-                resampled_waveform = resampler(waveform)
-                resampled_waveform_li.append(resampled_waveform)
+                waveform = resampler(waveform)
+            resampled_waveform_li.append(waveform)
         audio_data = np.concatenate(resampled_waveform_li, axis=-1)
-        vad_file_path = os.path.join(tmp_folder, f"{spkid}_selected.wav")
+        vad_file_path = os.path.join(spkid_folder, f"{spkid}_selected.wav")
         torchaudio.save(vad_file_path, torch.from_numpy(audio_data), sample_rate=16000)
+        # cut 10s
+        extract_audio_segment(vad_file_path, vad_file_path, 0, cfg.VAD_MIN_LENGTH)
 
     # step5 get embedding
     try:
-        file_emb = encode_files(spkid, [vad_file_path], need_list=True)
+        file_emb = encode_files(spkid, [vad_file_path])
     except Exception as e:
         logger.error(f"Encode failed. spkid:{spkid}.response:{e}")
         return {"code": 500, "spkid": spkid, "message": "Encode failed. response:{}".format(e)}
 
     t1 = time.time()
-    # final_score_list = process_map(calculate_final_score, [(i, value, file_emb, spkid)
-    #                                for i, value in spkid_embedding_dict.items()], max_workers=16, chunksize=1000, desc='calculate_final_score----')
-
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=16)
-    with executor as e:
-        data = [(i, value, file_emb, spkid) for i, value in spkid_embedding_dict.items()]
-        final_score_list = list(e.map(calculate_final_score, data))
+    final_score_list = process_map(calculate_final_score, [(i, value, file_emb, spkid)
+                                   for i, value in spkid_embedding_dict.items()], max_workers=16, chunksize=1000, desc='calculate_final_score----')
 
     final_score_list = sorted(final_score_list, key=lambda x: x[1], reverse=True)
     t2 = time.time()

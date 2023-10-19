@@ -29,7 +29,7 @@ for model_type in cfg.ENCODE_MODEL_LIST:
     model_info[model_type] = model_info_dict
 
 
-def encode_files(spkid, wav_files,  start=0, end=999, need_list=False):
+def encode_files(spkid, wav_files,  start=0, end=999):
     """
     提取特征
     :param spkid: 说话人id
@@ -49,6 +49,7 @@ def encode_files(spkid, wav_files,  start=0, end=999, need_list=False):
 
         file_emb[model_type] = {}
         file_emb[model_type]["embedding"] = {}
+        file_emb[model_type]["length"] = {}
 
         for _index, wav_file in enumerate(wav_files):
             _data, sr = torchaudio.load(wav_file)
@@ -61,8 +62,10 @@ def encode_files(spkid, wav_files,  start=0, end=999, need_list=False):
             with torch.no_grad():
                 embeddings = model(feat)[-1].detach().cpu().numpy()
             embeddings = embeddings.astype(np.float32).reshape(-1)
-            if need_list:
+            if len(wav_files) == 1:
                 file_emb[model_type]["embedding"][spkid] = embeddings.tolist()
+                file_emb[model_type]["length"][spkid] = _data.shape[1]/ sample_rate
             else:
-                file_emb[model_type]["embedding"][spkid] = embeddings
+                file_emb[model_type]["embedding"][wav_file] = embeddings.tolist()
+                file_emb[model_type]["length"][wav_file] = _data.shape[1]/ sample_rate
     return file_emb

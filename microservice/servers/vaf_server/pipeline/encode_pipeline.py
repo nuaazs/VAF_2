@@ -56,7 +56,7 @@ def encode_pipeline(request, filetype):
             return {"code": 200, "spkid": spkid, "message": "VAD length is less than {}s. vad_length:{}".format(VAD_MIN_LENGTH, vad_length)}
         file_path = vad_file_path
     try:
-        file_emb = encode_files(spkid, [file_path], need_list=True)
+        file_emb = encode_files(spkid, [file_path])
     except Exception as e:
         logger.error(f"Encode failed. spkid:{spkid}.response:{e}")
         return {"code": 500, "spkid": spkid, "message": "Encode failed. response:{}".format(e)}

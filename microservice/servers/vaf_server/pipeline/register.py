@@ -86,7 +86,7 @@ def register_pipeline(request, filetype):
 
     # get embedding
     try:
-        file_emb = encode_files(spkid, mandarin_wavs, need_list=True)
+        file_emb = encode_files(spkid, mandarin_wavs)
     except Exception as e:
         logger.error(f"Encode failed. spkid:{spkid}.response:{e}")
         return {"code": 500, "spkid": spkid, "message": "Encode failed. response:{}".format(e)}
