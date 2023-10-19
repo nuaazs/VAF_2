@@ -7,6 +7,7 @@
 @Version :   1.0
 @Desc    :   None
 '''
+from collections import Counter
 import os
 import wget
 from loguru import logger
@@ -79,3 +80,24 @@ def get_joint_wav(spkid, receive_path, wav_list):
     output_name = f'{receive_path}/{spkid}_joint.wav'
     playlist.export(output_name, format='wav')
     return output_name
+
+
+def find_items_with_highest_value(dictionary):
+    value_counts = Counter(dictionary.values())
+    max_count = max(value_counts.values())
+    for key, value in dictionary.items():
+        if value_counts[value] == max_count:
+            keys_with_max_value = value
+    items_with_highest_value = {key: value for key, value in dictionary.items() if value_counts[value] == max_count}
+    return items_with_highest_value, keys_with_max_value
+
+
+def extract_audio_segment(input_file, output_file, start_time, end_time):
+    """
+    截取音频片段
+    """
+    audio = AudioSegment.from_file(input_file)
+    start_ms = start_time * 1000
+    end_ms = end_time * 1000
+    extracted_segment = audio[start_ms:end_ms]
+    extracted_segment.export(output_file, format="wav")

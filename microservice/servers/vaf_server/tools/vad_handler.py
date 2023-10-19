@@ -24,7 +24,7 @@ def energybase_vad(filepath, receive_path, smooth_threshold=0.5, min_duration=2,
     Returns:
         string: file path
         float: after vad voice length
-        list: voice time list
+        list: voice time list (seconds)
 
      ffmpeg: 这是 FFmpeg 命令行工具的执行命令。它用于处理音视频文件。
         -i {filepath}: 这个选项后跟着输入文件的路径。-i 表示输入，{filepath} 应该被替换为实际的音频文件的路径。这是转码操作的源文件。

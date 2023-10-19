@@ -28,9 +28,9 @@ def run_cmd(cmd):
             result = subprocess.run(cmd, shell=True, check=True, capture_output=True)
             success = True
         except subprocess.CalledProcessError as e:
-            logger.error(f"发生了CalledProcessError错误: {str(e)}. message: {result.stdout.decode('utf-8')}")
+            logger.error(f"发生了CalledProcessError错误: {str(e)}. ")
             retries += 1
         except Exception as e:
-            logger.error(f"发生了其他错误: {str(e)}. message: {result.stdout.decode('utf-8')}")
+            logger.error(f"发生了其他错误: {str(e)}. ")
     if not success:
         logger.error(f"达到最大重试次数 {max_retries}，无法执行ffmpeg命令。")

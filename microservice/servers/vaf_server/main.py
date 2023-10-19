@@ -5,7 +5,7 @@
 @Time    :   2023/07/24 10:46:54
 @Author  :   Carry
 @Version :   1.0
-@Desc    :   音频注册单模型接口
+@Desc    :   
 '''
 from flask import Flask, request, jsonify
 from loguru import logger
@@ -13,6 +13,7 @@ import os
 from pipeline.register import register_pipeline
 from pipeline.encode_pipeline import encode_pipeline
 from pipeline.vad_pipeline import vad_pipeline
+from pipeline.search_pipeline import search_pipeline
 import traceback
 
 app = Flask(__name__)
@@ -45,5 +46,11 @@ def vad(filetype):
     return jsonify(data_info_dict)
 
 
+@app.route('/search/<filetype>', methods=['POST'])
+def search(filetype):
+    data_info_dict = search_pipeline(request, filetype)
+    return jsonify(data_info_dict)
+
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8899)
+    app.run(host="0.0.0.0", port=5550)

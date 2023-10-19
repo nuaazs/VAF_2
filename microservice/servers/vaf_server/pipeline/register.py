@@ -33,11 +33,10 @@ def register_pipeline(request, filetype):
     if not spkid:
         logger.error(f"spkid is None.")
         return {"code": 500, "spkid": spkid, "message": "spkid is None."}
-    spkid = str(spkid).strip().replace("_", "")
+    spkid = str(spkid).strip()
 
     record_month = str(request.form.get('record_month', str(datetime.datetime.now().month)))  # 音频文件的月份
     record_type = request.form.get('record_type', "")  # 音频文件的涉诈类型
-    asr_text = request.form.get('asr_text', "")  # 音频文件的asr文本
 
     channel = int(request.form.get('channel', 0))
     spkid_folder = f"{tmp_folder}/{spkid}"
@@ -58,14 +57,14 @@ def register_pipeline(request, filetype):
         return {"code": 500, "spkid": spkid, "message": "filetype is not in ['file', 'url']."}
 
     # do vad
-    vad_file_path, vad_length, _ = energybase_vad(file_path, spkid_folder)
-    logger.info(f"spkid:{spkid}. vad_length:{vad_length}")
-    if vad_length < cfg.VAD_MIN_LENGTH + 1:
+    vad_file_path, vad_length, time_list = energybase_vad(file_path, spkid_folder)
+    logger.info(f"spkid:{spkid}. After VAD vad_length:{vad_length}")
+    if vad_length < cfg.VAD_MIN_LENGTH:
         if os.path.exists(spkid_folder):
             shutil.rmtree(spkid_folder)
-        return {"code": 200, "spkid": spkid, "message": "VAD length is less than {}s. vad_length:{}".format(cfg.VAD_MIN_LENGTH + 1, vad_length)}
-
-    extract_audio_segment(vad_file_path, vad_file_path, 1, 11)  # get 1-11s
+        return {"code": 200, "spkid": spkid, "message": "VAD length is less than {}s. vad_length:{}".format(cfg.VAD_MIN_LENGTH, vad_length)}
+    # cut 10s
+    extract_audio_segment(vad_file_path, vad_file_path, 0, 10)
 
     # do lang classify
     if NEED_LANG:
@@ -105,12 +104,13 @@ def register_pipeline(request, filetype):
             return {"code": 200, "spkid": spkid, "message": "Speaker already exists.", "compare_result": compare_results}
 
     # do asr
+    text = ""
     if NEED_ASR:
         data = {"spkid": spkid, "postprocess": "1"}
         files = [('wav_file', (file_path, open(file_path, 'rb')))]
         response = send_request(cfg.ASR_URL, files=files, data=data)
         if response and response.get('transcription') and response.get('transcription').get('text'):
-            asr_text = response['transcription']["text"]
+            text = response['transcription']["text"]
         else:
             logger.error(f"ASR failed. spkid:{spkid}.message:{response['message']}")
 
@@ -126,12 +126,12 @@ def register_pipeline(request, filetype):
     db_info['raw_url'] = raw_url
     db_info['selected_url'] = selected_url
     db_info['record_month'] = record_month
-    db_info['asr_text'] = asr_text
+    db_info['asr_text'] = text
     db_info['record_type'] = record_type
     if add_speaker(db_info):
         for model_type in cfg.ENCODE_MODEL_LIST:
             emb_new = file_emb[model_type]["embedding"][spkid]
-            inster_redis_db(embedding=emb_new, spkid=spkid, use_model_type=model_type)
+            inster_redis_db(embedding=emb_new, spkid=spkid, use_model_type=model_type.replace("_", ""))
         logger.info(f"Add speaker success. spkid:{spkid}")
         if os.path.exists(spkid_folder):
             shutil.rmtree(spkid_folder)

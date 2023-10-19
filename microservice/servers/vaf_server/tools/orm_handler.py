@@ -90,6 +90,102 @@ def get_embeddings(use_model_type=None):
     return all_embedding
 
 
+def get_embeddings_from_spkid_bak(spkid):
+    """
+    Get embeddings from spkid
+    """
+    r = redis.Redis(
+        host=cfg.REDIS["host"],
+        port=cfg.REDIS["port"],
+        db=cfg.REDIS["register_db"],
+        password=cfg.REDIS["password"],
+    )
+    embeddings = {}
+    for key in r.keys():
+        key = key.decode("utf-8")
+        if "_" not in key:
+            continue
+        spkid_db = key.split("_")[-1]
+        if spkid_db == spkid:
+            embedding = fromRedis(r, key)
+            embeddings[key.replace("_"+spkid_db, '')] = embedding
+
+    return embeddings
+
+
+def get_embeddings_from_spkid(spkid):
+    """
+    Get embeddings from spkid
+    """
+    r = redis.Redis(
+        host=cfg.REDIS["host"],
+        port=cfg.REDIS["port"],
+        db=cfg.REDIS["register_db"],
+        password=cfg.REDIS["password"],
+    )
+    embeddings = {}
+    for key in r.keys():
+        key = key.decode("utf-8")
+        if "_" not in key:
+            continue
+        spkid_db = key.split("_")[-1]
+        if spkid_db == spkid:
+            embedding = fromRedis(r, key)
+            embeddings[key.replace("_"+spkid_db, '')] = embedding
+
+    return embeddings
+
+
+def get_embeddings_from_db():
+    """
+    Get embeddings from db
+    Returns:
+        embeddings = {spkid: {model_type: embedding, ...}, ...}
+    """
+    r = redis.Redis(
+        host=cfg.REDIS["host"],
+        port=cfg.REDIS["port"],
+        db=cfg.REDIS["register_db"],
+        password=cfg.REDIS["password"],
+    )
+    embeddings = {}
+    spkid_emb_dict = {}
+    for key in r.keys():
+        key = key.decode("utf-8")
+        if "_" not in key:
+            continue
+        spkid_db = key.split("_")[-1]
+        if spkid_db not in spkid_emb_dict:
+            emb_dict = {}
+            for i in cfg.ENCODE_MODEL_LIST:
+                i = i.replace("_", "")
+                emb_dict[i] = fromRedis(r, i+"_"+spkid_db)
+            spkid_emb_dict[spkid_db] = emb_dict
+    embeddings = spkid_emb_dict
+    return embeddings
+
+
+def get_spkid():
+    """
+    Get spkid
+    """
+    r = redis.Redis(
+        host=cfg.REDIS["host"],
+        port=cfg.REDIS["port"],
+        db=cfg.REDIS["register_db"],
+        password=cfg.REDIS["password"],
+    )
+    spkids = set()
+    for key in r.keys():
+        key = key.decode("utf-8")
+        if "_" not in key:
+            continue
+        uuid_db = key.split("_")[-1]
+        spkids.add(uuid_db)
+
+    return spkids
+
+
 def inster_redis_db(embedding, spkid, use_model_type, mode="register"):
     """
     将emb存入redis数据库
@@ -104,7 +200,7 @@ def inster_redis_db(embedding, spkid, use_model_type, mode="register"):
     if not use_model_type:
         logger.error(f"No use_model_type. spkid:{spkid}")
         return False
-    
+
     embedding_npy = np.array(embedding, dtype=np.float32)
 
     if mode == "register":
@@ -244,3 +340,39 @@ def compare_handler(model_type=None, embedding=None, black_limit=0.78, top_num=1
             return_results[f"top_{index + 1}"] = f"{results[index][0]:.5f}"
             return_results[f"top_{index + 1}_id"] = str(results[index][1])
     return return_results
+
+
+def add_hit(db_info):
+    """
+    录入hit
+    """
+    conn = pymysql.connect(
+        host=msg_db.get("host"),
+        port=msg_db.get("port"),
+        db=msg_db.get("db"),
+        user=msg_db.get("username"),
+        passwd=msg_db.get("passwd"),
+        cursorclass=pymysql.cursors.DictCursor,
+    )
+    cursor = conn.cursor()
+    try:
+        phone = db_info["spkid"]
+        name = db_info["name"]
+        gender = db_info["gender"]
+        valid_length = db_info["valid_length"]
+        file_url = db_info["file_url"]
+        preprocessed_file_url = db_info["preprocessed_file_url"]
+        message = db_info["message"]
+        hit_score = db_info["hit_score"]
+        hit_spkid = db_info["hit_spkid"]
+
+        table_name = msg_db['hit_table_name']
+        query_sql = f"insert into {table_name} (name,phone,gender,valid_length,file_url,preprocessed_file_url,message,hit_score,hit_spkid,hit_time) \
+                    values(%s,%s,%s,%s,%s,%s,%s,%s,%s,now());"
+        cursor.execute(query_sql, (name, phone, gender, valid_length, file_url, preprocessed_file_url, message, hit_score, hit_spkid))
+        conn.commit()
+    except Exception as e:
+        logger.error(f"Insert to db failed. record_id:{phone}. msg:{e}.")
+        conn.rollback()
+    cursor.close()
+    conn.close()

@@ -25,6 +25,7 @@ for model_type in cfg.ENCODE_MODEL_LIST:
     model_info_dict["sample_rate"] = sample_rate
     model.eval()
     model.to(device)
+    model_type = model_type.replace("_", "")
     model_info[model_type] = model_info_dict
 
 
@@ -40,6 +41,7 @@ def encode_files(spkid, wav_files,  start=0, end=999, need_list=False):
     """
     file_emb = {}
     for model_type in cfg.ENCODE_MODEL_LIST:
+        model_type = model_type.replace("_", "")
         model_info_dict = model_info[model_type]
         model = model_info_dict["model"]
         feature_extractor = model_info_dict["feature_extractor"]
