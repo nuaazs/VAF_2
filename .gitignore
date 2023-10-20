@@ -16,6 +16,13 @@ microservice/**/*.log
 microservice/**/*.ckpt
 microservice/**/*.wav
 
+cfg.py
+config.py
+*.png
+*.jpg
+*.jpeg
+*.json
+
 **/**/*.scp
 *.pt
 src/nn/*

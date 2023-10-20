@@ -9,18 +9,18 @@ ASR_URL = f"{HOST}:5000/transcribe/file"  # ASR
 # 注册模型列表
 ENCODE_MODEL_LIST = ["resnet101_cjsd", "resnet221_cjsd_lm"]
 
-# 去重使用的模型
-USE_MODEL_TYPE = "resnet101_cjsd"    
-
 TMP_FOLDER = "/tmp/dingxiaoyu"
 
 DEVICE = 'cuda:1'
 
-# VAD长度
+# 截取的VAD音频长度
 VAD_MIN_LENGTH = 10
 
 # 命中阈值
 HIT_SCORE_THRESHOLD = 0.8
+
+# 聚类使用的模型
+USE_MODEL_TYPE = "resnet101_cjsd"   
 
 # 聚类阈值
 CLUSTER_MIN_SCORE_THRESHOLD = 0.8

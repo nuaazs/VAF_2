@@ -27,6 +27,10 @@ def internal_server_error(e):
     logger.error(traceback.format_exc())
     return jsonify({"code": 500, "message": "服务器内部错误"})
 
+# 添加一个health check接口
+@app.route("/health", methods=["GET"])
+def health_check():
+    return jsonify({"code": 200, "message": "ok"})
 
 @app.route("/register/<filetype>", methods=["POST"])
 def register(filetype):

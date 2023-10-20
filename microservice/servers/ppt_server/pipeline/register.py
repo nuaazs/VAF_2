@@ -37,7 +37,7 @@ def register_pipeline(request, filetype):
         logger.info(f"phone already exists. phone:{spkid}")
         return {"code": 200, "phone": spkid, "message": "手机号已存在"}
 
-    spkid = str(spkid).strip().replace("_", "")
+    spkid = str(spkid).strip()
     channel = int(request.form.get('channel', 0))
     spkid_folder = f"{tmp_folder}/{spkid}"
     if filetype == "file":

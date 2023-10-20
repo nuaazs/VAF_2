@@ -1,15 +1,8 @@
 #!/bin/bash
+GUNICORN_CONF="gunicorn_config.py"
+APP_MODULE="main:app"
 
-APP_NAME="app"
-PID_FILE="$APP_NAME.pid"
-
-# 检查应用是否在运行
-if [ -f "$PID_FILE" ]; then
-    PID=$(cat $PID_FILE)
-    echo "正在停止应用 $APP_NAME (PID: $PID)"
-    kill -15 $PID  # 发送SIGTERM信号以优雅地停止应用
-    rm $PID_FILE
-    echo "应用 $APP_NAME 已停止"
-else
-    echo "应用 $APP_NAME 未在运行"
-fi
+# 查找并终止 Gunicorn 进程
+echo "Stopping Gunicorn server..."
+pkill -f "gunicorn -c $GUNICORN_CONF $APP_MODULE"
+echo "Gunicorn server is stopped."

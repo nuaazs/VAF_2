@@ -1,18 +1,30 @@
 #!/bin/bash
 
-APP_NAME="app"
-CONFIG_FILE="gunicorn_config.py"
-PID_FILE="$APP_NAME.pid"
+GUNICORN_CONF="gunicorn_config.py"
+APP_MODULE="main:app"
 
-# 检查应用是否已经在运行
-if [ -f "$PID_FILE" ]; then
-    echo "应用 $APP_NAME 已经在运行 (PID: $(cat $PID_FILE))"
-    exit 1
+check_app_availability() {
+    HEALTH_CHECK_URL="http://localhost:5550/health"
+
+    HTTP_STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" $HEALTH_CHECK_URL | tr -d '\n')
+
+    if [ "$HTTP_STATUS_CODE" -eq 200 ]; then
+        echo 0
+    else
+        echo 1
+    fi
+}
+
+# 检查当前目录是否有log文件夹，没有则创建
+if [ ! -d "log" ]; then
+    mkdir log
 fi
-
-# 启动 Gunicorn 应用
-gunicorn -c $CONFIG_FILE $APP_NAME:app -D
-
-# 获取新的应用进程的PID并保存到PID文件
-echo $! > $PID_FILE
-echo "应用 $APP_NAME 已启动 (PID: $(cat $PID_FILE))"
+result=$(check_app_availability)
+if [ "$result" -eq 0 ]; then
+    echo "Gunicorn server is running"
+else
+    echo "Gunicorn server is not running."
+    echo "Starting Gunicorn server..."
+    gunicorn -c $GUNICORN_CONF $APP_MODULE &
+    echo "Gunicorn server is started."
+fi

@@ -28,7 +28,7 @@ def encode_pipeline(request, filetype):
     if not spkid:
         logger.error(f"spkid is None.")
         return {"code": 500, "spkid": spkid, "message": "spkid is None."}
-    spkid = str(spkid).strip().replace("_", "")
+    spkid = str(spkid).strip()
 
     spkid_folder = f"{tmp_folder}/{spkid}"
     if filetype == "file":
