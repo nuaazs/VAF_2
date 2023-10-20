@@ -25,6 +25,7 @@ config.py
 
 **/**/*.scp
 *.pt
+*.pb
 src/nn/*
 src/.model.pt
 deploy/*
