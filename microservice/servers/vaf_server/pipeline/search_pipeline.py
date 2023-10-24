@@ -52,6 +52,9 @@ def calculate_final_score(input_data):
     return [i, final_score]
 
 
+call_time_info = {}
+
+
 def search_pipeline(request, filetype):
     tmp_folder = cfg.TMP_FOLDER
     os.makedirs(tmp_folder, exist_ok=True)
@@ -69,6 +72,7 @@ def search_pipeline(request, filetype):
     NEED_CLUSTER = request.form.get('need_cluster', default=False, type=lambda x: x.lower() == 'true')    # 是否进行聚类
 
     # step1 save and convert audio file
+    t1 = time.time()
     spkid_folder = f"{tmp_folder}/{spkid}"
     if filetype == "file":
         file_data = request.files.get('wav_file')
@@ -85,10 +89,12 @@ def search_pipeline(request, filetype):
     else:
         logger.error(f"filetype is not in ['file', 'url'].")
         return {"code": 500, "spkid": spkid, "message": "filetype is not in ['file', 'url']."}
+    call_time_info['save_and_convert'] = time.time() - t1
 
-     # step2 do lang classify
+    # step2 do lang classify
     if NEED_LANG_CHECK:
-        data = {"spkid": spkid, "filelist": "local://"+ file_path}
+        t1 = time.time()
+        data = {"spkid": spkid, "filelist": "local://" + file_path}
         response = send_request(cfg.LANG_URL, data=data)
         if response and response['code'] == 200:
             pass_list = response['pass_list']
@@ -103,8 +109,10 @@ def search_pipeline(request, filetype):
             if os.path.exists(spkid_folder):
                 shutil.rmtree(spkid_folder)
             return {"code": 500, "spkid": spkid, "message": "Lang_classify failed. response:{}".format(response)}
+        call_time_info['lang_classify'] = time.time() - t1
 
     # step3 do vad
+    t1 = time.time()
     vad_file_path, vad_length, time_list = energybase_vad(file_path, spkid_folder)
     logger.info(f"spkid:{spkid}. After VAD vad_length:{vad_length}")
     if vad_length < cfg.VAD_MIN_LENGTH:
@@ -113,9 +121,11 @@ def search_pipeline(request, filetype):
         return {"code": 200, "spkid": spkid, "message": "VAD length is less than {}s. vad_length:{}".format(cfg.VAD_MIN_LENGTH, vad_length)}
     # cut 10s
     extract_audio_segment(vad_file_path, vad_file_path, 0, cfg.VAD_MIN_LENGTH)
+    call_time_info['vad'] = time.time() - t1
 
     # step4 do cluster
     if NEED_CLUSTER:
+        t1 = time.time()
         # 截取音频片段
         output_file_li = []
         d = {}
@@ -131,7 +141,7 @@ def search_pipeline(request, filetype):
         if response and response['code'] == 200:
             pass_list = response['pass_list']
             url_list = response['file_url_list']
-            mandarin_wavs = [i.replace("local://","") for i in url_list if pass_list[url_list.index(i)] == 1]
+            mandarin_wavs = [i.replace("local://", "") for i in url_list if pass_list[url_list.index(i)] == 1]
         else:
             logger.error(f"Lang_classify failed. spkid:{spkid}.response:{response}")
             if os.path.exists(spkid_folder):
@@ -153,6 +163,8 @@ def search_pipeline(request, filetype):
         try:
             response = send_request(cfg.CLUSTER_URL, json=data)
         except Exception as e:
+            if os.path.exists(spkid_folder):
+                shutil.rmtree(spkid_folder)
             logger.error(f"Cluster failed. spkid:{spkid}.response:{e}")
             return {"code": 500, "spkid": spkid, "message": "Cluster failed. response:{}".format(e)}
         items, keys_with_max_value = find_items_with_highest_value(response['labels'])
@@ -160,12 +172,16 @@ def search_pipeline(request, filetype):
         min_score = response['scores'][keys_with_max_value]['min']
 
         if min_score < cfg.CLUSTER_MIN_SCORE_THRESHOLD:
+            if os.path.exists(spkid_folder):
+                shutil.rmtree(spkid_folder)
             logger.info(f"After cluster min_score:{min_score} < {cfg.CLUSTER_MIN_SCORE_THRESHOLD}. spkid:{spkid}.response:{response}")
             return {"code": 200, "spkid": spkid, "message": f"After cluster min_score:{min_score} < {cfg.CLUSTER_MIN_SCORE_THRESHOLD}. spkid:{spkid}.response:{response}"}
         total_duration = 0
         for i in items.keys():
             total_duration += file_emb['length'][i]
         if total_duration < cfg.VAD_MIN_LENGTH:
+            if os.path.exists(spkid_folder):
+                shutil.rmtree(spkid_folder)
             logger.info(f"After cluster total_duration:{total_duration} < {cfg.VAD_MIN_LENGTH}s. spkid:{spkid}.response:{response}")
             return {"code": 200, "spkid": spkid, "message": f"After cluster total_duration:{total_duration} < {cfg.VAD_MIN_LENGTH}s. spkid:{spkid}.response:{response}"}
 
@@ -183,21 +199,30 @@ def search_pipeline(request, filetype):
         torchaudio.save(vad_file_path, torch.from_numpy(audio_data), sample_rate=16000)
         # cut 10s
         extract_audio_segment(vad_file_path, vad_file_path, 0, cfg.VAD_MIN_LENGTH)
+        call_time_info['cluster'] = time.time() - t1
 
     # step5 get embedding
+    t1 = time.time()
     try:
         file_emb = encode_files(spkid, [vad_file_path])
     except Exception as e:
         logger.error(f"Encode failed. spkid:{spkid}.response:{e}")
+        if os.path.exists(spkid_folder):
+            shutil.rmtree(spkid_folder)
         return {"code": 500, "spkid": spkid, "message": "Encode failed. response:{}".format(e)}
+    call_time_info['encode'] = time.time() - t1
 
     t1 = time.time()
-    final_score_list = process_map(calculate_final_score, [(i, value, file_emb, spkid)
-                                   for i, value in spkid_embedding_dict.items()], max_workers=16, chunksize=1000, desc='calculate_final_score----')
+    datas = [(i, value, file_emb, spkid) for i, value in spkid_embedding_dict.items()]
+
+    # executor = concurrent.futures.ProcessPoolExecutor(max_workers=16)
+    # with executor as e:
+    #     final_score_list = list(e.map(calculate_final_score, datas))
+
+    final_score_list = process_map(calculate_final_score, datas, max_workers=16, chunksize=1000, desc='calculate_final_score----')
 
     final_score_list = sorted(final_score_list, key=lambda x: x[1], reverse=True)
-    t2 = time.time()
-    logger.info(f"Final score time: {t2-t1}")
+    call_time_info['campare'] = time.time() - t1
 
     # get top 10
     final_score_list = final_score_list[:10]
@@ -210,13 +235,17 @@ def search_pipeline(request, filetype):
     if hit_score < cfg.HIT_SCORE_THRESHOLD:
         compare_result = {"is_hit": False, "hit_spkid": hit_spkid, "hit_score": hit_score}
         logger.info(f"spkid:{spkid} is not in black list. score:{hit_score}")
-        return {"code": 200, "compare_result": compare_result, "message": "{} is not in black list".format(spkid)}
+        if os.path.exists(spkid_folder):
+            shutil.rmtree(spkid_folder)
+        return {"code": 200, "compare_result": compare_result, "message": "{} is not in black list".format(spkid), "call_time_info": call_time_info}
 
     compare_result = {"is_hit": True, "hit_spkid": hit_spkid, "hit_score": hit_score, "top_10": final_score_list}
     # OSS
+    t1 = time.time()
     hit_bucket_name = cfg.MINIO['hit_bucket_name']
     raw_url = upload_file(hit_bucket_name, file_path, f"{spkid}/raw_{spkid}.wav")
     selected_url = upload_file(hit_bucket_name, vad_file_path, f"{spkid}/vad_{spkid}.wav")
+    call_time_info['upload_oss'] = time.time() - t1
 
     db_info = {}
     db_info['spkid'] = spkid
@@ -229,4 +258,6 @@ def search_pipeline(request, filetype):
     db_info['hit_score'] = hit_score
     db_info['hit_spkid'] = hit_spkid
     add_hit(db_info)
-    return {"code": 200, "message": "success", "file_url": raw_url, "compare_result": compare_result}
+    if os.path.exists(spkid_folder):
+        shutil.rmtree(spkid_folder)
+    return {"code": 200, "message": "success", "file_url": raw_url, "compare_result": compare_result, "call_time_info": call_time_info}

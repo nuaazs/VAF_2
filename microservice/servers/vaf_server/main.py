@@ -19,8 +19,8 @@ import traceback
 app = Flask(__name__)
 # app.config['JSON_AS_ASCII'] = False
 name = os.path.basename(__file__).split(".")[0]
-logger.add("log/"+name+"_{time}.log", rotation="500 MB", encoding="utf-8", enqueue=True, compression="zip", backtrace=True, diagnose=True)
 
+logger.add("log/"+name+"_{time:YYYY-MM-DD_HH-mm}.log", rotation="500 MB", encoding="utf-8", enqueue=True, compression="zip", backtrace=True, diagnose=True)
 
 @app.errorhandler(500)
 def internal_server_error(e):

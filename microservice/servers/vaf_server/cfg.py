@@ -2,6 +2,7 @@
 # 公司内部服务配置文件
 ###########################################
 HOST = "http://192.168.3.199"
+DENOISE_URL = f"{HOST}:5001/denoise/file"  # denoise
 LANG_URL = f"{HOST}:5002/lang_classify"  # 语种识别
 CLUSTER_URL = f"{HOST}:5011/cluster"  # cluster
 ASR_URL = f"{HOST}:5000/transcribe/file"  # ASR

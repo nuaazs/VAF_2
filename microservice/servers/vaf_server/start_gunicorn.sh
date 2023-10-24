@@ -2,6 +2,7 @@
 
 GUNICORN_CONF="gunicorn_config.py"
 APP_MODULE="main:app"
+LOG_FILE="log/app_status_$(date +%Y-%m-%d).log"
 
 check_app_availability() {
     HEALTH_CHECK_URL="http://localhost:5550/health"
@@ -25,6 +26,6 @@ if [ "$result" -eq 0 ]; then
 else
     echo "Gunicorn server is not running."
     echo "Starting Gunicorn server..."
-    gunicorn -c $GUNICORN_CONF $APP_MODULE &
+    gunicorn -c "$GUNICORN_CONF" "$APP_MODULE"  >> "$LOG_FILE" 2>&1 &
     echo "Gunicorn server is started."
 fi

@@ -2,10 +2,10 @@
 bind = "0.0.0.0:5550"
 
 # Gunicorn 的工作进程数
-workers = 4
+workers = 8
 
 # 每个工作进程的线程数
-threads = 2
+# threads = 2
 
 # 访问日志文件的路径
 accesslog = "log/access.log"

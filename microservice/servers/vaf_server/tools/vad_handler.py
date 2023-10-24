@@ -45,6 +45,10 @@ def energybase_vad(filepath, receive_path, smooth_threshold=0.5, min_duration=2,
     run_cmd(f'./vad_wav --wav-bin={bin_path} --energy-thresh={energy_thresh} --text-out={receive_path}/output.txt --smooth-threshold={smooth_threshold} --min-duration={min_duration} --wav-out={vad_output_path}')
     voice_length = 0
     time_list = []
+    if not os.path.exists(f"{receive_path}/output.txt"):
+        logger.error(f"{receive_path}/output.txt file not exist.")
+        return vad_output_path, voice_length, time_list
+    
     with open(f"{receive_path}/output.txt", "r") as f:
         for line in f.readlines():
             start, end = line.strip().split(",")
