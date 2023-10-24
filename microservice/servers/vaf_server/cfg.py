@@ -8,7 +8,7 @@ CLUSTER_URL = f"{HOST}:5011/cluster"  # cluster
 ASR_URL = f"{HOST}:5000/transcribe/file"  # ASR
 
 # 注册模型列表
-ENCODE_MODEL_LIST = ["resnet101_cjsd", "resnet221_cjsd_lm"]
+ENCODE_MODEL_LIST = ["resnet101_cjsd", "resnet221_cjsd_lm", "resnet293_cjsd_lm"]
 
 TMP_FOLDER = "/tmp/dingxiaoyu"
 
@@ -37,7 +37,7 @@ MYSQL = {
     "username": "root",
     "passwd": "longyuan",
     "black_table_name": "black_speaker_info",
-    "hit_table_name": "cjsd_hit_speaker_info",
+    "hit_table_name": "hit_speaker_info",
 }
 
 REDIS = {

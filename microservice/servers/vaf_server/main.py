@@ -14,10 +14,11 @@ from pipeline.register import register_pipeline
 from pipeline.encode_pipeline import encode_pipeline
 from pipeline.vad_pipeline import vad_pipeline
 from pipeline.search_pipeline import search_pipeline
+from pipeline.delete_pipeline import delete_pipeline
 import traceback
 
 app = Flask(__name__)
-# app.config['JSON_AS_ASCII'] = False
+app.config['JSON_AS_ASCII'] = False
 name = os.path.basename(__file__).split(".")[0]
 
 logger.add("log/"+name+"_{time:YYYY-MM-DD_HH-mm}.log", rotation="500 MB", encoding="utf-8", enqueue=True, compression="zip", backtrace=True, diagnose=True)
@@ -54,6 +55,12 @@ def vad(filetype):
 def search(filetype):
     data_info_dict = search_pipeline(request, filetype)
     return jsonify(data_info_dict)
+
+@app.route('/delete_user', methods=['POST'])
+def delete_user():
+    data_info_dict = delete_pipeline(request)
+    return jsonify(data_info_dict)
+
 
 
 if __name__ == "__main__":

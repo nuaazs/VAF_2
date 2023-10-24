@@ -35,12 +35,6 @@ def fromRedis(r, n):
     return a
 
 
-def deletRedis(r, n):
-    if r.keys(f"*{n}*"):
-        r.delete(*r.keys(f"*{n}*"))
-    return
-
-
 def get_embedding(spkid):
     r = redis.Redis(
         host=cfg.REDIS["host"],
@@ -219,13 +213,23 @@ def inster_redis_db(embedding, spkid, use_model_type, mode="register"):
 
 
 def delete_by_key(spkid):
+    """
+    删除redis中的emb
+    Args:
+        spkid: 说话人id
+    """
     r = redis.Redis(
         host=cfg.REDIS["host"],
         port=cfg.REDIS["port"],
         db=cfg.REDIS["register_db"],
         password=cfg.REDIS["password"],
     )
-    deletRedis(r, spkid)
+    keys = r.keys(f'*{spkid}*')
+
+    for key in keys:
+        key = key.decode("utf-8")
+        r.delete(key)
+        logger.info(f"Delete key:{key} success.")
     return
 
 
