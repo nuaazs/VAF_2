@@ -23,6 +23,9 @@ config.py
 *.jpeg
 *.json
 
+*.deb
+minio
+
 **/**/*.scp
 *.pt
 *.pb

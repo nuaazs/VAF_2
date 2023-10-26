@@ -1,21 +1,20 @@
 import requests
 
-# 请求的URL
-url = "http://localhost:5000/transcribe/url"
+def request_search(calling_number, file_path):
+   url = "http://127.0.0.1:5000/transcribe/file"
+   data = {
+      'spkid': calling_number,
+      'postprocess':1,
+      'channel':0,
+   }
+   files = {'wav_file': open(file_path, 'rb')}
+   response = requests.post(url, files=files, data=data)
+   print(response.text)
+   if response.json().get("code") == 200:
+      text = response.json()['transcription']['text']
+      print(f"Transcribe success. calling_number:{calling_number}. text:{text}")
+   else:
+      print(f"Transcribe failed. calling_number:{calling_number}")
 
-# 上传的音频文件路径
-audio_path = "/home/zhaosheng/asr_damo_websocket/online/speaker-diraization/data/speaker_diarisation_test_data/1c99701339235ed853362d5a448a94ed-江苏-常州-2023年01月01日14时20分25秒-13357881270-1672554009.6297503000.wav"
 
-data = {"channel": 0, "spkid": "zhaosheng","save_oss":False,"url":f"local://{audio_path}","postprocess":0}
-# 构造multipart/form-data格式的请求体
-files=[
-   ('wav_file',(audio_path.split("/")[-1],open(audio_path,'rb'),'application/octet-stream'))
-]
-# 发送POST请求
-response = requests.post(url, files=files,data=data)
-
-# 解析响应数据
-transcription = response.json().get("transcription")
-
-# 打印转录结果
-print(transcription)
+request_search("test_spkid", "./test_audio.wav")
