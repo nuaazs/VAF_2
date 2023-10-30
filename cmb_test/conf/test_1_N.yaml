@@ -1,0 +1,36 @@
+# coding = utf-8
+# @Time    : 2023-10-24  12:49:28
+# @Author  : zhaosheng@lyxxkj.com.cn
+# @Describe: 1:N speaker verification test conf.
+
+exp_name: "longyuan1025"                                  # Experiment Name
+
+test_type: one2N                                          # Test Type: one2N or one2one
+
+register_wavs_path: "/mnt/data/cmbdata_formated/data"     # <WAV ROOT PATH> for register
+
+register_wav_pattern: "0[13579]_*.wav"                    # Pattern for register
+
+test_wavs_path: "/mnt/data/cmbdata_formated/data"         # <WAV ROOT PATH> for test
+
+spkid_location: -2                                        # Spkid Location: <filepath>.split("/")[-2]
+
+test_wav_pattern: "0[2468]_*.wav"                         # Pattern for test
+
+random_seed: 123                                          # Random Seed
+
+wav_length: 3                                             # Wav Length
+
+threshold: 0.1,0.9,0.1                                    # Threshold format: <start>,<end>,<step>
+
+topk: 5                                                   # TOP-K (Just used for log)
+
+cmf: 0                                                    # Use CMF or not
+
+encode_url: "http://127.0.0.1:5001/embeddings"            # WAV Embedding URL
+
+mode: "api"                                               #  api or local
+
+register_url: "http://127.0.0.1:5001/register"            # WAV Register URL
+
+search_url: "http://127.0.0.1:5001/search"                # WAV Register URL

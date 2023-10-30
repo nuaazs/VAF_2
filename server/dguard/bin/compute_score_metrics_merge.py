@@ -29,15 +29,8 @@ parser.add_argument('--total', default=1, type=float, help='total')
 parser.add_argument('--rank', default=0, type=float, help='rank')
 parser.add_argument('--tiny_save_dir', default='', type=str, help='')
 
-
-parser.add_argument('--min_recall', default=-1, type=float, help='min recall to find TH')
-parser.add_argument('--min_precision', default=-1, type=float, help='min precision to find TH')
-
-
 def main():
     args = parser.parse_args(sys.argv[1:])
-    print(f"Min Recall:{parser.parse_args().min_recall}")
-    print(f"Min Precision:{parser.parse_args().min_precision}")
     os.makedirs(args.scores_dir, exist_ok=True)
 
     result_path = os.path.join(args.scores_dir, 'result.metrics')
@@ -96,7 +89,7 @@ def main():
                                 p_target=args.p_target,
                                 c_miss=args.c_miss,
                                 c_fa=args.c_fa)
-        th_matrix_result = compute_tn_fn_tp_fp(scores, labels,min_recall=args.min_recall,min_precision=args.min_precision)
+        th_matrix_result = compute_tn_fn_tp_fp(scores, labels)
         
         # write the metrics
         logger.info(f"Results of {trial_name} is:")
@@ -104,15 +97,10 @@ def main():
         logger.info("\t\tminDCF (p_target:{} c_miss:{} c_fa:{}) = {:.4f}".format(
             args.p_target, args.c_miss, args.c_fa, min_dcf))
         min_recall_precision_diff = 100
-        max_recall_precision_sum = 0
-        max_acc = 0
-        max_precision=0
-        max_recall=0
         best_precision = 0
         best_recall = 0
         best_acc = 0
         best_th = 0
-        last_precision = 0
         for _info in th_matrix_result:
             th,tp,fp,tn,fn = _info
             try:
@@ -124,41 +112,15 @@ def main():
                 recall = " - "
             logger.info(f"\t\tTH:{th:.2f}\tTP:{tp:.4f}\tFP:{fp:.4f}\tTN:{tn:.4f}\tFN:{fn:.4f}\tP:{precision:.2f}\tR:{recall:.2f}\tACC:{acc:.2f}")
             # if recall and precision is float
-            if precision - last_precision > 0:
-                if precision <= 90:
-                # if isinstance(recall,float) and isinstance(precision,float):
-                #     if recall > max_recall:
-                    max_recall = recall
-                    max_precision = precision
-                    max_acc = acc
+            if isinstance(recall,float) and isinstance(precision,float):
+                if abs(recall-precision) < min_recall_precision_diff and (recall!=0) and (precision!=0):
+                    print(f"recall:{recall},precision:{precision}")
+                    print(f"best_recall:{best_recall},best_precision:{best_precision}")
+                    min_recall_precision_diff = abs(recall-precision)
+                    best_precision = precision
+                    best_recall = recall
+                    best_acc = acc
                     best_th = th
-
-            last_precision = precision
-            
-                # min_recall = float(args.min_recall)
-                # min_precision = float(args.min_precision)
-                # if min_recall > 0:
-                #     if recall >= min_recall:
-                #             best_precision = precision
-                #             best_recall = recall
-                #             best_acc = acc
-                #             best_th = th
-                # else:
-                #     if min_precision > 0:
-                #         if precision <= min_precision:
-                #             # print(f"Precision:{precision},min_precision:{min_precision}")
-                #             best_precision = precision
-                #             best_recall = recall
-                #             best_acc = acc
-                #             best_th = th
-                # if abs(recall-precision) < min_recall_precision_diff and (recall!=0) and (precision!=0):
-                #     print(f"recall:{recall},precision:{precision}")
-                #     print(f"best_recall:{best_recall},best_precision:{best_precision}")
-                #     min_recall_precision_diff = abs(recall-precision)
-                #     best_precision = precision
-                #     best_recall = recall
-                #     best_acc = acc
-                #     best_th = th
         # logger_all.info(f"{args.exp_id},{100 * eer:.4f},{min_dcf:.4f}")
         # append to args.scores_all
         # if args.scores_all not exist, create it

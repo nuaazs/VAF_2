@@ -1,5 +1,5 @@
 #!/bin/bash
-exp_name="cti_all_without_cmf"
+exp_name="cti_all_with_cmf"
 models="resnet101_cjsd_and_resnet221_cjsd_lm_and_resnet293_cjsd_lm" # dfresnet_233 repvgg eres2net resnet101_lm 
 datasets="cti_v1" #  male female cnceleb cjsdv2pro cjsd300 
 overwrite=true

@@ -26,9 +26,7 @@ parser.add_argument('--p_target', default=0.01, type=float, help='p_target in DC
 parser.add_argument('--c_miss', default=1, type=float, help='c_miss in DCF')
 parser.add_argument('--c_fa', default=1, type=float, help='c_fa in DCF')
 
-
 parser.add_argument('--total', default=1, type=float, help='total')
-parser.add_argument('--emb_size', default=256, type=float, help='emb_size')
 parser.add_argument('--rank', default=0, type=float, help='rank')
 parser.add_argument('--tiny_save_dir', default='', type=str, help='')
 
@@ -100,42 +98,8 @@ def main():
                 for line in tqdm(lines, desc=f'scoring trial {trial_name}'):
                     pair = line.strip().split()
                     enrol_emb, test_emb = enrol_dict[pair[0]], test_dict[pair[1]]
-                    # assert enrol_emb.shape[0] == args.emb_size*3, f"Enrol emb shape is {enrol_emb.shape}, not {args.emb_size*3}"
-                    args.emb_size = int(enrol_emb.shape[0]/3)
-                    # TODO: a,b,full
-                    enrol_emb_a = enrol_emb[:args.emb_size]
-                    enrol_emb_b = enrol_emb[args.emb_size:args.emb_size*2]
-                    enrol_emb_full = enrol_emb[args.emb_size*2:args.emb_size*3]
-
-                    test_emb_a = test_emb[:args.emb_size]
-                    test_emb_b = test_emb[args.emb_size:args.emb_size*2]
-                    test_emb_full = test_emb[args.emb_size*2:args.emb_size*3]
-
-
-                    cos_enrol_a_b = cosine_similarity(enrol_emb_a.reshape(1, -1),
-                                                enrol_emb_b.reshape(1, -1))[0][0]
-                    cos_test_a_b = cosine_similarity(test_emb_a.reshape(1, -1),
-                                                test_emb_b.reshape(1, -1))[0][0]
-                    mean_self_score = (cos_enrol_a_b+cos_test_a_b)/2
-                    radio = 0.7/((cos_enrol_a_b + cos_enrol_a_b)/2)
-                    # print(f"="*30)
-                    # print(f"Radio1 :{0.7/cos_enrol_a_b} Radio2:{0.7/cos_test_a_b}")
-                    # if radio > 3:
-                    #     radio = 3
-                    # if radio < 0.33:
-                    #     radio = 0.33
-                    
-                    raw_cosine_score = cosine_similarity(enrol_emb_full.reshape(1, -1),
-                                                test_emb_full.reshape(1, -1))[0][0]
-
-                    # with cmf
-                    cosine_score = raw_cosine_score*radio
-                    print(f"Raw Score: {raw_cosine_score}, New Score: {cosine_score}")
-
-                    # without cmf
-                    # cosine_score = raw_cosine_score
-
-
+                    cosine_score = cosine_similarity(enrol_emb.reshape(1, -1),
+                                                test_emb.reshape(1, -1))[0][0]
                     # write the score
                     score_f.write(' '.join(pair)+' %.5f\n'%cosine_score)
                     scores.append(cosine_score)

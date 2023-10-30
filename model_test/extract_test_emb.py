@@ -137,10 +137,27 @@ def main():
                     if args.length*fs<wav.shape[1]:
                         random_start = random.randint(args.start_from*fs, wav.shape[1] - int(fs*args.length))
                         wav = wav[:,random_start:random_start+int(fs*args.length)]
+                    half_len = int(wav.shape[1]/2)
+                    wav_a = wav[:,:half_len]
+                    wav_b = wav[:,half_len:]
+                    feat_a = feature_extractor(wav_a)
+                    feat_b = feature_extractor(wav_b)
+                    feat_a = feat_a.unsqueeze(0)
+                    feat_b = feat_b.unsqueeze(0)
+                    feat_a = feat_a.to(device)
+                    feat_b = feat_b.to(device)
+                    emb_a = model(feat_a)[-1].detach().cpu().numpy().reshape(1,-1)
+                    emb_b = model(feat_b)[-1].detach().cpu().numpy().reshape(1,-1)
+
+
                     feat = feature_extractor(wav)
                     feat = feat.unsqueeze(0)
                     feat = feat.to(device)
-                    emb = model(feat)[-1].detach().cpu().numpy()
+                    emb = model(feat)[-1].detach().cpu().numpy().reshape(1,-1)
+
+                    emb = np.concatenate((emb_a,emb_b,emb),axis=1) # [1,512*3]
+                    # assert emb.shape == (1,512*3), "emb shape error"
+                    emb = emb.reshape(-1)
                     writer(k, emb)
 
 if __name__ == "__main__":
