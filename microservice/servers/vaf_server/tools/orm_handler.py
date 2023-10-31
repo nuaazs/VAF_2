@@ -322,7 +322,7 @@ def compare_handler(model_type=None, embedding=None, black_limit=0.78, top_num=1
     input_data = [(k, emb_db[k], embedding) for k in emb_db.keys()]
 
     t1 = time.time()
-    results = process_map(cosine_similarity, input_data, max_workers=1, chunksize=1000, desc='Doing----')
+    results = process_map(cosine_similarity, input_data, max_workers=4, chunksize=1000, desc='Doing----')
     if not results:
         return {'best_score': 0, 'inbase': 0}
     t2 = time.time()

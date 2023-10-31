@@ -49,7 +49,7 @@ declare -A gpus=(
 )
 
 declare -A workers=(
-    ["vaf"]="2"
+    ["vaf"]="4"
     ["asr"]="1"
     ["lang"]="1"
     ["cluster"]="1"

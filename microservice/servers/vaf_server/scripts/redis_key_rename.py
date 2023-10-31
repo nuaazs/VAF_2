@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+@File    :   redis_key_rename.py
+@Time    :   2023/10/31 14:04:00
+@Author  :   Carry
+@Version :   1.0
+@Desc    :   将redis中的特征数据的键名重命名，resnet_101_123456 -> resnet101_123456
+'''
+
+
 import redis
 
 # 连接到 Redis 服务器

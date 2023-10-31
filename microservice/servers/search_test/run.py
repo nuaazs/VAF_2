@@ -14,14 +14,15 @@ import config as cfg
 from loguru import logger
 
 name = os.path.basename(__file__).split(".")[0]
-logger.add("log/"+name+"_{time:YYYY-MM-DD_HH-mm}.log", rotation="500 MB", encoding="utf-8", enqueue=True, compression="zip", backtrace=True, diagnose=True)
+logger.add("log/"+name+"_{time:YYYY-MM-DD_HH-mm}.log", rotation="500 MB", encoding="utf-8",
+           enqueue=True, compression="zip", backtrace=True, diagnose=True)
 
 
 def search_file(file_path):
     try:
         record_id = os.path.basename(file_path)
         # TODO:
-        record_id=record_id.split('.')[0]
+        record_id = record_id.split('.')[0]
         data = {
             'spkid': record_id,
         }
@@ -40,7 +41,7 @@ def search_url(file_path):
     try:
         record_id = os.path.basename(file_path)
         # TODO:
-        record_id=record_id.split('.')[0]
+        record_id = record_id.split('.')[0]
         data = {
             'spkid': record_id,
             'wav_url': f"http://192.168.3.199:9000/gray-raw/{os.path.basename(file_path)}"
@@ -53,6 +54,7 @@ def search_url(file_path):
         mark_file(file_path)
     except Exception as e:
         logger.error(f'File:{file_path}. Error info:{e}')
+
 
 def mark_file(spkid):
     """
@@ -72,7 +74,7 @@ def main():
     start_time = time.time()
     files_original = glob.glob(cfg.WAV_PATH_GRAY + '/*.wav')
     files_original = sorted(files_original)
-    files_original = files_original*10
+    # files_original = files_original*10
     # files_original = files_original[1:100]
     if not files_original:
         logger.error(f'No wav file in {cfg.WAV_PATH_GRAY}')
@@ -94,7 +96,6 @@ def main():
     with multiprocessing.Pool(cfg.WORKERS) as p:
         list((tqdm(p.imap(search_file, files), total=len(files), desc='监视进度')))
 
-
     # for file in files:
     #     search_url(file)
 
@@ -103,12 +104,11 @@ def main():
 
     # process_map(search_url, files, max_workers=cfg.WORKERS, chunksize=10, desc='进度tqdm:')
 
-
     # from multiprocessing.pool import ThreadPool
     # with ThreadPool(cfg.WORKERS) as p:
     #     p.map(test_by_file, files)
 
-    time_str=datetime.now().strftime("%Y-%m-%d-%H%M%S")
+    time_str = datetime.now().strftime("%Y-%m-%d-%H%M%S")
     os.rename(mark_file_path, f'{mark_file_path}_{time_str}')
     logger.info(f'Rename {mark_file_path} to {mark_file_path}_{time_str}')
 

@@ -5,7 +5,7 @@
 @Time    :   2023/08/14 14:03:54
 @Author  :   Carry
 @Version :   1.0
-@Desc    :   读取23月份人工审核的excel文件，下载文件并注册
+@Desc    :   读取人工审核的excel文件，调用注册接口，需修改record_month参数逐月注册
 '''
 
 import requests
@@ -38,7 +38,7 @@ def main(record_info):
 
 
 if __name__ == "__main__":
-    with open("./record_ids.csv", "r") as f:
+    with open("./input/record_ids.csv", "r") as f:
         spkids = f.readlines()
     spkids = [i.strip().split(",") for i in spkids]
     logger.info(f"Total spkids: {len(spkids)}")

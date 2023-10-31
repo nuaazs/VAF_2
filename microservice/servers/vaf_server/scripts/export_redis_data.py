@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+@File    :   export_redis_data.py
+@Time    :   2023/10/31 14:06:09
+@Author  :   Carry
+@Version :   1.0
+@Desc    :   将redis中数据导出为npy文件,共输出三个文件，分别为：三个模型的特征向量文件，文件名为：模型名.npy,输出在output文件夹下
+'''
+
+
 import numpy as np
 import redis
 
@@ -64,12 +75,12 @@ def import_npy_to_redis(npy_file):
     print(f"Total : {len(all_embedding.keys())} embeddings in database.Use model type:{npy_file}")
 
 
-for i in ["resnet101_cjsd", "resnet221_cjsd_lm", "resnet293_cjsd_lm"]:
+for i in ["resnet101cjsd", "resnet221cjsdlm", "resnet293cjsdlm"]:
     all_embedding = get_embeddings(i)
     # save to npy
-    np.save(f"{i}.npy", all_embedding)
+    np.save(f"./output/{i}.npy", all_embedding)
     # save to txt
-    with open(f"{i}.txt", "w") as f:
+    with open(f"./output/{i}.txt", "w") as f:
         for k, v in all_embedding.items():
             f.write(f"{k} {v}\n")
 print("Done!")

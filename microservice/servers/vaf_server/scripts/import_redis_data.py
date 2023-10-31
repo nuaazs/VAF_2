@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+@File    :   import_redis_data.py
+@Time    :   2023/10/31 14:12:56
+@Author  :   Carry
+@Version :   1.0
+@Desc    :   将output文件夹下的npy文件导入到redis中
+'''
+
+
 import numpy as np
 import redis
 
@@ -64,7 +75,7 @@ def import_npy_to_redis(npy_file):
     print(f"Total : {len(all_embedding.keys())} embeddings in database.Use model type:{npy_file}")
 
 
-for i in ["resnet101_cjsd", "resnet221_cjsd_lm", "resnet293_cjsd_lm"]:
-    import_npy_to_redis(f"{i}.npy")
+for i in ["resnet101cjsd", "resnet221cjsdlm", "resnet293cjsdlm"]:
+    import_npy_to_redis(f"./output/{i}.npy")
 
 print("Done!")

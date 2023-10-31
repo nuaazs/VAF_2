@@ -5,16 +5,16 @@
 @Time    :   2023/10/30 13:34:43
 @Author  :   Carry
 @Version :   1.0
-@Desc    :   None
+@Desc    :   将redis中的特征数据导出为二进制文件，共输出四个文件，分别为：三个模型的特征向量文件，一个黑名单id文件，文件名为：模型名_vectorDB.bin，black_id_all.txt，已做升序排序
 '''
 
+import cfg
+from tqdm import tqdm
 import redis
 import numpy as np
 import argparse
 import sys
 sys.path.append("../")
-from tqdm import tqdm
-import cfg
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--host', type=str, default=cfg.REDIS["host"], help='redis host')
@@ -24,7 +24,8 @@ parser.add_argument('--password', type=str, default=cfg.REDIS["password"], help=
 
 args = parser.parse_args()
 
-def fromRedis(r,n):
+
+def fromRedis(r, n):
     """Retrieve Numpy array from Redis key 'n'"""
     encoded = r.get(n)
     a = np.frombuffer(encoded, dtype=np.float32, offset=8)
@@ -43,8 +44,8 @@ for model in tqdm(cfg.ENCODE_MODEL_LIST):
         if model not in key:
             continue
         spkid = key.split("_")[1]
-        embedding_1 = fromRedis(r,key)
-        data[model][spkid]= embedding_1
+        embedding_1 = fromRedis(r, key)
+        data[model][spkid] = embedding_1
 
 # sort by spkid
 for key in data.keys():
@@ -58,7 +59,7 @@ for model in cfg.ENCODE_MODEL_LIST:
         # f.write(str(data[key][key]).replace('[', '').replace(']', '').replace(' ', '') + '\n')
         data_list_all.append(data[model][key])
         black_id_all.append(key)
-    
+
     # 保存为二进制dtype=np.float32
     data_list_all = np.array(data_list_all)
     print(data_list_all.shape)
@@ -66,10 +67,10 @@ for model in cfg.ENCODE_MODEL_LIST:
     data_list_all = data_list_all.reshape(-1)
     # type to float32
     data_list_all = data_list_all.astype(np.float32)
-    data_list_all.tofile(f'./{model}_vectorDB.bin')
+    data_list_all.tofile(f'./output/{model}_vectorDB.bin')
 
-with open(f'black_id_all.txt', 'w') as f:
+with open(f'./output/black_id_all.txt', 'w') as f:
     for item in black_id_all:
         f.write(item + '\n')
-    
+
 print("Done!")
