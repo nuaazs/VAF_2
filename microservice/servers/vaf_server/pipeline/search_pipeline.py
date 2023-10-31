@@ -17,6 +17,7 @@ import numpy as np
 import torch
 import torchaudio
 import cfg
+from tools.calculate_handler import calculate_vaf
 from tools.file_handler import get_audio_and_conver, extract_audio_segment, find_items_with_highest_value
 from tools.orm_handler import get_embeddings_from_db, add_hit
 from tools.minio_handler import upload_file
@@ -213,24 +214,23 @@ def search_pipeline(request, filetype):
     call_time_info['encode'] = time.time() - t1
 
     t1 = time.time()
-    datas = [(i, value, file_emb, spkid) for i, value in spkid_embedding_dict.items()]
 
-    # executor = concurrent.futures.ProcessPoolExecutor(max_workers=16)
-    # with executor as e:
-    #     final_score_list = list(e.map(calculate_final_score, datas))
-
-    final_score_list = process_map(calculate_final_score, datas, max_workers=16, chunksize=1000, desc='calculate_final_score----')
-
-    final_score_list = sorted(final_score_list, key=lambda x: x[1], reverse=True)
-    call_time_info['campare'] = time.time() - t1
-
-    # get top 10
-    final_score_list = final_score_list[:10]
-    logger.info(f"top_10: {final_score_list}")
+    # step6 calculate final score
+    embedding_path_dict = {}
+    for i in file_emb.keys():
+        embedding_path = f"{spkid_folder}/{i}.txt"
+        embedding_path_dict[i] = embedding_path
+        with open(embedding_path, 'w') as f:
+            for j in file_emb[i]:
+                f.write(str(j) + '\n')
+    final_score_list = calculate_vaf(embedding_path_dict, f"{spkid_folder}/{spkid}_output.txt")
+    call_time_info['calculate_vaf'] = time.time() - t1
+    if not final_score_list:
+        return {"code": 500, "spkid": spkid, "message": f"calculate_vaf failed. spkid:{spkid}"}
 
     hit_spkid = final_score_list[0][0]
-    hit_score = final_score_list[0][1]
-    logger.info(f"hit_spkid:{hit_spkid}, best hit_score:{hit_score}")
+    hit_score = float(final_score_list[0][1])
+    logger.info(f"top_10: {final_score_list}. hit_spkid:{hit_spkid}, best hit_score:{hit_score}")
 
     if hit_score < cfg.HIT_SCORE_THRESHOLD:
         compare_result = {"is_hit": False, "hit_spkid": hit_spkid, "hit_score": hit_score}

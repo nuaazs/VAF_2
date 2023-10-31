@@ -1,4 +1,5 @@
 #!/bin/bash
+# 服务管理脚本，可以在这里启动、停止、重启、测试单个服务
 
 export MICRO_SERVICE_PATH="/home/xuekaixiang/workplace/vaf/microservice"
 export GUNICORN="/opt/anaconda3/envs/carry/bin/gunicorn"
@@ -48,7 +49,7 @@ declare -A gpus=(
 )
 
 declare -A workers=(
-    ["vaf"]="8"
+    ["vaf"]="2"
     ["asr"]="1"
     ["lang"]="1"
     ["cluster"]="1"

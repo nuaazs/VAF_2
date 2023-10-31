@@ -72,6 +72,7 @@ def main():
     start_time = time.time()
     files_original = glob.glob(cfg.WAV_PATH_GRAY + '/*.wav')
     files_original = sorted(files_original)
+    files_original = files_original*10
     # files_original = files_original[1:100]
     if not files_original:
         logger.error(f'No wav file in {cfg.WAV_PATH_GRAY}')

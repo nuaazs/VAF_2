@@ -10,6 +10,7 @@ ASR_URL = f"{HOST}:5000/transcribe/file"  # ASR
 
 # 注册模型列表
 ENCODE_MODEL_LIST = ["resnet101_cjsd", "resnet221_cjsd_lm", "resnet293_cjsd_lm"]
+ENCODE_MODEL_FEATURE_DIM = {"resnet101_cjsd": 256, "resnet221_cjsd_lm": 256, "resnet293_cjsd_lm": 256}
 
 TMP_FOLDER = "/tmp/dingxiaoyu"
 
@@ -30,6 +31,8 @@ CLUSTER_MIN_SCORE_THRESHOLD = 0.8
 # 去重指定使用的模型及阈值
 BLACK_TH = {"resnet101_cjsd": 0.78}
 
+#黑库数量
+BLACK_SPEAKER_LENGTH = 27973
 
 MYSQL = {
     "host": "127.0.0.1",

@@ -48,8 +48,6 @@ def encode_files(spkid, wav_files,  start=0, end=999):
         sample_rate = model_info_dict["sample_rate"]
 
         file_emb[model_type] = {}
-        file_emb[model_type]["embedding"] = {}
-        file_emb[model_type]["length"] = {}
 
         for _index, wav_file in enumerate(wav_files):
             _data, sr = torchaudio.load(wav_file)
@@ -63,9 +61,8 @@ def encode_files(spkid, wav_files,  start=0, end=999):
                 embeddings = model(feat)[-1].detach().cpu().numpy()
             embeddings = embeddings.astype(np.float32).reshape(-1)
             if len(wav_files) == 1:
-                file_emb[model_type]["embedding"][spkid] = embeddings.tolist()
-                file_emb[model_type]["length"][spkid] = _data.shape[1]/ sample_rate
+                file_emb[model_type] = embeddings.tolist()
             else:
                 file_emb[model_type]["embedding"][wav_file] = embeddings.tolist()
-                file_emb[model_type]["length"][wav_file] = _data.shape[1]/ sample_rate
+                file_emb[model_type]["length"][wav_file] = _data.shape[1] / sample_rate
     return file_emb

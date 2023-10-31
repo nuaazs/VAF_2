@@ -1373,7 +1373,7 @@ ECAPATDNN={
     }
 }
 # 定义请求的URL和数据
-url = 'http://localhost:5011/cluster'
+url = 'http://localhost:5002/cluster'
 data = {
     "emb_dict": ECAPATDNN["embedding"],
     "cluster_line": 3,

@@ -96,7 +96,7 @@ def register_pipeline(request, filetype):
         model_type = list(cfg.BLACK_TH.keys())[0]
         black_limit = cfg.BLACK_TH[model_type]
         model_type = model_type.replace("_", "")
-        emb_new = file_emb[model_type]["embedding"][spkid]
+        emb_new = file_emb[model_type]
         compare_results = compare_handler(model_type=model_type, embedding=emb_new, black_limit=black_limit)
         logger.info(f"spkid:{spkid}. compare_result:{compare_results}")
         if compare_results['inbase']:
@@ -133,7 +133,7 @@ def register_pipeline(request, filetype):
     if add_speaker(db_info):
         for model_type in cfg.ENCODE_MODEL_LIST:
             model_type = model_type.replace("_", "")
-            emb_new = file_emb[model_type]["embedding"][spkid]
+            emb_new = file_emb[model_type]
             inster_redis_db(embedding=emb_new, spkid=spkid, use_model_type=model_type)
         logger.info(f"Add speaker success. spkid:{spkid}")
         if os.path.exists(spkid_folder):

@@ -24,6 +24,7 @@ def encode_pipeline(request, filetype):
 
     NEED_VAD = request.form.get('need_vad',  default=False, type=lambda x: x.lower() == 'true')  # 是否启动VAD
     channel = int(request.form.get('channel', 0))
+    length = float(request.form.get('length', 999))
     spkid = request.form.get('spkid')
     if not spkid:
         logger.error(f"spkid is None.")
@@ -36,13 +37,13 @@ def encode_pipeline(request, filetype):
         if not file_data:
             logger.error(f"wav_file is None.")
             return {"code": 500, "spkid": spkid, "message": "wav_file is None."}
-        file_path = get_audio_and_conver(spkid, spkid_folder, file_data=file_data, channel=channel)
+        file_path = get_audio_and_conver(spkid, spkid_folder, file_data=file_data, channel=channel, length=length)
     elif filetype == "url":
         file_url = request.form.get('wav_url')
         if not file_url:
             logger.error(f"wav_url is None.")
             return {"code": 500, "spkid": spkid, "message": "wav_url is None."}
-        file_path = get_audio_and_conver(spkid, spkid_folder, file_url=file_url, channel=channel)
+        file_path = get_audio_and_conver(spkid, spkid_folder, file_url=file_url, channel=channel, length=length)
     else:
         logger.error(f"filetype is not in ['file', 'url'].")
         return {"code": 500, "spkid": spkid, "message": "filetype is not in ['file', 'url']."}
