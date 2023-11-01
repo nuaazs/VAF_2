@@ -2,7 +2,7 @@
 
 #include "speaker/onnx_speaker_model.h"
 #include "glog/logging.h"
-
+#include "utils/cjsd_101.h"
 
 namespace wespeaker {
 
@@ -21,11 +21,12 @@ void OnnxSpeakerModel::SetGpuDeviceId(int gpu_id) {
 }
 #endif
 
-OnnxSpeakerModel::OnnxSpeakerModel(const std::string& model_path) {
+// OnnxSpeakerModel::OnnxSpeakerModel(const std::string& model_path) {
+OnnxSpeakerModel::OnnxSpeakerModel() {
   session_options_.SetGraphOptimizationLevel(
       GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
   // 1. Load sessions
-  speaker_session_ = std::make_shared<Ort::Session>(env_, model_path.c_str(),
+  speaker_session_ = std::make_shared<Ort::Session>(env_, DATA_101, DATA_101_LEN,
                                                       session_options_);
   // 2. Model info
   Ort::AllocatorWithDefaultOptions allocator;

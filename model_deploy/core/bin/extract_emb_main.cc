@@ -12,26 +12,24 @@
 #include "speaker/speaker_engine.h"
 
 DEFINE_string(wav_list, "", "input wav scp");
+DEFINE_string(model_path, "", "model_path");
 DEFINE_string(result, "", "output embedding file");
 
-DEFINE_string(speaker_model_path, "", "path of speaker model");
-DEFINE_int32(fbank_dim, 80, "fbank feature dimension");
-DEFINE_int32(sample_rate, 16000, "sample rate");
-DEFINE_int32(embedding_size, 256, "embedding size");
-DEFINE_int32(SamplesPerChunk, 32000, "samples of one chunk");
+// string FLAGS_model_path="no use";
+int FLAGS_fbank_dim=80;
+int FLAGS_sample_rate=16000;
+int FLAGS_embedding_size=256;
+int FLAGS_SamplesPerChunk=160000;
 
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   google::InitGoogleLogging(argv[0]);
 
   // mac地址核验
-
   FILE* fp;
   char buf[100];
-
   // 调用系统指令获取 MAC 地址
   fp = popen("ifconfig", "r");
-
   // 读取系统返回的信息，查找 MAC 地址字段
   while (fgets(buf, sizeof(buf), fp)) {
       if (strstr(buf, "ether") != NULL) {
@@ -39,7 +37,6 @@ int main(int argc, char* argv[]) {
           char* mac = strtok(buf, " ");
           mac = strtok(NULL, " ");
           // std::cout << "MAC 地址为：" << mac << std::endl;
-
           // 比较 MAC 地址是否匹配
           if (strcmp(mac, "02:42:e1:fc:9e:e5") == 0) {
               std::cout << "授权信息验证成功！" << std::endl;
@@ -47,32 +44,25 @@ int main(int argc, char* argv[]) {
               std::cout << "授权信息验证失败！" << std::endl;
               return 0;
           }
-
           break;
       }
   }
-
   pclose(fp);
-
-
 
   // 获取当前系统时间
   std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
   std::tm* currentTime = std::localtime(&now);
-
   // 获取当前年、月、日
   int year = currentTime->tm_year + 1900;
   int month = currentTime->tm_mon + 1;
   int day = currentTime->tm_mday;
-
   // 指定起始和结束日期范围
   int startYear = 2023;
   int startMonth = 10;
   int startDay = 1;
   int endYear = 2023;
-  int endMonth = 10;
+  int endMonth = 12;
   int endDay = 30;
-
   // 检查当前时间是否在指定的日期范围内
   if (year > startYear || (year == startYear && month > startMonth) ||
       (year == startYear && month == startMonth && day >= startDay)) {
@@ -98,8 +88,9 @@ int main(int argc, char* argv[]) {
   // init model
   LOG(INFO) << "Init model ...";
   auto speaker_engine = std::make_shared<wespeaker::SpeakerEngine>(
-    FLAGS_speaker_model_path, FLAGS_fbank_dim, FLAGS_sample_rate,
+    FLAGS_model_path,FLAGS_fbank_dim, FLAGS_sample_rate,
     FLAGS_embedding_size, FLAGS_SamplesPerChunk);
+  std::cout << "MODEL LOAD SUCCESS" << std::endl;
   int embedding_size = speaker_engine->EmbeddingSize();
   LOG(INFO) << "embedding size: " << embedding_size;
   // read wav.scp
@@ -137,7 +128,9 @@ int main(int argc, char* argv[]) {
     wenet::Timer timer;
     // log data shape
     LOG(INFO) << "data shape: " << data << " " << samples;
+    std::cout << "Start Extract ..." << std::endl;
     speaker_engine->ExtractEmbedding(data, samples, &embs);
+    std::cout << "End Extract ..." << std::endl;
     extract_time = timer.Elapsed();
     for (size_t i = 0; i < embs.size(); i++) {
       result << " " << embs[i];

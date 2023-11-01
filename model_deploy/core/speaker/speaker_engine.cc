@@ -17,7 +17,7 @@ SpeakerEngine::SpeakerEngine(const std::string& model_path,
                              const int SamplesPerChunk) {
   // NOTE(cdliang): default num_threads = 1
   const int kNumGemmThreads = 1;
-  LOG(INFO) << "Reading model " << model_path;
+
   embedding_size_ = embedding_size;
   LOG(INFO) << "Embedding size: " << embedding_size_;
   per_chunk_samples_ = SamplesPerChunk;
@@ -35,7 +35,7 @@ SpeakerEngine::SpeakerEngine(const std::string& model_path,
   // NOTE(cdliang): default gpu_id = 0
   OnnxSpeakerModel::SetGpuDeviceId(0);
   #endif
-  model_ = std::make_shared<OnnxSpeakerModel>(model_path);
+  model_ = std::make_shared<OnnxSpeakerModel>();
 #endif
 }
 

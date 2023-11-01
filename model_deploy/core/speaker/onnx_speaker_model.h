@@ -18,7 +18,7 @@ class OnnxSpeakerModel : public SpeakerModel {
   static void SetGpuDeviceId(int gpu_id = 0);
 #endif
  public:
-  explicit OnnxSpeakerModel(const std::string& model_path);
+  explicit OnnxSpeakerModel();
 
   void ExtractEmbedding(const std::vector<std::vector<float>>& feats,
                         std::vector<float>* embed) override;
