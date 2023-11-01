@@ -1,5 +1,9 @@
 .vscode
-train/
+# train/
+model_deploy
+model_deploy/onnxruntime/fc_base
+model_deploy/onnxruntime/cmake
+model_deploy/onnxruntime/build
 microservice/models/
 microservice/cfg.py
 microservice/**/.vscode
@@ -14,7 +18,10 @@ microservice/**/*.log
 microservice/**/*.ckpt
 microservice/**/*.wav
 **/**/*.scp
-
+**/**/*.onnx
+model_test/trials
+model_test/scp
+model_test/result
 src/nn/*
 src/.model.pt
 deploy/*
@@ -22,6 +29,7 @@ docs/
 docker/*
 .vscode
 **/*.bin
+**/*.onnx
 **/*.pt
 train/data/*
 test/dataset/*
@@ -82,3 +90,4 @@ src/cpp
 src/get_output_from_hit
 launch.json
 settings.json
+server_deploy/
