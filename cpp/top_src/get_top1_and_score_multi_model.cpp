@@ -1,3 +1,8 @@
+// # coding = utf-8
+// # @Time    : 2023-11-01  09:06:00
+// # @Author  : zhaosheng@nuaa.edu.cn
+// # @Describe: Get Model Result from fusion all models.
+
 #include <iostream>
 #include <cstring>
 #include <sys/ipc.h>

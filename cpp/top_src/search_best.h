@@ -1,3 +1,8 @@
+// # coding = utf-8
+// # @Time    : 2023-11-01  09:06:41
+// # @Author  : zhaosheng@nuaa.edu.cn
+// # @Describe: Search Best.
+
 #ifndef _SEARCHBEST_
 #define _SEARCHBEST_
 

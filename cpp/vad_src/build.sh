@@ -1,4 +1,8 @@
 #!/bin/bash
+# coding = utf-8
+# @Time    : 2023-11-01  09:08:19
+# @Author  : zhaosheng@nuaa.edu.cn
+# @Describe: VAD UTILS.
 
 # Build
 echo "Building ../bin/vad_wav"

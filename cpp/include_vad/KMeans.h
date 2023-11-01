@@ -1,3 +1,8 @@
+// # coding = utf-8
+// # @Time    : 2023-11-01  09:07:09
+// # @Author  : zhaosheng@nuaa.edu.cn
+// # @Describe: KMEANS.
+
 #ifndef KMEANS_H
 #define KMEANS_H
 #define DEBUG

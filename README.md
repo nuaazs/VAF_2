@@ -18,19 +18,24 @@
 
 
 ## 🔥 News
-0. 2023-08-08 + NLP microservices
 
-1. 2023-08-08 + Integrated WavLM (pretrained) feature extractor
+- 2023-11-01 + D-Guard v0.1.0 Documentation
 
-2. 2023-07-15 + Language recognition model to screen out non-Mandarin Chinese audio, including foreign languages, dialects, and low-quality audio.
+- 2023-11-01 + Release D-Guard v0.1.0
 
-3. 2023-07-03 + DFResNet233/repvgg/MFA-Conformer/CAM++/ERes2Net model to fuse results.
+- 2023-10-30 + Update model fusion strategy
 
+- 2023-10-03 + Phone Data simulation utils
 
-## 🚩 TODOs
-- Pre-trained large model feature extractor integration and model training.
+- 2023-09-10 + PhoneData(>400h) trained models (ResNet Family)
 
-- Android runtime development
+- 2023-08-08 + NLP microservices
+
+- 2023-08-08 + Integrated WavLM (pretrained) feature extractor
+
+- 2023-07-15 + Language recognition model to screen out non-Mandarin Chinese audio, including foreign languages, dialects, and low-quality audio.
+
+- 2023-07-03 + DFResNet233/repvgg/MFA-Conformer/CAM++/ERes2Net model to fuse results.
 
 
 ## ⭐ Highlights

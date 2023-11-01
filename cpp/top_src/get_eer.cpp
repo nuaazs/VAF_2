@@ -1,3 +1,8 @@
+// # coding = utf-8
+// # @Time    : 2023-11-01  09:05:05
+// # @Author  : zhaosheng@nuaa.edu.cn
+// # @Describe: Calc EER.
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
