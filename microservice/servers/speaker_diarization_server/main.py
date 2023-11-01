@@ -205,8 +205,8 @@ if __name__ == "__main__":
 
     # 存储pipeline后需要聚类的音频信息文件
     need_cluster_records_path = "output/need_cluster_records.txt"
-    if os.path.exists(need_cluster_records_path):
-        os.remove(need_cluster_records_path)
+    # if os.path.exists(need_cluster_records_path):
+    #     os.remove(need_cluster_records_path)
 
     need_cluster_records = []
     last_id = get_last_id()

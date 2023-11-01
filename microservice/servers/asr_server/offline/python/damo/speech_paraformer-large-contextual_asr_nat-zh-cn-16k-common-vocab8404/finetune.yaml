@@ -1,0 +1,37 @@
+# minibatch related
+# # dataset_type: small
+batch_type: length
+batch_bins: 2000
+num_workers: 16
+speech_length_min: 100
+speech_length_max: 15000
+# dataset_type: large
+dataset_conf:
+    data_types: sound,text_hotword
+    filter_conf:
+        speech_length_min: 100
+        speech_length_max: 15000
+        token_length_min: 0
+        token_length_max: 200
+    shuffle: true
+    shuffle_conf:
+        shuffle_size: 2048
+        sort_size: 500
+    batch_conf:
+        batch_type: 'token'
+        batch_size: 120000
+    num_workers: 16
+
+# optimization related
+accum_grad: 1
+grad_clip: 5
+max_epoch: 20
+keep_nbest_models: 10
+optim: adam
+optim_conf:
+   lr: 0.0005
+scheduler: warmuplr
+scheduler_conf:
+   warmup_steps: 30000
+
+log_interval: 50

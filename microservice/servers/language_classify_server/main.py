@@ -17,8 +17,7 @@ import torch
 name = os.path.basename(__file__).split(".")[0]
 logger.add("log/"+name+"_{time}.log", rotation="500 MB", encoding="utf-8", enqueue=True, compression="zip", backtrace=True, diagnose=True)
 
-language_id = EncoderClassifier.from_hparams(
-    source="models/LANG", savedir=f"./pretrained_models/lang-id-ecapa", run_opts={"device": cfg.LANGUAGE_DEVICE})
+language_id = EncoderClassifier.from_hparams(source="./models/LANG", savedir=f"./pretrained_models/lang-id-ecapa", run_opts={"device": cfg.LANGUAGE_DEVICE})
 language_id.eval()
 logger.info("Load language id model success.")
 logger.info(f"Model device: {cfg.LANGUAGE_DEVICE}\nModel Path: ./pretrained_models/lang-id-ecapa")

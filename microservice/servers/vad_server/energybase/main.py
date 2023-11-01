@@ -17,13 +17,15 @@ name = os.path.basename(__file__).split(".")[0]
 logger.add("log/"+name+"_{time}.log", rotation="500 MB", encoding="utf-8", enqueue=True, compression="zip", backtrace=True, diagnose=True)
 
 
-def energybase_vad(filepath, save_folder_path, smooth_threshold=0.5, min_duration=2, save_oss=False, split=False):
+def energybase_vad(filepath, save_folder_path, smooth_threshold=0.5, min_duration=2, energy_thresh=1e8, save_oss=False, split=False):
     os.makedirs(save_folder_path, exist_ok=True)
     bin_path = f"{filepath.split('/')[-1][:-4]}.bin"
     bin_path = os.path.join(save_folder_path, bin_path)
     run_cmd(f"ffmpeg -i {filepath} -f s16le -acodec pcm_s16le -ar 16000 -map_metadata -1 -y  {bin_path}", util_exist=bin_path)
 
-    cout = run_cmd(f"./vad {bin_path} {save_folder_path}/output.txt {smooth_threshold} {min_duration}", check=False)
+    # cout = run_cmd(f"./vad {bin_path} {save_folder_path}/output.txt {smooth_threshold} {min_duration}", check=False)
+    cout = run_cmd(
+        f'./vad --wav-bin={bin_path} --energy-thresh={energy_thresh} --text-out={save_folder_path}/output.txt --smooth-threshold={smooth_threshold} --min-duration={min_duration}', check=False)
     logger.info(f"VAD output: {cout}")
     if split:
         # TODO split
@@ -65,6 +67,7 @@ def main(filetype):
     channel = int(request.form.get('channel', 0))
     smooth_threshold = float(request.form.get('smooth_threshold', 0.5))
     min_duration = float(request.form.get('min_duration', 2))
+    energy_thresh = float(request.form.get('energy_thresh', 1e8))
     start = int(request.form.get('start', 0))
     length = int(request.form.get('length', 999))
     end = start + length
@@ -76,7 +79,7 @@ def main(filetype):
     if save_oss != False and save_oss.lower() in ['true', 'yes', '1']:
         save_oss = True
     logger.info(f"* New request: {spkid} ===================================== ")
-    logger.info(f"# spkid:{spkid},channel:{channel},smooth_threshold:{smooth_threshold},min_duration:{min_duration},start:{start},length:{length},save_oss:{save_oss},file:{file},url:{url}")
+    logger.info(f"# spkid:{spkid},channel:{channel},smooth_threshold:{smooth_threshold},min_duration:{min_duration},energy_thresh:{energy_thresh},start:{start},length:{length},save_oss:{save_oss},file:{file},url:{url}")
     if filetype == "file":
         filedata = request.files.get('file')
         filepath, url = save_file(filedata, spkid, channel, upload=save_oss, start=start, length=length, sr=cfg.SR, server_name="nn_vad_server")
@@ -91,7 +94,8 @@ def main(filetype):
 
     logger.info(f"# temp_folder:{temp_folder}")
     try:
-        file_list, url_list, error_msg, timelist = energybase_vad(filepath, temp_folder, smooth_threshold, min_duration, save_oss, split)
+        file_list, url_list, error_msg, timelist = energybase_vad(
+            filepath, temp_folder, smooth_threshold, min_duration, energy_thresh, save_oss, split)
         logger.info(f"# Result file_list:{file_list},url_list:{url_list},error_msg:{error_msg},timelist:{timelist}")
 
     except Exception as e:
