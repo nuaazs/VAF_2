@@ -116,9 +116,9 @@ def main():
         for _info in th_matrix_result:
             th,tp,fp,tn,fn = _info
             try:
-                precision = float((tp/(tp+fp)) *100.0)
-                recall = float((tp/(tp+fn)) *100.0)
-                acc = float(((tp+tn)/(tp+fn+tn+fp)) *100.0)
+                precision = float((tp/(tp+fp+1e-5)) *100.0)
+                recall = float((tp/(tp+fn+1e-5)) *100.0)
+                acc = float(((tp+tn)/(tp+fn+tn+fp+1e-5)) *100.0)
             except:
                 precision = " - "
                 recall = " - "

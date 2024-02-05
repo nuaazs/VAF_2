@@ -13,7 +13,7 @@ set -e
 
 overwrite=false
 master_port=45688
-seeds="123 456 789"
+seeds="123 456"
 start_from=0
 cpu_nj=64
 stage=0

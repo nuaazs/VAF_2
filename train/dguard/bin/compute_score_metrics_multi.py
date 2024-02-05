@@ -85,7 +85,7 @@ def main():
             labels = []
 
             trial_name = os.path.basename(trial)
-            score_path = os.path.join(args.scores_dir, f'{trial_name}.score')
+            score_path = os.path.join(args.scores_dir, f'{args.rank}_{trial_name}.score')
             with open(trial, 'r') as trial_f, open(score_path, 'w') as score_f:
                 lines = trial_f.readlines()
                 # lines_sorted = sorted(lines, key=lambda x: x.split()[0])
@@ -129,7 +129,7 @@ def main():
                                                 test_emb_full.reshape(1, -1))[0][0]
 
                     # with cmf
-                    cosine_score = raw_cosine_score*radio
+                    cosine_score = raw_cosine_score # *radio
                     print(f"Raw Score: {raw_cosine_score}, New Score: {cosine_score}")
 
                     # without cmf
@@ -174,7 +174,7 @@ def main():
                 trial_name = os.path.basename(trial)
                 scores_all_info[model_name][trial_name] = {}
                 labels_all_info[model_name][trial_name] = {}
-                score_path = os.path.join(args.scores_dir, f'{trial_name}.score')
+                score_path = os.path.join(args.scores_dir, f'{args.rank}_{trial_name}.score')
                 with open(trial, 'r') as trial_f, open(score_path, 'w') as score_f:
                     lines = trial_f.readlines()
                     # lines_sorted = sorted(lines, key=lambda x: x.split()[0])
@@ -188,6 +188,8 @@ def main():
 
                     for line in tqdm(lines, desc=f'scoring trial {trial_name}'):
                         pair = line.strip().split()
+                        if pair[0] == pair[1]:
+                            continue
                         enrol_emb, test_emb = enrol_dict[pair[0]], test_dict[pair[1]]
                         cosine_score = cosine_similarity(enrol_emb.reshape(1, -1),
                                                     test_emb.reshape(1, -1))[0][0]

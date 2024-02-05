@@ -112,6 +112,14 @@ model_info ={
         'embedding_size': '192',
         'sample_rate': '16000'
     },
+    'resnet101_cjsd_2024':{
+        'embedding_size': '256',
+        'sample_rate': '16000'
+    },
+    'resnet101_cjsd_lm_2024':{
+        'embedding_size': '256',
+        'sample_rate': '16000'
+    }
 }
 
 ALL_MODELS = list(model_info.keys())
@@ -280,7 +288,10 @@ class PretrainedModel:
                 alpha = crops_num/abs(segment_length)
             else:
                 alpha = 1
-            factor = self.calculate_factor(result[0][1],result[1][1])
+            if cmf == True:
+                factor = self.calculate_factor(result[0][1],result[1][1])
+            else:
+                factor = None
             print(f"Factor: {factor}, Alpha: {alpha}")
             return cos_score,factor,alpha
 

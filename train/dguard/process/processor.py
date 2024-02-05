@@ -142,8 +142,13 @@ class FBank(object):
     def __call__(self, wav, dither=0):
         sr = 16000
         assert sr==self.sample_rate
+        if len(wav.shape) == 2:
+            # print(wav.shape)
+            wav = wav[0]
         if len(wav.shape) == 1:
             wav = wav.unsqueeze(0)
+        # TODO如果是双通道，取1号通道
+        
         assert len(wav.shape) == 2 and wav.shape[0]==1
         feat = Kaldi.fbank(wav, num_mel_bins=self.n_mels,
             sample_frequency=sr, dither=dither)

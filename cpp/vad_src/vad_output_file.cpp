@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <vector>
 #include <fstream>
+#include <algorithm>
 
 #include "../include_vad/parse-option.h"
 #include "../include_vad/wav.h"
@@ -138,25 +139,48 @@ int main(int argc, char *argv[]) {
     fout.close();
 
 
-    // 重新计算num_speech_frames
-    num_speech_frames = 0;
-    for (int i = 0; i < vad_result.size(); i++) {
-        if (vad_result[i] == 1) {
-            num_speech_frames++;
-        }
+    // // 重新计算num_speech_frames
+    // num_speech_frames = 0;
+    // for (int i = 0; i < vad_result.size(); i++) {
+    //     if (vad_result[i] == 1) {
+    //         num_speech_frames++;
+    //     }
+    // }
+
+    // int num_speech_sample = 
+    //          (num_speech_frames - 1) * num_point_shift + num_point_per_frame;
+    // float *speech_data = (float *)calloc(sizeof(float), num_speech_sample);
+    
+    // int speech_cur = 0;
+    // for (int i = 0; i < vad_result.size(); i++) {
+    //     // speech
+    //     if (vad_result[i] == 1) {
+    //         memcpy(speech_data + speech_cur * num_point_shift,
+    //                data + i * num_point_shift, 
+    //                num_point_per_frame * sizeof(float));
+    //         speech_cur++;
+    //     }
+    // }
+
+
+    std::fill(vad_result.begin(), vad_result.end(), 0); // 首先将所有结果初始化为0（非语音）
+    for (const auto& interval : speech_intervals) {
+        std::fill(vad_result.begin() + interval.first, vad_result.begin() + interval.second + 1, 1); // 将语音段对应的部分设置为1
     }
 
-    int num_speech_sample = 
-             (num_speech_frames - 1) * num_point_shift + num_point_per_frame;
+    // 重新计算num_speech_frames基于更新后的vad_result
+    num_speech_frames = std::count(vad_result.begin(), vad_result.end(), 1);
+
+    // 根据更新后的 vad_result 重新构建 speech_data
+    int num_speech_sample = num_speech_frames * num_point_shift + (num_point_per_frame - num_point_shift);
     float *speech_data = (float *)calloc(sizeof(float), num_speech_sample);
     
     int speech_cur = 0;
     for (int i = 0; i < vad_result.size(); i++) {
-        // speech
+        // 如果当前帧是语音帧，则复制对应数据到speech_data
         if (vad_result[i] == 1) {
-            memcpy(speech_data + speech_cur * num_point_shift,
-                   data + i * num_point_shift, 
-                   num_point_per_frame * sizeof(float));
+            int copy_length = (i == vad_result.size() - 1) ? (num_sample - i * num_point_shift) : num_point_per_frame; // 处理最后一帧可能不完整的情况
+            memcpy(speech_data + speech_cur * num_point_shift, data + i * num_point_shift, copy_length * sizeof(float));
             speech_cur++;
         }
     }
