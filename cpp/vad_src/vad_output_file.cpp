@@ -115,6 +115,10 @@ int main(int argc, char *argv[]) {
 
     // std::string base_name = wav_out.substr(0, wav_out.rfind(".wav"));
     int file_index = 0;
+
+    // 二维数组，存储每个片段的起止时间
+    std::vector<std::vector<float>> speech_time;
+
     std::ofstream fout(text_out, std::ios::app);
     // 平滑逻辑：将长度小于指定时长的片段修改为非人声
     for (int i = 0; i < speech_intervals.size(); i++) {
@@ -134,61 +138,54 @@ int main(int argc, char *argv[]) {
         // write to text_out
         
         fout << start_time << "," << end_time << std::endl;
+        std::vector <float> temp;
+        temp.push_back(start_time);
+        temp.push_back(end_time);
+        speech_time.push_back(temp);
         }
     }
     fout.close();
 
+    //  待补充
+    // 将所有start_time到end_time的片段合成一个音频写出到wav_out
+    // 遍历 speech_time
 
-    // // 重新计算num_speech_frames
-    // num_speech_frames = 0;
-    // for (int i = 0; i < vad_result.size(); i++) {
-    //     if (vad_result[i] == 1) {
-    //         num_speech_frames++;
-    //     }
-    // }
+    // 初始化一个向量来存储合并后的音频数据
+    std::vector<float> merged_audio_data;
 
-    // int num_speech_sample = 
-    //          (num_speech_frames - 1) * num_point_shift + num_point_per_frame;
-    // float *speech_data = (float *)calloc(sizeof(float), num_speech_sample);
-    
-    // int speech_cur = 0;
-    // for (int i = 0; i < vad_result.size(); i++) {
-    //     // speech
-    //     if (vad_result[i] == 1) {
-    //         memcpy(speech_data + speech_cur * num_point_shift,
-    //                data + i * num_point_shift, 
-    //                num_point_per_frame * sizeof(float));
-    //         speech_cur++;
-    //     }
-    // }
+    // 遍历speech_time中的每个时间段
+    for (const auto& time_pair : speech_time) {
+        float start_time = time_pair[0];
+        float end_time = time_pair[1];
 
+        // 计算开始和结束样本的索引
+        int start_sample = static_cast<int>(start_time * sample_rate);
+        int end_sample = static_cast<int>(end_time * sample_rate);
 
-    std::fill(vad_result.begin(), vad_result.end(), 0); // 首先将所有结果初始化为0（非语音）
-    for (const auto& interval : speech_intervals) {
-        std::fill(vad_result.begin() + interval.first, vad_result.begin() + interval.second + 1, 1); // 将语音段对应的部分设置为1
-    }
+        // 确保索引不超出范围
+        start_sample = std::max(start_sample, 0);
+        end_sample = std::min(end_sample, num_sample);
 
-    // 重新计算num_speech_frames基于更新后的vad_result
-    num_speech_frames = std::count(vad_result.begin(), vad_result.end(), 1);
-
-    // 根据更新后的 vad_result 重新构建 speech_data
-    int num_speech_sample = num_speech_frames * num_point_shift + (num_point_per_frame - num_point_shift);
-    float *speech_data = (float *)calloc(sizeof(float), num_speech_sample);
-    
-    int speech_cur = 0;
-    for (int i = 0; i < vad_result.size(); i++) {
-        // 如果当前帧是语音帧，则复制对应数据到speech_data
-        if (vad_result[i] == 1) {
-            int copy_length = (i == vad_result.size() - 1) ? (num_sample - i * num_point_shift) : num_point_per_frame; // 处理最后一帧可能不完整的情况
-            memcpy(speech_data + speech_cur * num_point_shift, data + i * num_point_shift, copy_length * sizeof(float));
-            speech_cur++;
+        // 将时间段对应的样本添加到merged_audio_data
+        for (int i = start_sample; i < end_sample; ++i) {
+            merged_audio_data.push_back(data[i]);
         }
     }
 
-    WaveWriter writer(speech_data, num_speech_sample, 1, 16);
+    // 将std::vector转换为动态分配的数组
+    float* speech_data = new float[merged_audio_data.size()];
+    std::copy(merged_audio_data.begin(), merged_audio_data.end(), speech_data);
 
+    // 计算合并后音频数据的样本数量
+    int num_speech_sample = merged_audio_data.size();
+
+    // 使用WaveWriter将合并后的音频数据写入到WAV文件中
+    WaveWriter writer(speech_data, num_speech_sample, 1, 16);  // 假设音频为单通道，16位深
     writer.Write(wav_out.c_str());
+
+    // 释放资源
     free(data);
-    free(speech_data);
+    delete[] speech_data;
+
     return 0;
 }

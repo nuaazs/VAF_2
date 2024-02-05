@@ -16,4 +16,5 @@ ffmpeg -i xyx.wav -f s16le -acodec pcm_s16le -ar 16000 -ac 1 -map_metadata -1 -y
 
 # Test
 echo "Testing ../bin/vad_wav"
-../bin/vad_wav --wav-bin='test_vad.bin' --energy-thresh=5e7 --text-out='./test_out.txt' --min-duration=2.0 --smooth-threshold=0.5 --wav-out='./output.wav'
+../bin/vad_wav --wav-bin='test_vad.bin' --energy-thresh=5e7 --text-out='./test_out1.txt' --min-duration=0.1 --smooth-threshold=0.1 --wav-out='./output1.wav'
+../bin/vad_wav --wav-bin='test_vad.bin' --energy-thresh=5e7 --text-out='./test_out2.txt' --min-duration=0.1 --smooth-threshold=1.0 --wav-out='./output2.wav'
