@@ -10,7 +10,7 @@
 set -e
 . ./path.sh || exit 1
 . utils/parse_options.sh || exit 1
-
+DGUARD_ROOT=/VAF/train/dguard
 overwrite=false
 master_port=45688
 seeds="123 456"

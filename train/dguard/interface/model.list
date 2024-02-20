@@ -9,6 +9,10 @@ resnet152_lm
 resnet101_lm
 resnet101_cjsd
 resnet221_cjsd_lm
+resnet101_cjsd8000
+resnet101_cjsd8000_lm
+resnet221_cjsd8000
+resnet221_cjsd8000_lm
 resnet101_cjsd_2024
 resnet101_cjsd_lm_2024
 resnet221_lm

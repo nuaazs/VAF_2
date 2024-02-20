@@ -20,7 +20,7 @@ app = Flask(__name__)
 
 inference_pipeline = pipeline(
     task=Tasks.voice_activity_detection,
-    model='./models/speech_fsmn_vad_zh-cn-16k-common-pytorch',
+    model='iic/speech_fsmn_vad_zh-cn-16k-common-pytorch',
     model_revision=None,
     device=cfg.NNVAD_DEVICE
 )

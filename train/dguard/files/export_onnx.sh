@@ -5,7 +5,7 @@
 # model_name_without_lm is model_name repalce "lm" to ""
 # python export_onnx.py --config ../files/yaml/<model_name_without_lm>.yaml --checkpoint ../files/pt/<model_name>.pt --output_file ../files/onnx/<model_name>.onnx
 
-for model_name in $(ls pt/eres2net*)
+for model_name in $(ls pt/*8000*)
 do
     # rm .pt
     model_name=${model_name//.pt/}
