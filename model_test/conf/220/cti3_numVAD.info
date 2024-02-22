@@ -1,6 +1,6 @@
 #!/bin/bash
-exp_name="cti_v3_numVAD"
-models="eres2net_200k" #"resnet101_cjsd_and_resnet221_cjsd_lm_and_resnet293_cjsd_lm" #resnet101_cjsd_and_resnet221_cjsd_lm_and_resnet293_cjsd_lm" # dfresnet_233 repvgg eres2net resnet101_lm 
+exp_name="cti_v3_numVAD_222"
+models="eres2net_200k_and_campp_200k campp_200k resnet101_cjsd8000_lm_and_resnet221_cjsd8000_lm_and_resnet293_cjsd8000_lm resnet101_cjsd8000_and_resnet221_cjsd8000_and_resnet293_cjsd8000 eres2net_200k_and_resnet221_cjsd8000_lm_and_resnet293_cjsd8000_lm eres2net_200k_and_campp_200k_and_resnet293_cjsd8000_lm" #"resnet101_cjsd_and_resnet221_cjsd_lm_and_resnet293_cjsd_lm" #resnet101_cjsd_and_resnet221_cjsd_lm_and_resnet293_cjsd_lm" # dfresnet_233 repvgg eres2net resnet101_lm 
 datasets="ctiv3numbervad" #"cti_v1" #  male female cnceleb cjsdv2pro cjsd300 
 overwrite=true
 gpus="0 1 2 3 4 5 6 7" # 1 2 3 4 5 6 7

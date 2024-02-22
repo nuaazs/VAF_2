@@ -108,6 +108,14 @@ model_info ={
         'embedding_size': '256',
         'sample_rate': '16000'
     },
+    'resnet293_cjsd8000':{
+        'embedding_size': '256',
+        'sample_rate': '16000'
+    },
+    'resnet293_cjsd8000_lm':{
+        'embedding_size': '256',
+        'sample_rate': '16000'
+    },
     'resnet293_lm':{
         'embedding_size': '256',
         'sample_rate': '16000'
@@ -132,6 +140,10 @@ model_info ={
         'embedding_size': '192',
         'sample_rate': '16000'
     },
+    'eres2net_vox':{
+        'embedding_size': '192',
+        'sample_rate': '16000'
+    },
     'resnet101_cjsd_2024':{
         'embedding_size': '256',
         'sample_rate': '16000'
@@ -139,7 +151,38 @@ model_info ={
     'resnet101_cjsd_lm_2024':{
         'embedding_size': '256',
         'sample_rate': '16000'
-    }
+    },
+    # resnet34_vox_lm
+    # resnet152_vox_lm
+    # resnet221_vox_lm
+    # resnet293_vox_lm
+    # campp_vox_lm
+    # campp_vox
+    'resnet34_vox_lm':{
+        'embedding_size': '256',
+        'sample_rate': '16000'
+    },
+    'resnet152_vox_lm':{
+        'embedding_size': '256',
+        'sample_rate': '16000'
+    },
+    'resnet221_vox_lm':{
+        'embedding_size': '256',
+        'sample_rate': '16000'
+    },
+    'resnet293_vox_lm':{
+        'embedding_size': '256',
+        'sample_rate': '16000'
+    },
+    'campp_vox_lm':{
+        'embedding_size': '512',
+        'sample_rate': '16000'
+    },
+    'campp_vox':{
+        'embedding_size': '512',
+        'sample_rate': '16000'
+    },
+
 }
 
 ALL_MODELS = list(model_info.keys())
@@ -356,13 +399,22 @@ class PretrainedModel:
         print("Get factor by cosine similarity")
         factor = self.calculate_cosine_distance(cmf1,cmf2)
         return factor
+    
+    # ["resnet34_vox_lm",
+    # "resnet152_vox_lm",
+    # "resnet221_vox_lm",
+    # "resnet293_vox_lm",
+    # "campp_vox_lm",
+    # "campp_vox"]
 
+    
 # useage
 if DEV:
-    for model_name in ["resnet101_cjsd8000","resnet101_cjsd8000_lm","resnet221_cjsd8000","resnet221_cjsd8000_lm","eres2net_200k"]: # ALL_MODELS: # ["campp","campp_cjsd","campp_200k"]:
+    for model_name in ["eres2net_vox"]:
         print(f"Model name: {model_name}")
         infer = PretrainedModel(model_name,mode="extract")
-        result = infer.inference(['/VAF/model_test/data/test/cjsd300/13002931667/20230112161623/20230112161623_1.wav','/VAF/model_test/data/test/cjsd300/13002931667/20230625163725/20230625163725_1.wav'],cmf=False,segment_length=3*16000)
+        # result = infer.inference(['/VAF/model_test/data/test/cjsd300/13002931667/20230112161623/20230112161623_1.wav','/VAF/model_test/data/test/cjsd300/13002931667/20230625163725/20230625163725_1.wav'],cmf=False,segment_length=3*16000)
+        result = infer.inference(['/VAF/model_test/data/test/cjsd300/13002931667/20230112161623/20230112161623_1.wav','/VAF/model_test/data/test/cjsd300/13113035539/20220119113439/20220119113439_0.wav'],cmf=False,segment_length=3*16000)
         print(f"result len: {len(result)}")
         print(f"result[0] len: {len(result[0])}")
         print(f"result[0][0] shape: {result[0][0].shape}")

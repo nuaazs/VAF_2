@@ -18,6 +18,8 @@ resnet101_cjsd_lm_2024
 resnet221_lm
 resnet293_cjsd
 resnet293_cjsd_lm
+resnet293_cjsd8000
+resnet293_cjsd8000_lm
 resnet293_lm
 campp_lm
 ampp_cjsd
@@ -25,3 +27,10 @@ campp_cjsd_lm
 campp_200k
 eres2net_200k
 eres2net_cnceleb
+resnet34_vox_lm
+resnet152_vox_lm
+resnet221_vox_lm
+resnet293_vox_lm
+campp_vox_lm
+campp_vox
+eres2net_vox
