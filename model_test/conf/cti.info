@@ -1,12 +1,12 @@
 #!/bin/bash
-exp_name="cti_all_without_dyb_cmf_new_model"
-models="resnet101_cjsd_2024" #resnet101_cjsd_and_resnet221_cjsd_lm_and_resnet293_cjsd_lm" # dfresnet_233 repvgg eres2net resnet101_lm 
-datasets="cjsd300denoised  cjsd300 cjsdv2pro" #"cti_v1" #  male female cnceleb cjsdv2pro cjsd300 
+exp_name="cti_all_226"
+models="eres2net_200k eres2net_200k_and_campp_200k campp_200k resnet101_cjsd8000_lm_and_resnet221_cjsd8000_lm_and_resnet293_cjsd8000_lm resnet101_cjsd8000_and_resnet221_cjsd8000_and_resnet293_cjsd8000 eres2net_200k_and_resnet221_cjsd8000_lm_and_resnet293_cjsd8000_lm eres2net_200k_and_campp_200k_and_resnet293_cjsd8000_lm" #resnet101_cjsd_and_resnet221_cjsd_lm_and_resnet293_cjsd_lm" # dfresnet_233 repvgg eres2net resnet101_lm 
+datasets="cjsd300denoised cjsd300 cjsdv2pro" #"cti_v1" #  male female cnceleb cjsdv2pro cjsd300 
 overwrite=true
-gpus="0 1 2 3 4 5 6 7" # 1 2 3 4 5 6 7
-nj=8
+gpus="1 2 3 4 5 6" # 1 2 3 4 5 6 7
+nj=6
 master_port=45688
-seeds="123"
+seeds="123 234 567"
 lengths="3 5 8 10 12" #  5 8 10 12
 start_from=0
 cpu_nj=64
