@@ -1,7 +1,11 @@
-# coding = utf-8
-# @Time    : 2023-08-10  09:12:39
-# @Author  : zhaosheng@nuaa.edu.cn
-# @Describe: Export ONNX model.
+# This code incorporates a significant amount of code adapted from the following open-source projects: 
+# alibaba-damo-academy/3D-Speaker (https://github.com/alibaba-damo-academy/3D-Speaker)  
+# and wenet-e2e/wespeaker (https://github.com/wenet-e2e/wespeaker).
+# We have extensively utilized the outstanding work from these repositories to enhance the capabilities of our project.
+# For specific copyright and licensing information, please refer to the original project links provided.
+# We express our gratitude to the authors and contributors of these projects for their 
+# invaluable work, which has contributed to the advancement of this project.
+
 # Open Neural Network Exchange (ONNX)
 # ONNX is a universal model representation format that can be used across multiple deep learning frameworks and platforms.
 # It allows models to be exported from one framework to ONNX format, and then loaded and executed in other ONNX-supported frameworks or engines.

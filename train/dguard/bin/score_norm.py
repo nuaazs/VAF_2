@@ -1,19 +1,33 @@
-# coding = utf-8
-# @Time    : 2023-08-10  09:02:48
-# @Author  : zhaosheng@nuaa.edu.cn
-# @Describe: Score Norm.
-# TODO: add more score norm methods.
+# This code incorporates a significant amount of code adapted from the following open-source projects: 
+# alibaba-damo-academy/3D-Speaker (https://github.com/alibaba-damo-academy/3D-Speaker)  
+# and wenet-e2e/wespeaker (https://github.com/wenet-e2e/wespeaker).
+# We have extensively utilized the outstanding work from these repositories to enhance the capabilities of our project.
+# For specific copyright and licensing information, please refer to the original project links provided.
+# We express our gratitude to the authors and contributors of these projects for their 
+# invaluable work, which has contributed to the advancement of this project.
 
-import logging
 import os
-
 import fire
 import kaldiio
+import logging
 import numpy as np
 from tqdm import tqdm
 
-from wespeaker.utils.file_utils import read_table
+def read_table(table_file):
+    """read table file with any columns
 
+    Args:
+        table_file (str): path to the table file
+
+    Returns:
+        list: table_list
+    """
+    table_list = []
+    with open(table_file, 'r', encoding='utf8') as fin:
+        for line in fin:
+            tokens = line.strip().split()
+            table_list.append(tokens)
+    return table_list
 
 def get_mean_std(emb, cohort, top_n):
     emb = emb / np.sqrt(np.sum(emb ** 2, axis=1, keepdims=True))
@@ -26,7 +40,6 @@ def get_mean_std(emb, cohort, top_n):
     emb_std = np.std(emb_cohort_score_topn, axis=1)
 
     return emb_mean, emb_std
-
 
 def split_embedding(utt_list, emb_scp, mean_vec):
     embs = []
@@ -41,7 +54,6 @@ def split_embedding(utt_list, emb_scp, mean_vec):
         utt2idx[utt] = len(embs) - 1
 
     return np.array(embs), utt2idx
-
 
 def main(score_norm_method,
          top_n,

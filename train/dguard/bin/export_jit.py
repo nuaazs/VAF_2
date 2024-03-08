@@ -1,7 +1,11 @@
-# coding = utf-8
-# @Time    : 2023-08-10  09:12:39
-# @Author  : zhaosheng@nuaa.edu.cn
-# @Describe: Export JIT model.
+# This code incorporates a significant amount of code adapted from the following open-source projects: 
+# alibaba-damo-academy/3D-Speaker (https://github.com/alibaba-damo-academy/3D-Speaker)  
+# and wenet-e2e/wespeaker (https://github.com/wenet-e2e/wespeaker).
+# We have extensively utilized the outstanding work from these repositories to enhance the capabilities of our project.
+# For specific copyright and licensing information, please refer to the original project links provided.
+# We express our gratitude to the authors and contributors of these projects for their 
+# invaluable work, which has contributed to the advancement of this project.
+
 # Just-in-Time
 # JIT is a dynamic compilation technology that compiles model code into executable machine code on the fly at runtime. 
 # This way of compiling can provide high performance and allow more flexible optimization at runtime.

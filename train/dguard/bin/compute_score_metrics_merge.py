@@ -1,3 +1,11 @@
+# This code incorporates a significant amount of code adapted from the following open-source projects: 
+# alibaba-damo-academy/3D-Speaker (https://github.com/alibaba-damo-academy/3D-Speaker)  
+# and wenet-e2e/wespeaker (https://github.com/wenet-e2e/wespeaker).
+# We have extensively utilized the outstanding work from these repositories to enhance the capabilities of our project.
+# For specific copyright and licensing information, please refer to the original project links provided.
+# We express our gratitude to the authors and contributors of these projects for their 
+# invaluable work, which has contributed to the advancement of this project.
+
 # Copyright 3D-Speaker (https://github.com/alibaba-damo-academy/3D-Speaker). All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 
@@ -134,34 +142,7 @@ def main():
                     best_th = th
 
             last_precision = precision
-            
-                # min_recall = float(args.min_recall)
-                # min_precision = float(args.min_precision)
-                # if min_recall > 0:
-                #     if recall >= min_recall:
-                #             best_precision = precision
-                #             best_recall = recall
-                #             best_acc = acc
-                #             best_th = th
-                # else:
-                #     if min_precision > 0:
-                #         if precision <= min_precision:
-                #             # print(f"Precision:{precision},min_precision:{min_precision}")
-                #             best_precision = precision
-                #             best_recall = recall
-                #             best_acc = acc
-                #             best_th = th
-                # if abs(recall-precision) < min_recall_precision_diff and (recall!=0) and (precision!=0):
-                #     print(f"recall:{recall},precision:{precision}")
-                #     print(f"best_recall:{best_recall},best_precision:{best_precision}")
-                #     min_recall_precision_diff = abs(recall-precision)
-                #     best_precision = precision
-                #     best_recall = recall
-                #     best_acc = acc
-                #     best_th = th
-        # logger_all.info(f"{args.exp_id},{100 * eer:.4f},{min_dcf:.4f}")
-        # append to args.scores_all
-        # if args.scores_all not exist, create it
+
         if not os.path.exists(args.scores_all):
             with open(args.scores_all, 'w') as f:
                 f.write("model,trails,time,trial_name,EER,minDCF,Recall,Precision,Acc,TH\n")

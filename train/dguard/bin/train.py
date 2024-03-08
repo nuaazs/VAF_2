@@ -1,3 +1,11 @@
+# This code incorporates a significant amount of code adapted from the following open-source projects: 
+# alibaba-damo-academy/3D-Speaker (https://github.com/alibaba-damo-academy/3D-Speaker)  
+# and wenet-e2e/wespeaker (https://github.com/wenet-e2e/wespeaker).
+# We have extensively utilized the outstanding work from these repositories to enhance the capabilities of our project.
+# For specific copyright and licensing information, please refer to the original project links provided.
+# We express our gratitude to the authors and contributors of these projects for their 
+# invaluable work, which has contributed to the advancement of this project.
+
 # Copyright 3D-Speaker (https://github.com/alibaba-damo-academy/3D-Speaker). All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 
@@ -15,13 +23,11 @@ from dguard.utils.utils import set_seed, get_logger, AverageMeters, ProgressMete
 from dguard.utils.config import build_config
 from dguard.utils.builder import build
 from dguard.utils.epoch import EpochCounter, EpochLogger
-
 from sklearn.metrics.pairwise import cosine_similarity
+
 ###############################################################################################################
-from dguard.utils.utils import get_logger
 from dguard.utils.score_metrics import (compute_pmiss_pfa_rbst, compute_eer, compute_c_norm)
 from dguard.utils.builder import build
-from dguard.utils.utils import get_logger
 from dguard.utils.config import build_config
 from dguard.utils.fileio import load_wav_scp
 from kaldiio import WriteHelper
@@ -41,19 +47,18 @@ import argparse
 import torch
 import torchaudio
 from kaldiio import WriteHelper
-
 from dguard.utils.builder import build
 from dguard.utils.utils import get_logger
 from dguard.utils.config import build_config
 from dguard.utils.fileio import load_wav_scp
 ###############################################################################################################
 from IPython import embed
-
 DEV=True
 DEV_PLOT=True
 def dev_print(s):
     if DEV and DEV_PLOT:
         print(s)
+
 test_config = {
     "trials":["/datasets/voxceleb1/trials/vox1_O_cleaned.trial"], # ,"/datasets/voxceleb1/trials/vox1_E_cleaned.trial","/datasets/voxceleb1/trials/vox1_H_cleaned.trial"
     "test_epoch_freq":1,
@@ -114,13 +119,7 @@ def main():
     except:
         pre_extractor = None
         print(f"pre_extractor load failed, change to None")
-    # feature_extractor to gpu
-    # try:
-    #     feature_extractor = feature_extractor.cuda()
-    # except:
-    #     pass
 
-    
     if args.fine_tune:
         if args.origin_model_dir:
             # Load the parameter of the original model
