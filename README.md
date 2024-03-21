@@ -13,36 +13,11 @@
 </div>
 
 <div align=center>
-<a href="./chinese.md">Chinese</a> | <a href="">Roadmap</a> | <a href="./docs.md">Docs</a> | <a href="">Runtime</a> | <a href="">Models</a> | <a href="./docs/icnoc_deploy_README.md">Deploy</a>
+<a href="">Chinese</a> | <a href="">Roadmap</a> | <a href="">Docs</a> | <a href="">Runtime</a> | <a href="">Models</a> | <a href="">Deploy</a>
 </div>
 
-
-## 🔥 News
-
-- 2023-11-01 + D-Guard v0.1.0 Documentation
-
-- 2023-11-01 + Release D-Guard v0.1.0
-
-- 2023-10-30 + Update model fusion strategy
-
-- 2023-10-03 + Phone Data simulation utils
-
-- 2023-09-10 + PhoneData(>400h) trained models (ResNet Family)
-
-- 2023-08-08 + NLP microservices
-
-- 2023-08-08 + Integrated WavLM (pretrained) feature extractor
-
-- 2023-07-15 + Language recognition model to screen out non-Mandarin Chinese audio, including foreign languages, dialects, and low-quality audio.
-
-- 2023-07-03 + DFResNet233/repvgg/MFA-Conformer/CAM++/ERes2Net model to fuse results.
-
-
-## ⭐ Highlights
-
-The D-Guard Speaker Recognition System is a full-stack production solution for voiceprint recognition that achieves SOTA results on many public speech datasets. It is lightweight, easy to install, easy to use, and well-documented.
-
-
 **Please note:**
-1. The project is **still under development**, and the models have not been open-sourced.
-2. This project has borrowed extensively from the code of [SpeechBrain](https://github.com/speechbrain/speechbrain), [3D-Speaker](https://github.com/alibaba-damo-academy/3D-Speaker), [FunASR](https://github.com/alibaba-damo-academy/FunASR), and [WeSpeaker](https://github.com/wenet-e2e/wespeaker).
+
+This project has borrowed extensively from the code of [SpeechBrain](https://github.com/speechbrain/speechbrain), [3D-Speaker](https://github.com/alibaba-damo-academy/3D-Speaker) and [WeSpeaker](https://github.com/wenet-e2e/wespeaker).
+
+For more related information, please visit the above projects.
