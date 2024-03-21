@@ -100,3 +100,10 @@ def build(name: str, config: Config, **kwargs):
     for k, v in kwargs.items():
         setattr(config, k, v)
     return deep_build(f"<{name}>", config)
+
+def try_build_component(name, config, logger):
+    try:
+        return build(name, config)
+    except Exception as e:
+        logger.error(f"#=> {component_type} load failed, change to None. Error: {e}")
+        return None

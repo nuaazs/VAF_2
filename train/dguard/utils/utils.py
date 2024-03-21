@@ -9,12 +9,11 @@
 # Copyright 3D-Speaker (https://github.com/alibaba-damo-academy/3D-Speaker). All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 
+import yaml
+import torch
 import random
 import logging
-import yaml
 import numpy as np
-
-import torch
 from dguard.utils.fileio import load_yaml
 
 def parse_config(config_file):
@@ -27,14 +26,13 @@ def parse_config(config_file):
 def set_seed(seed=0):
     np.random.seed(seed)
     random.seed(seed)
-
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    # torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.deterministic = True # may slow down the training
     torch.backends.cudnn.benchmark = True
 
-def get_logger(fpath=None, fmt=None):
+def get_logger(fpath=None, fmt=None, terminal=False):
     if fmt is None:
         fmt = "%(asctime)s - %(levelname)s: %(message)s"
     logging.basicConfig(level=logging.INFO, format=fmt)
@@ -43,6 +41,11 @@ def get_logger(fpath=None, fmt=None):
         handler = logging.FileHandler(fpath)
         handler.setFormatter(logging.Formatter(fmt))
         logger.addHandler(handler)
+        if terminal:
+            # Add a terminal logger
+            handler = logging.StreamHandler()
+            handler.setFormatter(logging.Formatter(fmt))
+            logger.addHandler(handler)
     return logger
 
 def get_utt2spk_dict(utt2spk, suffix=''):
