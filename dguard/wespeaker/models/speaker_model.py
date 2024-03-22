@@ -14,6 +14,7 @@
 
 import wespeaker.models.tdnn as tdnn
 import wespeaker.models.ecapa_tdnn as ecapa_tdnn
+import wespeaker.models.ecapa_tdnn_speechbrain as ecapa_tdnn_speechbrain
 import wespeaker.models.resnet as resnet
 import wespeaker.models.repvgg as repvgg
 import wespeaker.models.campplus as campplus
@@ -24,6 +25,8 @@ import wespeaker.models.res2net as res2net
 def get_speaker_model(model_name: str):
     if model_name.startswith("XVEC"):
         return getattr(tdnn, model_name)
+    elif model_name.startswith("ECAPA_TDNN_SPEECHBRAIN"):
+        return getattr(ecapa_tdnn_speechbrain, model_name)
     elif model_name.startswith("ECAPA_TDNN"):
         return getattr(ecapa_tdnn, model_name)
     elif model_name.startswith("ResNet"):
