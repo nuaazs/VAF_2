@@ -20,13 +20,13 @@ stop_stage=8
 
 data=data
 exp=exp
-exp_name=vox12_resnet293_add
+exp_name=vox12_resnet101_add
 data_type=shard
 num_avg=10
-gpus=[0,1,2,3,4,5,6,7]
+gpus=[0,1,2,3]
 checkpoint=
-config=/VAF/train/egs/voxceleb/sv-resnet-add/conf/resnet293_wenet.yaml
-config=/VAF/train/egs/voxceleb/sv-resnet-add/conf/resnet293_wenet_lm.yaml
+config=/VAF/train/egs/voxceleb/sv-resnet-add/conf/resnet101_wenet.yaml
+lm_config=/VAF/train/egs/voxceleb/sv-resnet-add/conf/resnet101_wenet_lm.yaml
 trials="vox1_O_cleaned.kaldi vox1_E_cleaned.kaldi vox1_H_cleaned.kaldi"
 score_norm_method="asnorm"  # asnorm/snorm
 top_n=300

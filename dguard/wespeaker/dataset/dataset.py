@@ -212,7 +212,9 @@ def Dataset(data_type,
             dataset = Processor(dataset, processor.random_chunk, chunk_len,
                                 data_type)
         # add reverb & noise
+        print(f"Configs: {configs}")
         aug_prob = configs.get('aug_prob', 0.6)
+        print(f"aug_prob: {aug_prob}")
         if (reverb_lmdb_file and noise_lmdb_file) and (aug_prob > 0.0):
             reverb_data = LmdbData(reverb_lmdb_file)
             noise_data = LmdbData(noise_lmdb_file)
@@ -220,8 +222,15 @@ def Dataset(data_type,
                                 reverb_data, noise_data, resample_rate,
                                 aug_prob)
         # compute fbank
-        dataset = Processor(dataset, processor.compute_fbank,
-                            **configs['fbank_args'])
+        feature_extractor = configs.get('feature_extractor', 'fbank')
+        if feature_extractor == "fbank":
+            dataset = Processor(dataset, processor.compute_fbank,
+                                **configs['fbank_args'])
+        if feature_extractor == "wav2vec2":
+            dataset = Processor(dataset, processor.compute_wav2vec2)
+        else:
+            raise ValueError(f"Unsupported feature extractor: {feature_extractor}")
+       
 
     # apply cmvn
     dataset = Processor(dataset, processor.apply_cmvn)

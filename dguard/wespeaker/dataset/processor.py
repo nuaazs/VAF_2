@@ -30,6 +30,7 @@ from scipy.io import wavfile
 import torch
 import torchaudio
 import torchaudio.compliance.kaldi as kaldi
+from dguard.models.wav2vec.wav2vec2 import get_feature
 
 AUDIO_FORMAT_SETS = set(['flac', 'mp3', 'm4a', 'ogg', 'opus', 'wav', 'wma'])
 
@@ -398,7 +399,7 @@ def add_reverb_noise(data,
                      reverb_source,
                      noise_source,
                      resample_rate=16000,
-                     aug_prob=0.6):
+                     aug_prob=0.6): # 0.6
     """ Add reverb & noise aug
 
         Args:
@@ -499,6 +500,24 @@ def compute_fbank(data,
                           sample_frequency=sample_rate,
                           window_type='hamming',
                           use_energy=False)
+        yield dict(key=sample['key'], label=sample['label'], feat=mat)
+
+
+def compute_wav2vec2(data,
+                  num_mel_bins=80,
+                  frame_length=25,
+                  frame_shift=10,
+                  dither=1.0):
+    for sample in data:
+        assert 'sample_rate' in sample
+        assert 'wav' in sample
+        assert 'key' in sample
+        assert 'label' in sample
+        sample_rate = sample['sample_rate']
+        waveform = sample['wav']
+        waveform = waveform * (1 << 15)
+        # Only keep key, feat, label
+        mat = get_feature(waveform,sample_rate)
         yield dict(key=sample['key'], label=sample['label'], feat=mat)
 
 

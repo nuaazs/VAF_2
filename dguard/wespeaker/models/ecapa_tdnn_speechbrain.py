@@ -573,10 +573,17 @@ class Classifier(torch.nn.Module):
 
 def ECAPA_TDNN_langid():
     """Returns the ECAPA-TDNN model for language identification."""
-    return ECAPA_TDNN(input_size=80,
+    model =  ECAPA_TDNN(input_size=60,
                       channels=[1024, 1024, 1024, 1024, 3072],
                         kernel_sizes=[5, 3, 3, 3, 1],
                         dilations=[1, 2, 3, 4, 1],
                         attention_channels=128,
                         lin_neurons=256
                         )
+    # load /VAF/train/tools/tmp/embedding_model.ckpt
+    model.load_state_dict(torch.load('/VAF/train/tools/tmp/embedding_model.ckpt'), strict=True)
+    model.eval()
+    print(f"ECAPA_TDNN model loaded")
+
+if __name__ == "__main__":
+    ECAPA_TDNN_langid()

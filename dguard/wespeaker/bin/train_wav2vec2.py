@@ -1,14 +1,3 @@
-# This code incorporates a significant amount of code adapted from the following open-source projects: 
-# alibaba-damo-academy/3D-Speaker (https://github.com/alibaba-damo-academy/3D-Speaker)  
-# and wenet-e2e/wespeaker (https://github.com/wenet-e2e/wespeaker).
-# We have extensively utilized the outstanding work from these repositories to enhance the capabilities of our project.
-# For specific copyright and licensing information, please refer to the original project links provided.
-# We express our gratitude to the authors and contributors of these projects for their 
-# invaluable work, which has contributed to the advancement of this project.
-
-# Copyright 3D-Speaker (https://github.com/alibaba-damo-academy/3D-Speaker). All Rights Reserved.
-# Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
-
 # Copyright (c) 2021 Hongji Wang (jijijiang77@gmail.com)
 #               2022 Chengdong Liang (liangchengdong@mail.nwpu.edu.cn)
 #
@@ -44,39 +33,8 @@ from wespeaker.utils.executor import run_epoch
 from wespeaker.utils.file_utils import read_table
 from wespeaker.utils.utils import get_logger, parse_config_or_kwargs, set_seed, \
     spk2id
+from dguard.models.wav2vec.wav2vec2 import base_model,base_feature_extractor
 
-################################################################################
-# Modified
-# Language ID model
-from wespeaker.models.ecapa_tdnn_speechbrain import ECAPA_TDNN
-import torch.nn as nn
-import torch
-
-class add_model(nn.Module):
-    def __init__(self, model, model_add):
-        super(add_model, self).__init__()
-        self.model = model
-        self.model_add = model_add
-        # freeze the model_add
-        for param in self.model_add.parameters():
-            param.requires_grad = False
-        self.conv1x1 = None
-        self.fc = nn.Linear(512,256)
-        self.fc.to(next(self.model.parameters()).device)
-    def forward(self, x):
-        print(f"Input shape: {x.shape}")
-        x1 = self.model(x)
-        x2 = self.model_add(x)
-        # Dynamically set the 1x1 convolution to match x2's feature size to x1's
-        x2 = x2.reshape(x2.size(0), -1)
-        if isinstance(x1, tuple):
-            x1 = x1[1]
-        combined = torch.cat([x1, x2], dim=1)
-        combined = self.fc(combined)
-        combined = combined.view_as(x1)
-        output = combined + x1
-        return (x1[0], output)
-################################################################################
 
 def train(config='conf/config.yaml', **kwargs):
     """Trains a model on the given features and spk labels.
@@ -85,9 +43,7 @@ def train(config='conf/config.yaml', **kwargs):
              config can also be manually adjusted with --ARG VALUE
     :returns: None
     """
-    print("Training model with config: ", config)
     configs = parse_config_or_kwargs(config, **kwargs)
-    print("Parsed config: ", configs)
     checkpoint = configs.get('checkpoint', None)
     # dist configs
     rank = int(os.environ['RANK'])
@@ -148,34 +104,10 @@ def train(config='conf/config.yaml', **kwargs):
         logger.info("<== Dataloaders ==>")
         logger.info("train dataloaders created")
         logger.info('epoch iteration number: {}'.format(epoch_iter))
-    ##########################################################################################
-    # Modified
+
     # model
     logger.info("<== Model ==>")
-    model_base = get_speaker_model(configs['model'])(**configs['model_args'])
-    # print base model parameters
-    print(f"# Base Model Parameters: {sum(p.numel() for p in model_base.parameters())}")
-    model_add = ECAPA_TDNN(input_size=60,
-                      channels=[1024, 1024, 1024, 1024, 3072],
-                        kernel_sizes=[5, 3, 3, 3, 1],
-                        dilations=[1, 2, 3, 4, 1],
-                        attention_channels=128,
-                        lin_neurons=256
-                        )
-    model_add.load_state_dict(torch.load('/VAF/train/tools/tmp/embedding_model.ckpt'), strict=True)
-    model_add.eval()
-    # print add model parameters
-    print(f"# Add Model Parameters: {sum(p.numel() for p in model_add.parameters())}")
-    # make add model's parameters not trainable
-    for param in model_add.parameters():
-        param.requires_grad = False
-    model = add_model(model_base, model_add)
-    # assert model.model_add's parameters are not trainable
-    for param in model.model_add.parameters():
-        assert not param.requires_grad, "model_add's parameters should not be trainable"
-    print(f"# Trainable Parameters: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
-    print(f"# Not Trainable Parameters: {sum(p.numel() for p in model.parameters() if not p.requires_grad)}")
-    ##########################################################################################
+    model = get_speaker_model(configs['model'])(**configs['model_args'])
     num_params = sum(param.numel() for param in model.parameters())
     if rank == 0:
         logger.info('speaker_model size: {}'.format(num_params))
@@ -201,15 +133,13 @@ def train(config='conf/config.yaml', **kwargs):
     model.add_module("projection", projection)
     if rank == 0:
         # print model
-        # for line in pformat(model).split('\n'):
-        #     logger.info(line)
-        pass
+        for line in pformat(model).split('\n'):
+            logger.info(line)
         # !!!IMPORTANT!!!
         # Try to export the model by script, if fails, we should refine
         # the code to satisfy the script export requirements
-
-        # script_model = torch.jit.script(model)
-        # script_model.save(os.path.join(model_dir, 'init.zip'))
+        script_model = torch.jit.script(model)
+        script_model.save(os.path.join(model_dir, 'init.zip'))
 
     # If specify checkpoint, load some info from checkpoint.
     if checkpoint is not None:
@@ -305,6 +235,7 @@ def train(config='conf/config.yaml', **kwargs):
         os.symlink('model_{}.pt'.format(configs['num_epochs']),
                    os.path.join(model_dir, 'final_model.pt'))
         logger.info(tp.bottom(len(header), width=10, style='grid'))
+
 
 if __name__ == '__main__':
     fire.Fire(train)
