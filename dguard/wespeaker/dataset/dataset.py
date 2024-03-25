@@ -226,14 +226,13 @@ def Dataset(data_type,
         if feature_extractor == "fbank":
             dataset = Processor(dataset, processor.compute_fbank,
                                 **configs['fbank_args'])
+            # apply cmvn
+            dataset = Processor(dataset, processor.apply_cmvn)
+        # compute feature by wav2vec2
         if feature_extractor == "wav2vec2":
-            dataset = Processor(dataset, processor.compute_wav2vec2)
+            dataset = Processor(dataset, processor.compute_feature_by_wav2vec,**configs['wav2vec2_args'])
         else:
             raise ValueError(f"Unsupported feature extractor: {feature_extractor}")
-       
-
-    # apply cmvn
-    dataset = Processor(dataset, processor.apply_cmvn)
 
     # spec augmentation
     spec_aug_flag = configs.get('spec_aug', True)

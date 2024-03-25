@@ -33,6 +33,9 @@ dataset_args:
   num_frms: 200
   aug_prob: 0 #0.6 # prob to add reverb & noise aug per sample
   feature_extractor: "wav2vec2"
+  wav2vec2_args:
+    feature_type: 'wav2vec2'
+  
   fbank_args:
     num_mel_bins: 80
     frame_shift: 10

@@ -503,22 +503,13 @@ def compute_fbank(data,
         yield dict(key=sample['key'], label=sample['label'], feat=mat)
 
 
-def compute_wav2vec2(data,
-                  num_mel_bins=80,
-                  frame_length=25,
-                  frame_shift=10,
-                  dither=1.0):
+def compute_feature_by_wav2vec(data,feature_type='wav2vec2'):
     for sample in data:
         assert 'sample_rate' in sample
         assert 'wav' in sample
         assert 'key' in sample
         assert 'label' in sample
-        sample_rate = sample['sample_rate']
-        waveform = sample['wav']
-        waveform = waveform * (1 << 15)
-        # Only keep key, feat, label
-        mat = get_feature(waveform,sample_rate)
-        yield dict(key=sample['key'], label=sample['label'], feat=mat)
+        yield dict(key=sample['key'], label=sample['label'], wav_data=sample['wav'])
 
 
 def apply_cmvn(data, norm_mean=True, norm_var=False):

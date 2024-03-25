@@ -35,7 +35,6 @@ from wespeaker.utils.utils import get_logger, parse_config_or_kwargs, set_seed, 
     spk2id
 from dguard.models.wav2vec.wav2vec2 import base_model,base_feature_extractor
 
-
 def train(config='conf/config.yaml', **kwargs):
     """Trains a model on the given features and spk labels.
 
@@ -153,6 +152,9 @@ def train(config='conf/config.yaml', **kwargs):
 
     # ddp_model
     model.cuda()
+    # base_feature_extractor
+    base_model.cuda()
+    base_model.eval()
     ddp_model = torch.nn.parallel.DistributedDataParallel(model)
     device = torch.device("cuda")
 
@@ -222,7 +224,9 @@ def train(config='conf/config.yaml', **kwargs):
                   scaler,
                   enable_amp=configs['enable_amp'],
                   log_batch_interval=configs['log_batch_interval'],
-                  device=device)
+                  device=device,
+                  base_feature_extractor=base_feature_extractor,
+                  base_model=base_model)
 
         if rank == 0:
             if epoch % configs['save_epoch_interval'] == 0 or epoch >= configs[

@@ -31,8 +31,12 @@ def run_epoch(dataloader,
               scaler,
               enable_amp,
               log_batch_interval=100,
-              device=torch.device('cuda')):
+              device=torch.device('cuda'),
+              base_feature_extractor=None,
+              base_model=None):
     model.train()
+    base_model.to(device)
+    base_model.eval()
     # By default use average pooling
     loss_meter = tnt.meter.AverageValueMeter()
     acc_meter = tnt.meter.ClassErrorMeter(accuracy=True)
@@ -40,7 +44,28 @@ def run_epoch(dataloader,
     for i, batch in enumerate(dataloader):
         utts = batch['key']
         targets = batch['label']
-        features = batch['feat']
+        if "wav_data" not in batch:
+            features = batch['feat']
+        else:
+            if base_feature_extractor is not None:
+                wav_data = batch['wav_data']
+                sample_rate = 16000 # TODO dynamic sample rate
+                # print(wav_data)
+                wav_data.to(device)
+                # print(f"wav_data shape: {wav_data.shape}")
+                wav_data = wav_data.reshape(wav_data.shape[0],-1)
+                with torch.no_grad():
+                    input_values = base_feature_extractor(wav_data, return_tensors="pt",sampling_rate=sample_rate).input_values
+                    input_values = input_values.squeeze(0)
+                    # print(f"input_values shape: {input_values.shape}")
+                    with torch.no_grad():
+                        input_values = input_values.to(device)
+                        outputs = base_model(input_values)
+                        features = outputs.last_hidden_state
+                # print(f"Final features shape: {features.shape}")
+                # features = features[0]
+            else:
+                raise ValueError("base_feature_extractor is None and wav_data is in batch !!")
 
         cur_iter = (epoch - 1) * epoch_iter + i
         scheduler.step(cur_iter)
