@@ -27,21 +27,20 @@ using namespace std;
 
 void print_help()
 {
-    cout << "Usage: program_name NUM_BLACK EMB_SIZE DB1 ID1 DB2 ID2 OUTPUT_PATH" << endl;
-    cout << "Options:" << endl;
-    cout << "\tEMB_list      :   size of each vector, separated by comma" << endl;
-    cout << "\tDB1_list      :   path to Black vector database files for DB1, separated by comma" << endl;
-    cout << "\tDB2_list      :   path to Black vector database files for DB2, separated by comma" << endl;
-    cout << "\tID1           :   path to the list of IDs for Black vectors file for DB1" << endl;
-    cout << "\tID2           :   path to the list of IDs for Black vectors file for DB2" << endl;
-    cout << "\tOUTPUT_PATH   :   path to output file" << endl;
-    cout << "\t*1: waiting for test; *2: enroll data" << endl;
+    cout << "Usage:" << endl;
+    cout << "\tARG1: FEATSIZE_list       :   [list] size of each vector, separated by comma" << endl;
+    cout << "\tARG2: DB1_list            :   [list] path to Black vector database files for DB1(Test), separated by comma" << endl;
+    cout << "\tARG3: DB2_list            :   [list] path to Black vector database files for DB2(Enroll), separated by comma" << endl;
+    cout << "\tARG4: ID1                 :   [str] path to the list of ID for Black vectors file for DB1(Test)" << endl;
+    cout << "\tARG5: ID2                 :   [str] path to the list of ID for Black vectors file for DB2(Enroll)" << endl;
+    cout << "\tARG6: OUTPUT_PATH         :   [str] path to output file" << endl;
+    cout << "\t\t\tNote: *1: waiting for test; *2: enroll data" << endl;
 }
 
 
 vector<string> split_string(const string &str, char delimiter)
 {
-    cout << "Start spilt " << str << endl;
+    // cout << "Start spilt " << str << endl;
     vector<string> result;
     stringstream ss(str);
     string token;
@@ -49,7 +48,7 @@ vector<string> split_string(const string &str, char delimiter)
     {
         result.push_back(token);
     }
-    cout << "End spilt " << str << endl;
+    // cout << "End spilt " << str << endl;
     return result;
 }
 
@@ -99,6 +98,7 @@ void print_argc_argv(int argc, char* argv[])
     }
 }
 
+
 int main(int argc, char* argv[])
 {
     if (argc < 2 || strcmp(argv[1], "--h") == 0 || strcmp(argv[1], "--help") == 0) {
@@ -122,21 +122,25 @@ int main(int argc, char* argv[])
     const char* id_1_file = argv[4];
     const char* id_2_file = argv[5];
     const char* output_path = argv[6];
-    cout<<"FEATSIZE: "<<FEATSIZE_list<<endl;
-    cout<<"vector_1_list: "<<vector_1_list<<endl;
-    cout<<"vector_2_list: "<<vector_2_list<<endl;
-    cout<<"id_1_file: "<<id_1_file<<endl;
-    cout<<"id_2_file: "<<id_2_file<<endl;
-    cout<<"output_path: "<<output_path<<endl;
 
     vector<string> FEATSIZE_list_str = split_string(FEATSIZE_list, ',');
-    cout << "FEATSIZE_list_str: " << FEATSIZE_list_str[0] << endl;
-    // change FEATSIZE_list_str to int
-    
+    cout << "FEATSIZE list: " << endl;
+    for (int i = 0; i < FEATSIZE_list_str.size(); i++)
+    {
+        cout << "    " << FEATSIZE_list_str[i] << endl;
+    }
     vector<string> vector_1_files = split_string(vector_1_list, ',');
+    cout << "vector_1_files list: " << endl;
+    for (int i = 0; i < vector_1_files.size(); i++)
+    {
+        cout << "    " << vector_1_files[i] << endl;
+    }
     vector<string> vector_2_files = split_string(vector_2_list, ',');
-    // vector<string> id_1_files = split_string(id_1_list, ',');
-    // vector<string> id_2_files = split_string(id_2_list, ',');
+    cout << "vector_2_files list: " << endl;
+    for (int i = 0; i < vector_2_files.size(); i++)
+    {
+        cout << "    " << vector_2_files[i] << endl;
+    }
 
     if ( vector_2_files.size() != vector_1_files.size())
     {
@@ -146,166 +150,124 @@ int main(int argc, char* argv[])
     
 
     // For each file vector_2_files
-
     int VOICENUM_2 = get_file_lines(id_2_file);
+    cout << "* Register VOICENUM (VOICENUM2): " << VOICENUM_2 << endl;
     DType* pDB_2_list[vector_2_files.size()];
     std::string id_list_2[VOICENUM_2];
     int FEATSIZE2;
     int FEATSIZE1;
-    for (int j = 0; j < vector_2_files.size(); j++)
+    for (int vector_2_file_index = 0; vector_2_file_index < vector_2_files.size(); vector_2_file_index++)
     {
-        cout << "* VOICENUM_2: " << VOICENUM_2 << endl;
-        FEATSIZE2 = stoi(FEATSIZE_list_str[j]);
-        cout<<  "* FEATSIZE_2: " << FEATSIZE2  <<endl;
-        
-        // Read DB 2
-        // ========================================================================================
+        FEATSIZE2 = stoi(FEATSIZE_list_str[vector_2_file_index]);
         DType* pDB_2 = reinterpret_cast<DType*>(memalign(ALGIN, sizeof(DType)*VOICENUM_2*FEATSIZE2));
         if(!pDB_2) {
             std::cout << "out of memory\n";
             return -1;
         }
-
-        // read bin file: vector_2_files[j]
-        FILE* fp_vector_2 = fopen(vector_2_files[j].c_str(), "rb");
+        FILE* fp_vector_2 = fopen(vector_2_files[vector_2_file_index].c_str(), "rb");
         if(!fp_vector_2) {
-            std::cout << "open file a.bin: "<<vector_2_files[j]<<" cjsd failed.\n";
+            std::cout << "open Register(2) vector file: "<<vector_2_files[vector_2_file_index]<<" failed.\n";
             return -1;
         }
-
         fread(pDB_2, sizeof(DType), VOICENUM_2*FEATSIZE2, fp_vector_2);
         fclose(fp_vector_2);
-        
         FILE* fp_id_file_2 = fopen(id_2_file, "r");
         if(!fp_id_file_2) {
-            std::cout << "open file a.bin: "<<id_2_file<<" cjsd failed.\n";
+            std::cout << "open file Register(2) id file: "<<id_2_file<<" failed.\n";
             return -1;
         }
-        for (int i = 0; i < VOICENUM_2; i++) {
+        for (int voicenum_2_index = 0; voicenum_2_index < VOICENUM_2; voicenum_2_index++) {
             char id[256];
             fscanf(fp_id_file_2, "%s", id);
-            id_list_2[i] = id;
+            id_list_2[voicenum_2_index] = id;
         }
-        // append to pDB_2_list
-        pDB_2_list[j] = pDB_2;
-        // ========================================================================================
+        pDB_2_list[vector_2_file_index] = pDB_2;
     }
-
-    std::cout << "Read FEATSIZE 2 Done." << endl;
+    std::cout << "Read All Register(2) Files !!" << endl;
 
 
     // Write result to file
-    // ========================================================================================
     FILE* fp_output = fopen(output_path, "w");
     if(!fp_output) {
-        std::cout << "open file a.bin: "<<output_path<<" failed.\n";
+        std::cout << "open OUTPUT FILE: "<<output_path<<" failed.\n";
         return -1;
     }
     std::unordered_map<int, std::pair<std::string, float>> top_similarities;
     
     
-
     // For each file vector_1_files
     // Get VOICENUM_1_list and pDB_1_list and id_list_1_list
     // ========================================================================================
 
     int VOICENUM_1 = get_file_lines(id_1_file);
+    cout << "* Test VOICENUM (VOICENUM1): " << VOICENUM_1 << endl;
     DType* pDB_1_list[vector_1_files.size()];
     std::string id_list_1[VOICENUM_1];
-
-    for (int i =0; i < vector_1_files.size(); i++)
+    for (int vector_1_file_index = 0; vector_1_file_index < vector_1_files.size(); vector_1_file_index++)
     {
-        FEATSIZE1 = stoi(FEATSIZE_list_str[i]);
-        cout<<  "* FEATSIZE_1: " << FEATSIZE1  <<endl;
-        
+        FEATSIZE1 = stoi(FEATSIZE_list_str[vector_1_file_index]);
         DType* pDB_1 = reinterpret_cast<DType*>(memalign(ALGIN, sizeof(DType)*VOICENUM_1*FEATSIZE1));
-
-        // Read DB 1
-        // ========================================================================================
         if(!pDB_1) {
             std::cout << "out of memory\n";
             return -1;
         }
-        // read bin file: vector_1_files[i]
-        FILE* fp_vector_1 = fopen(vector_1_files[i].c_str(), "rb");
+        FILE* fp_vector_1 = fopen(vector_1_files[vector_1_file_index].c_str(), "rb");
         if(!fp_vector_1) {
-            std::cout << "open file a.bin: "<<vector_1_files[i]<<" cjsd failed.\n";
+            std::cout << "open Test(1) vector file: "<<vector_1_files[vector_1_file_index]<<" failed.\n";
             return -1;
         }
 
-        for (int i = 0; i < VOICENUM_1; i++) {
-            std::vector<DType> feature_i(FEATSIZE1);
-            if (fread(&feature_i[0], sizeof(DType), FEATSIZE1, fp_vector_1) != FEATSIZE1) {
-                std::cout << "read feature failed.\n";
-                // cout shape diff
-                cout << "i: " << i << endl;
-                cout << "feature_i.size(): " << feature_i.size() << endl;
-                cout << "FEATSIZE1: " << FEATSIZE1 << endl;
-                return -1;
-            }
-            for (int j = 0; j < FEATSIZE1; j++) {
-                pDB_1[i * FEATSIZE1 + j] = feature_i[j];
-            }
-        }
+        fread(pDB_1, sizeof(DType), VOICENUM_1*FEATSIZE1, fp_vector_1);
         fclose(fp_vector_1);
-        
-        
         FILE* fp_id_file_1 = fopen(id_1_file, "r");
         if(!fp_id_file_1) {
-            std::cout << "open file a.bin: "<<id_1_file<<"  failed.\n";
+            std::cout << "open Test(1) id file: "<<id_1_file<<"  failed.\n";
             return -1;
         }
-        for (int i = 0; i < VOICENUM_1; i++) {
+        for (int voicenum_1_index = 0; voicenum_1_index < VOICENUM_1; voicenum_1_index++) {
             char id[256];
             fscanf(fp_id_file_1, "%s", id);
-            id_list_1[i] = id;
+            id_list_1[voicenum_1_index] = id;
         }
 
         // ========================================================================================
-        pDB_1_list[i] = pDB_1;
+        pDB_1_list[vector_1_file_index] = pDB_1;
     }
 
-    std::cout << "All Embedding Read Okay!" << std::endl;
-    for(int j = 0; j < VOICENUM_1; j++) {
+    std::cout << "Read All Test(1) Files !!" << std::endl;
+
+    for(int test_index = 0; test_index < VOICENUM_1; test_index++) {
         float max_similarity = 0;
         std::string max_similarity_id = "";
-        for(int i = 0; i < VOICENUM_2; i++) {
-            // j: index of vector_1_files, i: index of vector_2_files
-            // j: ID of Test, i: ID of Enroll
-
-            // calc cosine similarity
-            // init similarity list to calc mean similarity
+        for(int register_index = 0; register_index < VOICENUM_2; register_index++) {
             int FEATSIZE_auto;
             float similarity_list[vector_1_files.size()];
             for (int pdb_index = 0; pdb_index < vector_1_files.size(); pdb_index++){
                 FEATSIZE_auto = stoi(FEATSIZE_list_str[pdb_index]);
-                float similarity = Cosine_similarity(pDB_1_list[pdb_index] + i*FEATSIZE_auto, pDB_2_list[pdb_index] + j*FEATSIZE_auto, FEATSIZE_auto);
+                float similarity = Cosine_similarity(pDB_1_list[pdb_index] + test_index*FEATSIZE_auto, pDB_2_list[pdb_index] + register_index*FEATSIZE_auto, FEATSIZE_auto);
                 similarity_list[pdb_index] = similarity;
             }
             float similarity = get_float_list_mean(similarity_list, vector_1_files.size());
             
             if (similarity > max_similarity) {
                 max_similarity = similarity;
-                max_similarity_id = id_list_1[i];
+                max_similarity_id = id_list_2[register_index];
             }
-            top_similarities[j] = std::make_pair(max_similarity_id, max_similarity);
+            top_similarities[test_index] = std::make_pair(max_similarity_id, max_similarity);
         }
     }
 
     // write top similarities to file
-    for (int j = 0; j < VOICENUM_1; j++) {
-        std::string str = top_similarities[j].first + "," + id_list_2[j] + "," + std::to_string(top_similarities[j].second) + "\n";
+    for (int test_index = 0; test_index < VOICENUM_1; test_index++) {
+        std::string str = top_similarities[test_index].first + "," + id_list_1[test_index] + "," + std::to_string(top_similarities[test_index].second) + "\n";
         fwrite(str.c_str(), sizeof(char), str.size(), fp_output);
     }
+
     // Release memory
     for (int i = 0; i < vector_1_files.size(); i++)
     {
         free(pDB_1_list[i]);
-    }
-    for (int i = 0; i < vector_2_files.size(); i++)
-    {
         free(pDB_2_list[i]);
     }
-
     return 0;
 }

@@ -16,6 +16,15 @@
 <a href="">Chinese</a> | <a href="">Roadmap</a> | <a href="">Docs</a> | <a href="">Runtime</a> | <a href="">Models</a> | <a href="">Deploy</a>
 </div>
 
+
+<div>
+<br>
+<br>
+</div>
+<div align=center>
+<img src="https://shengbucket.oss-cn-hangzhou.aliyuncs.com/files/Snipaste_2024-04-16_14-23-18.png" />
+</div>
+
 **Please note:**
 
 This project has borrowed extensively from the code of [SpeechBrain](https://github.com/speechbrain/speechbrain), [3D-Speaker](https://github.com/alibaba-damo-academy/3D-Speaker) and [WeSpeaker](https://github.com/wenet-e2e/wespeaker).

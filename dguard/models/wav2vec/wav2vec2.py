@@ -15,6 +15,12 @@ from transformers import (
 )
 from transformers.models.wav2vec2.modeling_wav2vec2 import _compute_mask_indices
 
+# https://github.com/TencentGameMate/chinese_speech_pretrain
+# https://github.com/kehanlu/Mandarin-Wav2Vec2
+# Download model:
+# huggingface-cli download --token xxx --resume-download TencentGameMate/chinese-wav2vec2-large --local-dir wav2vec2-large-model
+# huggingface-cli download --token xxx --resume-download TencentGameMate/chinese-wav2vec2-base --local-dir wav2vec2-base-model
+
 model_path="/VAF/dguard/models/wav2vec/wav2vec2-base-model"
 wav_path="/VAF/test/data/test/cjsd300/13011899170/20220720091622/20220720091622_0.wav"
 mask_prob=0.0
